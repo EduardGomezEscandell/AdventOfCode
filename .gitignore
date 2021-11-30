@@ -1,0 +1,5 @@
+**/build/
+log.valgrind
+__pycache__/**
+.vscode/**
+*.sublime-workspace

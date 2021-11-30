@@ -1,0 +1,54 @@
+{
+	"folders":
+	[
+		{
+			"path": "/home/eduard/Code/AdventOfCode2021",
+			"folder_exclude_patterns" : [
+				".vscode",
+				"__pycache__",
+			],
+			"file_exclude_patterns": [
+				"*.sublime-workspace"
+			]
+		}
+	],
+	"build_systems" :
+	[
+		{
+			"name" : "CMake build",
+			"working_dir" : "/home/eduard/Code/AdventOfCode2021",
+			"file_regex": "\/home\/eduard\/Code\/AdventOfCode2021\/([^:]*):([0-9]*)",
+		    "shell_cmd": "bash build.sh ${file_path}",
+			"variants" : [
+				{
+					"name" : "Debug",
+					"env" :{"BUILD_TYPE" : "Debug"}
+				}
+			]
+		},
+		{
+			"name" : "Run AoC",
+			"working_dir" : "${file_path}/build/Release",
+			"shell_cmd" : "./\\$(ls aoc_2021_*)",
+			"variants" : [
+				{
+					"name" : "Debug+Valgrind",
+					"working_dir" : "$file_path/build/Debug",
+					"shell_cmd" : "valgrind --log-file=\"../../log.valgrind\" ./\\$(ls aoc_2021_*)"
+				}
+			]
+		},
+		{
+			"name" : "Python run",
+		    "cmd": ["python", "-u", "$file"],
+		    "file_regex": "^[ ]*File \"(...*?)\", line ([0-9]*)",
+		    "selector": "source.python",
+		    "variants" : [
+		    	{
+		    		"name" : "single core",
+		    		"env" : {"OMP_NUM_THREADS" : "1"}
+		    	}
+		    ]
+		}
+	]
+}
