@@ -71,7 +71,8 @@ void VectorGrow(Vector * vec, const size_t growth)
 		return;
 	}
 
-	size_t new_size = MAX(vec->capacity * GROWTH_FACTOR, min_size);
+	size_t new_cap = vec->capacity * GROWTH_FACTOR;
+	size_t new_size = MAX(new_cap, min_size);
 
 	size_t len = CONTAINER_LEN(*vec);
 	vec->begin = realloc(vec->begin, new_size * sizeof(int));

@@ -17,7 +17,7 @@
 		{
 			"name" : "CMake build",
 			"working_dir" : "${project_path}",
-			"file_regex": "${project_path}\/([^:]*):([0-9]*)",
+			"file_regex": "\/home\/[a-zA-z0-9/]*\/AdventOfCode2021\/([^:]*):([0-9]*)",
 		    "shell_cmd": "bash build.sh",
 			"variants" : [
 				{
@@ -33,7 +33,7 @@
 			"variants" : [
 				{
 					"name" : "Debug+Valgrind",
-					"shell_cmd" : "export FILEPATH=${file_path}; valgrind --log-file=\\$FILEPATH/log.valgrind bash run.sh \\${FILEPATH##*/}"
+					"shell_cmd" : "export FILEPATH=${file_path}; export DAY=\\${FILEPATH##*/}; valgrind --leak-check=full --show-leak-kinds=all --log-file=\\$FILEPATH/log.valgrind ./build/Debug/\\${DAY}/aoc_2021_\\${DAY}"
 				}
 			]
 		},

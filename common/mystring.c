@@ -24,6 +24,7 @@ String EmptyString()
 	s.begin = NULL;
 	s.end = NULL;
 	s.capacity = 0;
+	return s;
 }
 
 void StringCopy(String * out, const String in)
@@ -100,7 +101,7 @@ char * StringToC(const String str)
 	{
 		*out = *(in++);
 	}
-	out = '\0';
+	*out = '\0';
 	return ret;
 }
 
