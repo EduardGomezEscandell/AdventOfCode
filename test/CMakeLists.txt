@@ -1,10 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(${AOC_PROJECT_NAME} LANGUAGES C)
-add_executable(${AOC_PROJECT_NAME} main.c)
-
-add_subdirectory(../common common/${CMAKE_BUILD_TYPE})
+project(aoc_2021_test LANGUAGES C)
+add_executable(aoc_2021_test main.c)
 
 add_compile_options(-Wall -Werror -Wextra -Wpedantic)
 
-target_link_libraries(${AOC_PROJECT_NAME} mystring vector math)
+target_link_libraries(aoc_2021_test mystring vector math)
