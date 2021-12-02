@@ -5,7 +5,8 @@
 			"path": "~/Code/AdventOfCode2021",
 			"folder_exclude_patterns" : [
 				".vscode",
-				"__pycache__"
+				"__pycache__",
+				".clangd"
 			],
 			"file_exclude_patterns": [
 				"*.sublime-workspace"

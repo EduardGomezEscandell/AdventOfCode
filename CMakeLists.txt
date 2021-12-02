@@ -6,5 +6,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 add_subdirectory(common)
 add_subdirectory(test)
 add_subdirectory(01)
+add_subdirectory(02)
 
 set(CMAKE_C_FLGAS -Wall -Werror -Wextra -Wpedantic)
