@@ -4,14 +4,16 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+typedef unsigned short binary;
+
 FILE * GetFile(const bool is_test);
 
-unsigned int ReadBinary(char const * const line);
+binary ReadBinary(char const * const line);
 
-void PopEntry(char ** list, size_t * size, const size_t i);
+void PopEntry(binary * list, size_t * size, const size_t i);
 
-void ProcessCarbon(char ** carbon, size_t * n_carbon, const size_t digit);
-void ProcessOxygen(char ** oxygen, size_t * n_oxygen, const size_t digit);
+void ProcessCarbon(binary * carbon, size_t * n_carbon, const binary bit_mask);
+void ProcessOxygen(binary * oxygen, size_t * n_oxygen, const binary bit_mask);
 
 
 int SolvePart1(const bool is_test);

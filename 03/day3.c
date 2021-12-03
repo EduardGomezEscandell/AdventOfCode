@@ -16,7 +16,11 @@ FILE* GetFile(const bool is_test)
 
 	FILE* file = fopen(filename, "r");
 
-	if (file == NULL) exit(EXIT_FAILURE);
+	if (file == NULL)
+	{
+		fprintf(stderr, "File not found: %s", filename);
+		exit(EXIT_FAILURE);
+	}
 
 	return file;
 }
@@ -70,60 +74,66 @@ int SolvePart1(const bool is_test)
 }
 
 
-void PopEntry(char ** list, size_t * size, const size_t i)
+void PopEntry(binary * list, size_t * size, const size_t i)
 {
-	free(list[i]);
 	*size = *size - 1;
-
 	list[i]     = list[*size];
-	list[*size] = NULL;
 }
 
 void ProcessOxygen(
-	char ** oxygen,
+	binary * oxygen,
 	size_t * n_oxygen,
-	const size_t digit)
+	const binary bit_mask)
 {
 	int count = 0;
 	for(size_t i = 0; i < *n_oxygen; ++i)
 	{
-		count += oxygen[i][digit] == '1' ? 1 : -1;
+		const bool bit = oxygen[i] & bit_mask;
+		count += bit ? 1 : -1;
 	}
-	char most_common = count >= 0 ? '1' : '0';
 
-	for(ssize_t i = *n_oxygen - 1; i >= 0 && *n_oxygen > 1; --i)
+	const bool most_common = count >= 0 ? 1 : 0;
+
+	for(ssize_t i = *n_oxygen - 1; i >= 0; --i)
 	{
-		if(oxygen[i][digit] != most_common)
+		const bool bit = oxygen[i] & bit_mask;
+		if(bit != most_common)
 		{
 			PopEntry(oxygen, n_oxygen, i);
+
+			if(*n_oxygen == 1) return;
 		}
 	}
 }
 
 void ProcessCarbon(
-	char ** carbon,
+	binary * carbon,
 	size_t * n_carbon,
-	const size_t digit)
+	const binary bit_mask)
 {
 	int count = 0;
 	for(size_t i = 0; i < *n_carbon; ++i)
 	{
-		count += carbon[i][digit] == '1' ? 1 : -1;
+		const bool bit = carbon[i] & bit_mask;
+		count += bit ? 1 : -1;
 	}
-	char most_common = count >= 0 ? '1' : '0';
+	const bool most_common = count >= 0 ? 1 : 0;
 
-	for(int i = *n_carbon - 1; i >= 0 && *n_carbon > 1; --i)
+	for(ssize_t i = *n_carbon - 1; i >= 0; --i)
 	{
-		if(carbon[i][digit] == most_common)
+		const bool bit = (carbon[i] & bit_mask) > 0;
+		if(bit == most_common)
 		{
 			PopEntry(carbon, n_carbon, i);
+
+			if(*n_carbon == 1) return;
 		}
 	}
 }
 
-unsigned int ReadBinary(char const * const line)
+binary ReadBinary(char const * const line)
 {
-	unsigned int bin = 0;
+	binary bin = 0;
 	for(char const * it = line; *it != '\0'; ++it)
 	{
 		switch (*it) {
@@ -145,37 +155,41 @@ int SolvePart2(const bool is_test)
 	const size_t n_digits = is_test ? 5 : 12;
 	const size_t n_entries = is_test ? 12 : 1000;
 
-	char ** oxygen = malloc(n_entries * sizeof(char *));
-	char ** carbon = malloc(n_entries * sizeof(char *));
+	binary * oxygen = malloc(n_entries * sizeof(binary));
+	binary * carbon = malloc(n_entries * sizeof(binary));
 	
 	size_t i = 0;
 	while((read = getline(&line, &len, file)) != -1)
 	{
-		oxygen[i] = malloc((n_digits+2) * sizeof(char));
-		carbon[i] = malloc((n_digits+2) * sizeof(char));
-		strcpy(oxygen[i], line);
-		strcpy(carbon[i], line);
+		oxygen[i] = ReadBinary(line);
+		carbon[i] = oxygen[i];
 		++i;
 	}
 
 	// Oxygen
 	size_t n_oxygen = n_entries;
-	for(size_t i = 0; i < n_digits && n_oxygen > 1; ++i)
+
+	for(binary bit_mask = 1 << (n_digits-1);
+		bit_mask != 0;
+		bit_mask = bit_mask >> 1)
 	{
-		ProcessOxygen(oxygen, &n_oxygen, i);
+		ProcessOxygen(oxygen, &n_oxygen, bit_mask);
+		if(n_oxygen == 1) break;
 	}
 
 	// Carbon
 	size_t n_carbon = n_entries;
-	for(size_t i = 0; i < n_digits && n_carbon > 1; ++i)
+
+	for(binary bit_mask = 1 << (n_digits-1); 
+		bit_mask != 0;
+		bit_mask = bit_mask >> 1)
 	{
-		ProcessCarbon(carbon, &n_carbon, i);
+		ProcessCarbon(carbon, &n_carbon, bit_mask);
+		if(n_carbon == 1) break;
 	}
 
-	const int result = ReadBinary(*oxygen) * ReadBinary(*carbon);
+	const int result = oxygen[0] * carbon[0];
 
-	for(size_t i = 0; i<n_oxygen; ++i) free(oxygen[i]);
-	for(size_t i = 0; i<n_carbon; ++i) free(carbon[i]);
 	free(oxygen);
 	free(carbon);
 	free(line);
