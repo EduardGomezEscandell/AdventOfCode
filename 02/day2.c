@@ -1,4 +1,5 @@
 #include "day2.h"
+#include "common/file_utils.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,27 +33,10 @@ Command ReadCommand(char * line)
 	exit(EXIT_FAILURE);
 }
 
-FILE* GetFile(bool is_test)
-{
-	char* filename;
-	if(is_test)
-	{
-		filename = "data/02/test.txt";
-	} else {
-		filename = "data/02/data.txt";
-	}
-
-	FILE* file = fopen(filename, "r");
-
-	if (file == NULL) exit(EXIT_FAILURE);
-
-	return file;
-}
-
 
 int SolvePart1(bool is_test)
 {
-	FILE * file = GetFile(is_test);
+	FILE * file = GetFile(is_test, 2);
 	
 	char * line = NULL;
 	size_t len = 0;
@@ -78,7 +62,7 @@ int SolvePart1(bool is_test)
 
 int SolvePart2(bool is_test)
 {
-	FILE* file = GetFile(is_test);
+	FILE* file = GetFile(is_test, 2);
 
 	char * line = NULL;
 	size_t len = 0;

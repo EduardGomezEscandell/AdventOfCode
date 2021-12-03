@@ -1,29 +1,9 @@
-#include "day3.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-FILE* GetFile(const bool is_test)
-{
-	char* filename;
-	if(is_test)
-	{
-		filename = "data/03/test.txt";
-	} else {
-		filename = "data/03/data.txt";
-	}
-
-	FILE* file = fopen(filename, "r");
-
-	if (file == NULL)
-	{
-		fprintf(stderr, "File not found: %s", filename);
-		exit(EXIT_FAILURE);
-	}
-
-	return file;
-}
+#include "day3.h"
+#include "common/file_utils.h"
 
 void UpdateMostCommonList(const size_t n_digits, int * count, const char * const line)
 {
@@ -42,7 +22,7 @@ void UpdateMostCommonList(const size_t n_digits, int * count, const char * const
 
 int SolvePart1(const bool is_test)
 {
-	FILE * file = GetFile(is_test);
+	FILE * file = GetFile(is_test, 3);
 
 	char * line = NULL;
 	size_t len = 0;
@@ -146,7 +126,7 @@ binary ReadBinary(char const * const line)
 
 int SolvePart2(const bool is_test)
 {
-	FILE* file = GetFile(is_test);
+	FILE* file = GetFile(is_test, 3);
 
 	char * line = NULL;
 	size_t len = 0;

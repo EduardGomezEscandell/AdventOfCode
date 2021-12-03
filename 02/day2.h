@@ -11,7 +11,6 @@ typedef struct{
 	direction direction;
 } Command;
 
-FILE * GetFile(bool is_test);
 Command ReadCommand(char * line);
 int SolvePart1(bool is_test);
 int SolvePart2(bool is_test);

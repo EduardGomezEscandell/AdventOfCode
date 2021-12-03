@@ -6,8 +6,6 @@
 
 typedef unsigned short binary;
 
-FILE * GetFile(const bool is_test);
-
 binary ReadBinary(char const * const line);
 
 void PopEntry(binary * list, size_t * size, const size_t i);
