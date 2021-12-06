@@ -86,13 +86,13 @@ unsigned long RunSimulation(const bool is_test, const size_t n_days)
 	return n_fish;
 }
 
-size_t SolvePart1(const bool is_test)
+unsigned long SolvePart1(const bool is_test)
 {
 	const size_t n_days = 80;
 	return RunSimulation(is_test, n_days);
 }
 
-size_t SolvePart2(const bool is_test)
+unsigned long SolvePart2(const bool is_test)
 {
 	const size_t n_days = 256;
 	return RunSimulation(is_test, n_days);
