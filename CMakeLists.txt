@@ -9,7 +9,7 @@ add_subdirectory(01)
 add_subdirectory(02)
 add_subdirectory(03)
 add_subdirectory(04)
-
+add_subdirectory(05)
 add_subdirectory(06)
 
 set(CMAKE_C_FLGAS -Wall -Werror -Wextra -Wpedantic)
