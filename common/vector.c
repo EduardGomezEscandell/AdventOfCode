@@ -132,7 +132,8 @@ void VectorPrint(const Vector vec)
 	int* it=vec.begin;
 	printf("[ ");
 	
-	do {
+	while(it != vec.end)
+	{
 		printf("%d", *it);
 
 		++it;
@@ -142,7 +143,7 @@ void VectorPrint(const Vector vec)
 		} else {
 			break;
 		}
-	} while(it != vec.end);
+	};
 	
 	printf(" ]");
 }
@@ -154,9 +155,14 @@ void VectorPrintLine(const Vector vec)
 }
 
 
-void VectorClear(Vector vec)
+void VectorClear(Vector * vec)
 {
-	free(vec.begin);
-	vec.begin = NULL;
-	vec.end = NULL;
+	free(vec->begin);
+	vec->begin = NULL;
+	vec->end = NULL;
+}
+
+size_t VectorLen(Vector v)
+{
+	return CONTAINER_LEN(v);
 }

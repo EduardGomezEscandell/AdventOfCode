@@ -19,7 +19,8 @@ void VectorCopy(Vector *, const Vector);
 void VectorReserve(Vector *, const size_t);
 void VectorGrow(Vector *, const size_t);
 void VectorShrink(Vector * vec);
-void VectorClear(Vector);
+void VectorClear(Vector *);
+size_t VectorLen(Vector v);
 
 // Manipulation
 void VectorAppend(Vector *, const Vector);
