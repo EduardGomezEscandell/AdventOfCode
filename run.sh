@@ -3,7 +3,7 @@
 # Usage:
 # $ bash run.sh <day> <build_type>
 
-export DAY=${1:-test}
+export DAY=${1:-01}
 export BUILD_TYPE=${2:-Release}
 
 echo "Running case ${DAY} on ${BUILD_TYPE} mode"
