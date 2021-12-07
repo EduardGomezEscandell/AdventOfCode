@@ -18,7 +18,8 @@ int OptimizeFuelExpense(const Vector v, int(*fuel_formula)(const int, const int)
 int Solve(const bool is_test, int(*fuel_formula)(const int, const int));
 
 // Solving
-int SolvePart1(const bool is_test);
-int SolvePart2(const bool is_test);
+typedef int solution_t;
+solution_t SolvePart1(const bool is_test);
+solution_t SolvePart2(const bool is_test);
 
 #endif

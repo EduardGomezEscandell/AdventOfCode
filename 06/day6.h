@@ -21,7 +21,8 @@ void NextDay(School * school);
 unsigned long RunSimulation(const bool is_test, const size_t n_days);
 
 // Solving
-unsigned long SolvePart1(const bool is_test);
-unsigned long SolvePart2(const bool is_test);
+typedef unsigned long solution_t;
+solution_t SolvePart1(const bool is_test);
+solution_t SolvePart2(const bool is_test);
 
 #endif
