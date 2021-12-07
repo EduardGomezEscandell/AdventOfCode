@@ -6,6 +6,42 @@
 
 #define GROWTH_FACTOR 1.6
 
+
+int CharInString(char c, const char * const string)
+{
+	for(char const * it = string; *it != '\0'; ++it)
+	{
+		if(*it == c) return 1;
+	}
+	return 0;
+}
+
+Vector VectorFromString(
+	char * const line,
+	const char * const separators)
+{
+	char * begin = line;
+	Vector v = EmptyVector();
+	for(char * end = line; *end != '\0'; ++end)
+	{
+		if(CharInString(*end, separators))
+		{
+			*end = '\0';
+			VectorPush(&v, atoi(begin));
+			begin = end + 1;
+		}
+	}
+	
+	// Trailing int
+	if(*begin != '\0')
+	{
+		VectorPush(&v, atoi(begin));
+	}
+
+	return v;
+}
+
+
 Vector EmptyVector()
 {
 	Vector s;
@@ -165,4 +201,24 @@ void VectorClear(Vector * vec)
 size_t VectorLen(Vector v)
 {
 	return CONTAINER_LEN(v);
+}
+
+int * MinEntry(const Vector v)
+{
+	int * min = v.begin;
+	for(int * it = v.begin; it != v.end; ++it)
+	{
+		if(*it < *min) min = it;
+	}
+	return min;
+}
+
+int * MaxEntry(const Vector v)
+{
+	int * max = v.begin;
+	for(int * it = v.begin; it != v.end; ++it)
+	{
+		if(*it > *max) max = it;
+	}
+	return max;
 }
