@@ -1,6 +1,5 @@
 #include "day7.h"
 #include "common/file_utils.h"
-#include "common/vector.h"
 
 char * ReadSingleLine(FILE * file)
 {
@@ -40,7 +39,47 @@ int QuadraticCostExpense(const int source, const int destination)
 }
 
 
-int SolvePart1(const bool is_test)
+// Fuel_formula must have a single local minimum which is also the global minimum
+int OptimizeFuelExpense(const Vector v, int(*fuel_formula)(const int, const int))
+{
+	// Computing average position
+	int avg = 0;
+	size_t n = 0;
+	for(int *it=v.begin; it != v.end; ++it)	
+	{
+		avg += *it;
+		++n;
+	}
+	avg /= n;
+
+	// Starting search at average position
+	int x = avg;
+	int fuel_p = ComputeFuelExpense(v, x-1, fuel_formula);
+	int fuel_x = ComputeFuelExpense(v, x, fuel_formula);
+	int fuel_n = ComputeFuelExpense(v, x+1, fuel_formula);
+
+	// Edge case: average is minimum
+	bool minimum = fuel_p > fuel_x && fuel_n > fuel_x;
+	if(minimum) return fuel_x;
+
+	// Else: move towards minimum
+	int dx = -1;
+	if(fuel_p > fuel_x) dx = 1;
+
+	while (!minimum)
+	{
+		x += dx;
+		fuel_p = fuel_x;										// fuel @ x-dx
+		fuel_x = fuel_n;										// fuel @ x
+		fuel_n = ComputeFuelExpense(v, x + dx, fuel_formula); 	// fuel @ x+dx
+		minimum = fuel_p > fuel_x && fuel_n > fuel_x;
+	}
+
+	return fuel_x;
+}
+
+
+int Solve(const bool is_test, int(*fuel_formula)(const int, const int))
 {
 	FILE* file = GetFile(is_test, 7);
 	char * line = ReadSingleLine(file);
@@ -48,42 +87,18 @@ int SolvePart1(const bool is_test)
 	Vector v = VectorFromString(line, ",\n");
 	free(line);
 
-	int * min_entry = MinEntry(v);
-	int min = ComputeFuelExpense(v, *min_entry, &UniformCostExpense);
-
-	for(int i=*min_entry+1; i <= *MaxEntry(v); ++i)
-	{
-		int expense = ComputeFuelExpense(v, i, &UniformCostExpense);
-		if(expense < min)
-		{
-			min = expense;
-		}
-	}
+	int min = OptimizeFuelExpense(v, fuel_formula);
 
 	VectorClear(&v);
 	return min;
 }
 
+int SolvePart1(const bool is_test)
+{
+	return Solve(is_test, UniformCostExpense);
+}
+
 int SolvePart2(const bool is_test)
 {
-	FILE* file = GetFile(is_test, 7);
-	char * line = ReadSingleLine(file);
-
-	Vector v = VectorFromString(line, ",\n");
-	free(line);
-
-	int * min_entry = MinEntry(v);
-	int min = ComputeFuelExpense(v, *min_entry, &QuadraticCostExpense);
-
-	for(int i=*min_entry+1; i <= *MaxEntry(v); ++i)
-	{
-		int expense = ComputeFuelExpense(v, i, &QuadraticCostExpense);
-		if(expense < min)
-		{
-			min = expense;
-		}
-	}
-
-	VectorClear(&v);
-	return min;
+	return Solve(is_test, QuadraticCostExpense);
 }
