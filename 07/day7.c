@@ -69,9 +69,9 @@ int OptimizeFuelExpense(const Vector v, int(*fuel_formula)(const int, const int)
 	while (!minimum)
 	{
 		x += dx;
-		fuel_p = fuel_x;										// fuel @ x-dx
-		fuel_x = fuel_n;										// fuel @ x
-		fuel_n = ComputeFuelExpense(v, x + dx, fuel_formula); 	// fuel @ x+dx
+		fuel_p = fuel_x;                                      // fuel @ x-dx
+		fuel_x = fuel_n;                                      // fuel @ x
+		fuel_n = ComputeFuelExpense(v, x + dx, fuel_formula); // fuel @ x+dx
 		minimum = fuel_p > fuel_x && fuel_n > fuel_x;
 	}
 
