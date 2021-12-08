@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Usage:
-# $ bash run.sh <day> <build_type>
+# $ bash run.sh <0-padded day> <build_type>
 
 export DAY=${1:-test}
 export BUILD_TYPE=${2:-Release}
