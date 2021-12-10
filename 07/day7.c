@@ -20,7 +20,7 @@ char * ReadSingleLine(FILE * file)
 int ComputeFuelExpense(const Vector v, int destination, int(*fuel_formula)(const int, const int))
 {
 	unsigned int cost = 0;
-	for(int * it=v.begin; it != v.end; ++it)
+	for(long * it=v.begin; it != v.end; ++it)
 	{
 		cost += fuel_formula(*it, destination);
 	}
@@ -45,7 +45,7 @@ int OptimizeFuelExpense(const Vector v, int(*fuel_formula)(const int, const int)
 	// Computing average position
 	int avg = 0;
 	size_t n = 0;
-	for(int *it=v.begin; it != v.end; ++it)	
+	for(long *it=v.begin; it != v.end; ++it)	
 	{
 		avg += *it;
 		++n;

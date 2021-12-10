@@ -3,16 +3,19 @@
 
 #include <stdlib.h>
 
+typedef long int vdata_type;
+
 typedef struct
 {
-	int * begin;
-	int * end;
+	vdata_type * begin;
+	vdata_type * end;
 	size_t capacity;
 } Vector;
 
+
 // Construction
 Vector EmptyVector();
-Vector CreateVector(const size_t, const int);
+Vector CreateVector(const size_t, const vdata_type);
 Vector VectorFromString(
 	char * const line,
 	const char * const separators);
@@ -27,12 +30,14 @@ size_t VectorLen(Vector v);
 
 // Manipulation
 void VectorAppend(Vector *, const Vector);
-void VectorPush(Vector *, const int);
+void VectorPush(Vector *, const vdata_type);
 void VectorPop(Vector *);
 
+void QuickSort(Vector * vec);
+
 // Querry
-int * MinEntry(const Vector v);
-int * MaxEntry(const Vector v);
+vdata_type * MinEntry(const Vector v);
+vdata_type * MaxEntry(const Vector v);
 
 // Output
 void VectorPrint(const Vector);

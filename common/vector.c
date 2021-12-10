@@ -6,8 +6,39 @@
 
 #define GROWTH_FACTOR 1.6
 
+void QuickSort(Vector * vec)
+{
+	if(VectorLen(*vec) <= 1) return;
 
-int CharInString(char c, const char * const string)
+	vdata_type pivot = *vec->begin;
+
+	Vector low = EmptyVector();
+	Vector high = EmptyVector();
+	
+	for(vdata_type * it = vec->begin + 1; it != vec->end; ++it)
+	{
+		if(*it <= pivot)
+		{
+			VectorPush(&low, *it);
+		}
+		else
+		{
+			VectorPush(&high, *it);
+		}
+	}
+	VectorPush(&high, pivot);
+
+	QuickSort(&low);
+	QuickSort(&high);
+
+	VectorClear(vec);
+	*vec = low;
+
+	VectorAppend(vec, high);
+	VectorClear(&high);
+}
+
+vdata_type CharInString(char c, const char * const string)
 {
 	for(char const * it = string; *it != '\0'; ++it)
 	{
@@ -32,7 +63,7 @@ Vector VectorFromString(
 		}
 	}
 	
-	// Trailing int
+	// Trailing vdata_type
 	if(*begin != '\0')
 	{
 		VectorPush(&v, atoi(begin));
@@ -51,12 +82,12 @@ Vector EmptyVector()
 	return s;
 }
 
-Vector CreateVector(size_t size, const int value)
+Vector CreateVector(size_t size, const vdata_type value)
 {
 	Vector s = EmptyVector();
 	VectorReserve(&s, size);
 	s.end += size;
-	for(int* it=s.begin; it != s.end; ++it)
+	for(vdata_type* it=s.begin; it != s.end; ++it)
 	{
 		*it = value;
 	}
@@ -67,7 +98,7 @@ void VectorCopy(Vector * out, const Vector in)
 {
 	VectorReserve(out, CONTAINER_LEN(in));
 	
-	int const * it = in.begin;
+	vdata_type const * it = in.begin;
 	for(out->end = out->begin; it != in.end; ++out->end, ++it)
 	{
 		*out->end = *it;
@@ -80,14 +111,14 @@ void VectorReserve(Vector * vec, const size_t new_size)
 
 	if(vec->begin == NULL)
 	{
-		vec->begin = (int *) malloc(new_size * sizeof(int));
+		vec->begin = (vdata_type *) malloc(new_size * sizeof(vdata_type));
 		vec->end   = vec->begin;
 		vec->capacity = new_size;
 		return;
 	}
 
 	size_t len = CONTAINER_LEN(*vec);
-	vec->begin = realloc(vec->begin, new_size * sizeof(int));
+	vec->begin = realloc(vec->begin, new_size * sizeof(vdata_type));
 	vec->end   = vec->begin + len;
 	vec->capacity = new_size;
 }
@@ -101,7 +132,7 @@ void VectorGrow(Vector * vec, const size_t growth)
 
 	if(vec->capacity == 0)
 	{
-		vec->begin = (int *) malloc(min_size * sizeof(int));
+		vec->begin = (vdata_type *) malloc(min_size * sizeof(vdata_type));
 		vec->end   = vec->begin;
 		vec->capacity = min_size;
 		return;
@@ -111,7 +142,7 @@ void VectorGrow(Vector * vec, const size_t growth)
 	size_t new_size = MAX(new_cap, min_size);
 
 	size_t len = CONTAINER_LEN(*vec);
-	vec->begin = realloc(vec->begin, new_size * sizeof(int));
+	vec->begin = realloc(vec->begin, new_size * sizeof(vdata_type));
 	vec->end   = vec->begin + len;
 	vec->capacity = min_size;
 }
@@ -121,7 +152,7 @@ void VectorShrink(Vector * vec)
 	if(vec->begin == NULL) return;
 
 	size_t new_size = CONTAINER_LEN(*vec);
-	vec->begin = realloc(vec->begin, new_size * sizeof(int));
+	vec->begin = realloc(vec->begin, new_size * sizeof(vdata_type));
 	vec->end   = vec->begin + new_size;
 	vec->capacity = new_size;
 }
@@ -131,7 +162,7 @@ void VectorShrink(Vector * vec)
  * 2 - begin = null but end   != null
  * 3 - capacity < size
  */
-// int VectorCheck(Vector vec)
+// vdata_type VectorCheck(Vector vec)
 // {
 // 	if(vec.capacity == 0 && vec.begin != NULL) return 1;
 // 	if(vec.begin == null && vec.end != NULL)   return 2;
@@ -143,14 +174,14 @@ void VectorAppend(Vector * reciever, const Vector giver)
 {
 	VectorGrow(reciever, CONTAINER_LEN(giver));
 
-	for(int const * it = giver.begin; it!=giver.end; ++it)
+	for(vdata_type const * it = giver.begin; it!=giver.end; ++it)
 	{
 		*reciever->end = *it;
 		++reciever->end;
 	}
 }
 
-void VectorPush(Vector * reciever, const int value)
+void VectorPush(Vector * reciever, const vdata_type value)
 {
 	VectorGrow(reciever, 1);
 
@@ -165,12 +196,12 @@ void VectorPop(Vector * vec)
 
 void VectorPrint(const Vector vec)
 {
-	int* it=vec.begin;
+	vdata_type* it=vec.begin;
 	printf("[ ");
 	
 	while(it != vec.end)
 	{
-		printf("%d", *it);
+		printf("%ld", *it);
 
 		++it;
 		if(it != vec.end)
@@ -203,20 +234,20 @@ size_t VectorLen(Vector v)
 	return CONTAINER_LEN(v);
 }
 
-int * MinEntry(const Vector v)
+vdata_type * MinEntry(const Vector v)
 {
-	int * min = v.begin;
-	for(int * it = v.begin; it != v.end; ++it)
+	vdata_type * min = v.begin;
+	for(vdata_type * it = v.begin; it != v.end; ++it)
 	{
 		if(*it < *min) min = it;
 	}
 	return min;
 }
 
-int * MaxEntry(const Vector v)
+vdata_type * MaxEntry(const Vector v)
 {
-	int * max = v.begin;
-	for(int * it = v.begin; it != v.end; ++it)
+	vdata_type * max = v.begin;
+	for(vdata_type * it = v.begin; it != v.end; ++it)
 	{
 		if(*it > *max) max = it;
 	}
