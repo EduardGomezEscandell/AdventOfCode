@@ -18,11 +18,6 @@ typedef struct {
 	size_t size;
 } Basin;
 
-
-#include "day9.h"
-#include "common/file_utils.h"
-#include <string.h>
-
 int * StringToInts(char * line, const size_t len);
 
 HeightMap ReadHeightMap(FILE * file);

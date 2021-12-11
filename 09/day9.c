@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "day9.h"
 #include "common/file_utils.h"
 
