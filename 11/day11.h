@@ -14,10 +14,19 @@ typedef struct {
 	size_t ccols;
 } Matrix;
 
+
+Matrix EmptyMatrix(size_t rows, size_t cols);
+void StringToRow(long * result, char * line, const size_t len);
 Matrix ReadMatrix(FILE * file);
-void ClearMatrix(Matrix * hmap);
+
+void AddRow(Matrix * mat);
+void AddCol(Matrix * mat);
 
 void PrintMatrix(const Matrix * const mat);
+void ClearMatrix(Matrix * mat);
+
+bool Flash(Matrix * mat, const size_t row, const size_t col);
+unsigned int NextStep(Matrix * mat);
 
 // Solving
 typedef int solution_t;
