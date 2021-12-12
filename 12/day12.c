@@ -195,7 +195,8 @@ size_t CountPaths(CaveSystem *cs, Cave * start, unsigned int max_small_visits)
 
 	size_t n_paths = 0;
 
-	if(start->type == SMALL && start->n_visits > 0) --max_small_visits;
+	if(start->type == SMALL && start->n_visits > 0)
+		max_small_visits = max_small_visits > 1 ? max_small_visits-1 : max_small_visits;
 
 	++start->n_visits;
 
