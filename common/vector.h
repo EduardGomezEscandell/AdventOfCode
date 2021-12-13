@@ -163,15 +163,15 @@ void CQSC_FUN_NAME(CQSC_type * CQSC_begin, CQSC_type * CQSC_end);
 #define DEFINE_QUICKSORT_COMP(CQSC_FUN_NAME, CQSC_type, CQSC_comparisson)     \
 void CQSC_FUN_NAME(CQSC_type * CQSC_begin, CQSC_type * CQSC_end) {            \
     if(CQSC_end - CQSC_begin <= 1) return;                                    \
-    CQSC_type CQSC_pivot = *CQSC_begin;                                       \
     SWAP(CQSC_type, CQSC_begin, CQSC_end-1);                                  \
+    CQSC_type * CQSC_pivot = CQSC_end-1;                                      \
     CQSC_type * CQSC_unsorted_begin = CQSC_begin;                             \
     CQSC_type * CQSC_unsorted_end = CQSC_end-1;                               \
     for(CQSC_type * CQSC_it = CQSC_unsorted_begin;                            \
         CQSC_it != CQSC_unsorted_end;                                         \
         ++CQSC_it)                                                            \
     {                                                                         \
-        if(CQSC_comparisson(CQSC_it, &CQSC_pivot) != 1) {                     \
+        if(CQSC_comparisson(CQSC_it, CQSC_pivot) != 1) {                      \
             SWAP(CQSC_type, CQSC_unsorted_begin, CQSC_it);                    \
             if(CQSC_it > CQSC_unsorted_begin) --CQSC_it;                      \
             ++CQSC_unsorted_begin;                                            \
