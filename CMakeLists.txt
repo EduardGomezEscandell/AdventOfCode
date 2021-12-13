@@ -22,3 +22,6 @@ add_subdirectory(09)
 add_subdirectory(10)
 add_subdirectory(11)
 add_subdirectory(12)
+
+# Week 3
+add_subdirectory(13)
