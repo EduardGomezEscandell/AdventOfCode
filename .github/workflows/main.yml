@@ -26,6 +26,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Install valgrind
+        run: apt install -y valgrind
+      
       - name: Build
         run: bash build.sh Debug
 
