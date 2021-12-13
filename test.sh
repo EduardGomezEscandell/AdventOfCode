@@ -22,6 +22,7 @@ do
 done
 
 echo "================================================================================"
+echo
 echo "Exiting with code ${EXIT_CODE}"
-
-exit EXIT_CODE
+echo
+exit $EXIT_CODE
