@@ -42,13 +42,7 @@
 			"name" : "Python run",
 		    "cmd": ["python", "-u", "$file"],
 		    "file_regex": "^[ ]*File \"(...*?)\", line ([0-9]*)",
-		    "selector": "source.python",
-		    "variants" : [
-		    	{
-		    		"name" : "single core",
-		    		"env" : {"OMP_NUM_THREADS" : "1"}
-		    	}
-		    ]
+		    "selector": "source.python"
 		}
 	]
 }

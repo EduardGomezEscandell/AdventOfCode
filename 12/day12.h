@@ -24,9 +24,6 @@ typedef struct
 } CaveSystem;
 
 
-#include "day12.h"
-#include "common/file_utils.h"
-
 // Hashing
 size_t HashString(const char * const begin, const char * const end);
 CaveType Classify(const char * const begin, const size_t hash);
