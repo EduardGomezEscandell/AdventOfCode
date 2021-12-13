@@ -2,6 +2,9 @@
 #include "common/file_utils.h"
 #include "common/math.h"
 
+DEFINE_TEST(1, 5)
+DEFINE_TEST(2, 12)
+
 Board EmptyBoard()
 {
 	Board b;

@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include "common/testing.h"
+
 #define BOARD_SIZE_X 1000
 #define BOARD_SIZE_Y 1000
 
@@ -37,5 +39,8 @@ void ReadVents(FILE * file, Board * board, const bool consider_diagonals);
 // Solving
 int SolvePart1(const bool is_test);
 int SolvePart2(const bool is_test);
+
+DECLARE_TEST(1);
+DECLARE_TEST(2);
 
 #endif

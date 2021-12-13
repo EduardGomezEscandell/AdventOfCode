@@ -1,6 +1,8 @@
 #include "day11.h"
 #include "common/file_utils.h"
 
+DEFINE_TEST(1, 1656)
+DEFINE_TEST(2, 195)
 
 bool Flash(Matrix * mat, const size_t row, const size_t col)
 {

@@ -5,15 +5,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "common/testing.h"
+
 typedef struct 
 {
 	char * codes[10];
 } Decoder;
-
-
-#include "day8.h"
-#include "common/file_utils.h"
-#include <string.h>
 
 // String querrying
 char * SkipToOutput(char * const line);
@@ -38,5 +35,8 @@ int Decode(Decoder * dec, char * line);
 typedef int solution_t;
 solution_t SolvePart1(const bool is_test);
 solution_t SolvePart2(const bool is_test);
+
+DECLARE_TEST(1);
+DECLARE_TEST(2);
 
 #endif

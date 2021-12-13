@@ -4,6 +4,9 @@
 #include "common/file_utils.h"
 #include "common/vector.h"
 
+DEFINE_TEST(1, 17)
+DEFINE_TEST(2, 1)
+
 void ReadLine(SparseMatrix * sp, char * line)
 {
     char * begin = line;
@@ -153,8 +156,6 @@ int SolvePart2(const bool is_test)
         }
     }
 
-    if(is_test) printf("Day 13 Test 2 solution:\n");
-    else        printf("Day 13 Part 2 solution:\n");
     SpPrintSparsity(&sp);
 
     // Yeah... not going to implement an intepreter for this.

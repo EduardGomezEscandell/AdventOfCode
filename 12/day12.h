@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "common/testing.h"
+
 typedef enum {START, END, SMALL, BIG} CaveType;
 
 typedef struct cave
@@ -55,5 +57,8 @@ typedef int solution_t;
 solution_t Solve(const bool is_test, const unsigned int max_small_visits);
 solution_t SolvePart1(const bool is_test);
 solution_t SolvePart2(const bool is_test);
+
+DECLARE_TEST(1);
+DECLARE_TEST(2);
 
 #endif

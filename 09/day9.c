@@ -3,6 +3,9 @@
 #include "day9.h"
 #include "common/file_utils.h"
 
+DEFINE_TEST(1, 15)
+DEFINE_TEST(2, 1134)
+
 int * StringToInts(char * line, const size_t len)
 {
 	int * ints = malloc(len * sizeof(int));

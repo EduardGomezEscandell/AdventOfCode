@@ -1,6 +1,9 @@
 #include "day12.h"
 #include "common/file_utils.h"
 
+DEFINE_TEST(1, 226)
+DEFINE_TEST(2, 3509)
+
 size_t HashString(const char * const begin, const char * const end)
 {
 	const size_t base = 'z' - 'a';

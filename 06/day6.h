@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "common/testing.h"
+
 #define REPR_CYCLE 6
 #define CHILDHOOD 8
 
@@ -24,5 +26,8 @@ unsigned long RunSimulation(const bool is_test, const size_t n_days);
 typedef unsigned long solution_t;
 solution_t SolvePart1(const bool is_test);
 solution_t SolvePart2(const bool is_test);
+
+DECLARE_TEST(1);
+DECLARE_TEST(2);
 
 #endif

@@ -11,4 +11,4 @@ echo "--------------------------------------------------------------------------
 
 export EXECUTABLE=build/${BUILD_TYPE}/${DAY}/aoc_2021_${DAY}
 
-./${EXECUTABLE}
+./${EXECUTABLE} -t -s

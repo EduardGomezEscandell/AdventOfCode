@@ -5,6 +5,8 @@
 #include "day4.h"
 #include "common/file_utils.h"
 
+DEFINE_TEST(1, 4512)
+DEFINE_TEST(2, 1924)
 
 BoardVector NewBoardVector()
 {

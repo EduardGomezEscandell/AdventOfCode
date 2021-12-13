@@ -1,6 +1,9 @@
 #include "day6.h"
 #include "common/file_utils.h"
 
+DEFINE_TEST(1, 5934)
+DEFINE_TEST(2, 26984457539)
+
 School ParseSchool(FILE * file)
 {
 	char * line = NULL;

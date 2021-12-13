@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+DEFINE_TEST(1, 150)
+DEFINE_TEST(2, 900)
+
 Command ReadCommand(char * line)
 {
 	Command command;

@@ -5,6 +5,9 @@
 #include "day3.h"
 #include "common/file_utils.h"
 
+DEFINE_TEST(1, 198)
+DEFINE_TEST(2, 230)
+
 void UpdateMostCommonList(const size_t n_digits, int * count, const char * const line)
 {
 	for(size_t i=0; i<n_digits; ++i)

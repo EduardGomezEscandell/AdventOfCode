@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 #include "common/matrix.h"
+#include "common/testing.h"
 
 typedef struct
 {
@@ -31,5 +32,8 @@ void XFold(SparseMatrix * sp, const size_t x_fold);
 typedef int solution_t;
 solution_t SolvePart1(const bool is_test);
 solution_t SolvePart2(const bool is_test);
+
+DECLARE_TEST(1);
+DECLARE_TEST(2);
 
 #endif

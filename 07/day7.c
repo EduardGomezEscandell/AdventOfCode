@@ -1,5 +1,9 @@
 #include "day7.h"
 #include "common/file_utils.h"
+#include <string.h>
+
+DEFINE_TEST(1, 37)
+DEFINE_TEST(2, 168)
 
 char * ReadSingleLine(FILE * file)
 {

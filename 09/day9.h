@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "common/testing.h"
 
 typedef struct {
 	int ** z;
@@ -38,5 +39,8 @@ void FindLargestBasins(Basin largest_basins[3], const HeightMap * const hmap, co
 typedef int solution_t;
 solution_t SolvePart1(const bool is_test);
 solution_t SolvePart2(const bool is_test);
+
+DECLARE_TEST(1);
+DECLARE_TEST(2);
 
 #endif

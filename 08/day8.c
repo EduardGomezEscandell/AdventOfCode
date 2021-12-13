@@ -2,6 +2,9 @@
 #include "common/file_utils.h"
 #include <string.h>
 
+DEFINE_TEST(1, 26)
+DEFINE_TEST(2, 61229)
+
 char * SkipToOutput(char * const line)
 {
 	// Returns a pointer to the pipe

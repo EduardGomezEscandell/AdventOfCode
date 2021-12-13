@@ -1,38 +1,47 @@
 #ifndef DEFINES_INCLUDED_H
 #define DEFINES_INCLUDED_H
 
-#define MAIN(format)                                                          \
-printf("Running tests:\n");                                                   \
-const solution_t test_1 = SolvePart1(true);                                   \
-const char * fmt = "Wrong solution for test %d!\n> Expected: %ld\n> Obtained: %ld\n\n"; \
-if(test_1 != test_1_solution)                                                 \
-{                                                                             \
-	printf(fmt, 1, test_1_solution, test_1);                                  \
-}                                                                             \
+#include "common/timing.h"
+#include "common/testing.h"
+#include <stdlib.h>
+#include <string.h>
+
+#define PARSE_INPUT(test_flag, solution_flag) do {                        \
+for(int i=1; i<argc; ++i) {                                               \
+    if(!test_flag && strcmp(argv[i], "-t") == 0)                          \
+        test_flag = true;                                                 \
+    else if(!solution_flag && strcmp(argv[i], "-s") == 0)                 \
+        solution_flag = true;                                             \
+}                                                                         \
+}while(0)
+
+#define AOC_MAIN                                                              \
+int main(int argc, char ** argv) {                                            \
+    int run_tests = 0;                                                        \
+    int run_solution = 0;                                                     \
+    PARSE_INPUT(run_tests, run_solution);                                     \
                                                                               \
-const solution_t test_2 = SolvePart2(true);                                   \
-if(test_2 != test_2_solution)                                                 \
-{                                                                             \
-	printf(fmt, 2, test_2_solution, test_2);                                  \
-}                                                                             \
+    int result = EXIT_SUCCESS;                                                \
+    if(run_tests) RUN_TESTS(result);                                          \
                                                                               \
-if(test_1 == test_1_solution && test_2 == test_2_solution)                    \
-{                                                                             \
-	printf("All tests passed.\n\n");                                          \
-}                                                                             \
+    if(!run_solution) return result;                                          \
+    printf("Running with real data\n\n");                                     \
+    printf("Running Part 1\n");                                               \
+    Timer t1 = StartTimer();                                                  \
+    long long int solution_1 = SolvePart1(false);                             \
+    long t = StopTimer(&t1);                                                  \
+    printf("Solution: %lld\n", solution_1);                                   \
+    printf("Time:     %ld ns\n\n", t);                                        \
                                                                               \
-printf("Running with real data:\n");                                          \
-                                                                              \
-Timer t1 = StartTimer();                                                      \
-solution_t solution_1 = SolvePart1(false);                                    \
-long t = StopTimer(&t1);                                                      \
-printf("Part 1: "format" \t (time:%10ld ns)\n", solution_1, t);                   \
-                                                                              \
-Timer t2 = StartTimer();                                                      \
-solution_t solution_2 = SolvePart2(false);                                    \
-t = StopTimer(&t2);                                                           \
-                                                                              \
-printf("Part 2: "format" \t (time:%10ld ns)\n", solution_2, t);
+    printf("Running Part 2\n");                                               \
+    Timer t2 = StartTimer();                                                  \
+    long long int solution_2 = SolvePart2(false);                             \
+    t = StopTimer(&t2);                                                       \
+    printf("Solution: %lld\n", solution_2);                                   \
+    printf("Time:     %ld ns\n\n", t);                                        \
+    return result;                                                            \
+}
+
 
 
 #endif

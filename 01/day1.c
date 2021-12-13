@@ -1,10 +1,38 @@
-#ifndef DAY1_PART_2_H
-#define DAY1_PART_2_H
+#include "day1.h"
+#include "common/file_utils.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
+DEFINE_TEST(1, 7)
+DEFINE_TEST(2, 5)
 
+int SolvePart1(bool is_test)
+{
+
+	FILE* file = GetFile(is_test, 1);
+
+	if (file == NULL) exit(EXIT_FAILURE);
+
+	char * line = NULL;
+	size_t len = 0;
+	size_t read = 0;
+
+	int increases = 0;
+	
+	read = getline(&line, &len, file);
+	
+	int old_data = atoi(line);
+
+	while((read = getline(&line, &len, file) != -1))
+	{
+		int data = atoi(line);
+		increases += (data > old_data) ? 1 : 0;
+		old_data = data;
+	}
+
+	fclose(file);
+	free(line);
+
+	return increases;
+}
 
 int SolvePart2(bool is_test)
 {
@@ -60,5 +88,3 @@ int SolvePart2(bool is_test)
 
 	return increases;
 }
-
-#endif

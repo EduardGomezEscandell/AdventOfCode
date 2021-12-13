@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 #include "common/vector.h"
+#include "common/testing.h"
 
 TEMPLATE_VECTOR(long) Vector;
 
@@ -23,5 +24,8 @@ int Solve(const bool is_test, int(*fuel_formula)(const int, const int));
 typedef int solution_t;
 solution_t SolvePart1(const bool is_test);
 solution_t SolvePart2(const bool is_test);
+
+DECLARE_TEST(1);
+DECLARE_TEST(2);
 
 #endif

@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "common/testing.h"
+
 typedef struct {
 	unsigned short value;
 	bool marked;
@@ -38,5 +40,8 @@ int CountPoints(const Board b, int winner_number);
 // Solving
 int SolvePart1(const bool is_test);
 int SolvePart2(const bool is_test);
+
+DECLARE_TEST(1);
+DECLARE_TEST(2);
 
 #endif

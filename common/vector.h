@@ -185,20 +185,10 @@ void CQSC_FUN_NAME(CQSC_type * CQSC_begin, CQSC_type * CQSC_end) {            \
     CQSC_FUN_NAME(CQSC_unsorted_end, CQSC_end);                               \
 }
 
-
-inline int CharInString(char c, const char * const string)
-{
-    for(char const * it = string; *it != '\0'; ++it)
-    {
-        if(*it == c) return 1;
-    }
-    return 0;
-}
-
-#define STRING_TO_VECTOR(S2V_vector, S2V_line, S2V_separators, S2V_data_type) do {   \
+#define STRING_TO_VECTOR(S2V_vector, S2V_line, S2V_separator, S2V_data_type) do {   \
     char * S2V_begin = (S2V_line);                                            \
     for(char * S2V_end = (S2V_line); *S2V_end != '\0'; ++S2V_end) {           \
-        if(CharInString(*S2V_end, (S2V_separators))) {                        \
+        if(strchr((S2V_separator), *S2V_end) == NULL) {                       \
             *S2V_end = '\0';                                                  \
             const S2V_data_type val = (S2V_data_type) atol(S2V_begin);        \
             PUSH((S2V_vector), val);                                          \
