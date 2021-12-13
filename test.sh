@@ -15,10 +15,11 @@ do
 
 	./${EXECUTABLE} -t
 
-	echo "Day ${DAY} exit code: $?"
+	export LOCAL_EXIT_CODE=$?
+	echo "Day ${DAY} exit code: ${LOCAL_EXIT_CODE}"
 	echo
 
-	export EXIT_CODE=$(expr $EXIT_CODE + $?)
+	export EXIT_CODE=$(expr $EXIT_CODE + ${LOCAL_EXIT_CODE})
 done
 
 echo "================================================================================"
