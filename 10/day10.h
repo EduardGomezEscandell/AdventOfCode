@@ -5,19 +5,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-typedef struct
-{
-	size_t * base;     // base of stack
-	size_t * top;      // past-the-end pointer
-	size_t capacity; // Allocated memory
-} Stack;
+#include "common/vector.h"
 
-Stack EmptyStack();
-void ClearStack(Stack * s);
-void Push(Stack * stack, const size_t c);
-size_t Pop(Stack * stack);
-void PrintStack(Stack s, const char * line);
-
+TEMPLATE_VECTOR(long) Vector;
+TEMPLATE_VECTOR(size_t) Stack;
 
 typedef struct 
 {

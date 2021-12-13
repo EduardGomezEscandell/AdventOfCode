@@ -1,53 +1,5 @@
 #include "day10.h"
 #include "common/file_utils.h"
-#include "common/vector.h"
-
-Stack EmptyStack()
-{
-	Stack s;
-	s.capacity = 10;
-	s.base = malloc(s.capacity * sizeof(size_t)); 
-	s.top = s.base;
-	return s;
-}
-
-void ClearStack(Stack * s)
-{
-	free(s->base);
-	s->capacity = 0;
-	s->base = NULL;
-	s->top = NULL;
-}
-
-void Push(Stack * stack, const size_t c)
-{
-	const size_t size = stack->top - stack->base;
-	if(size >= stack->capacity)
-	{
-		stack->capacity *= 1.6;
-		stack->base = realloc(stack->base, stack->capacity * sizeof(size_t));
-		stack->top = stack->base + size;
-	}
-
-	*stack->top = c;
-	++stack->top;
-}
-
-size_t Pop(Stack * stack)
-{
-	--stack->top;
-	return *stack->top;
-}
-
-void PrintStack(Stack s, const char * line)
-{
-	printf("(len=%ld, cap=%ld): ", s.top - s.base, s.capacity);
-	for(size_t * c = s.base; c != s.top; ++c)
-	{
-		printf("%c", line[*c]);
-	}
-	printf("\n");
-}
 
 char Closer(char c)
 {
@@ -103,9 +55,11 @@ void PrintWrongCharError(const size_t row, const size_t col, const char read, co
 size_t ComputeLineAutocompletionScore(Stack stack, const char * line)
 {
 	size_t score = 0;
-	while(stack.top != stack.base)
+	while(stack.end != stack.begin)
 	{
-		const char c = line[Pop(&stack)];
+		size_t i = stack.end[-1];
+		POP(stack);
+		const char c = line[i];
 		score *= 5;
 		score -= ComputeScore(c);
 	}
@@ -114,7 +68,8 @@ size_t ComputeLineAutocompletionScore(Stack stack, const char * line)
 
 Score ComputeLineScore(const char * line, const size_t line_id)
 {
-	Stack stack = EmptyStack();
+	Stack stack;
+	NEW_VECTOR(stack);
 	size_t col = 0;
 
 	Score score;
@@ -129,18 +84,19 @@ Score ComputeLineScore(const char * line, const size_t line_id)
 
 		if(char_score < 0) // Opener character
 		{
-			Push(&stack, col);
+			PUSH(stack, col);
 		}
 		else if(char_score > 0) // Closer caracter
 		{
-			size_t i_opener = Pop(&stack);
+			size_t i_opener = stack.end[-1];
+			POP(stack);
 			char p = line[i_opener];
 
 			if(*c != Closer(p)) // Corrupted line
 			{
 				// PrintCorruptionError(line_id, col, i_opener, *c, line);
 
-				ClearStack(&stack);
+				CLEAR(stack);
 				score.corruption = char_score;
 				return score;
 			}
@@ -155,9 +111,11 @@ Score ComputeLineScore(const char * line, const size_t line_id)
 	
 	score.autocompletion = ComputeLineAutocompletionScore(stack, line);
 
-	ClearStack(&stack);
+	CLEAR(stack);
 	return score;
 }
+
+DEFINE_QUICKSORT(QuickSort, long int)
 
 Score Solve(const bool is_test)
 {
@@ -171,7 +129,8 @@ Score Solve(const bool is_test)
 	score.corruption = 0;
 	score.autocompletion = 0;
 
-	Vector autocompletions = EmptyVector();
+	Vector autocompletions;
+	NEW_VECTOR(autocompletions);
 
 	size_t i = 0;
 	while((read = getline(&line, &len, file)) != -1)
@@ -180,25 +139,26 @@ Score Solve(const bool is_test)
 		score.corruption += line_score.corruption;
 		if(line_score.autocompletion != 0)
 		{
-			VectorPush(&autocompletions, line_score.autocompletion);
+			PUSH(autocompletions, line_score.autocompletion);
 		}
 		++i;
 	}
 
-	size_t vlen = VectorLen(autocompletions);
+	size_t vlen = SIZE(autocompletions);
 	if(vlen % 2 == 0)
 	{
 		fprintf(stderr, "No middle item in autocompletions: Total is even! (%ld)", vlen);
 		exit(EXIT_FAILURE);
 	}
 
-	QuickSort(&autocompletions);
+
+	QuickSort(autocompletions.begin, autocompletions.end);
 	size_t middle = vlen / 2;
 	score.autocompletion = autocompletions.begin[middle];
 
 	free(line);
 	fclose(file);
-	VectorClear(&autocompletions);
+	CLEAR(autocompletions);
 
 	return score;
 }

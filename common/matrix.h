@@ -3,6 +3,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
+
+#include "vector.h"
 
 // Dense matrices
 
@@ -52,7 +55,9 @@ void SpPush(SparseMatrix * sp, SpTriplet * t);
 void SpAppend(SparseMatrix * reciever, const SparseMatrix * const giver);
 
 int TripletCompare(SpTriplet * a, SpTriplet * b);
-void SpQuickSort(SparseMatrix * sp);
+bool TripletGreaterThan(SpTriplet * a, SpTriplet * b);
+
+DECLARE_QUICKSORT_COMP(SpQuickSort, SpTriplet)
 
 void SpPopZeros(SparseMatrix * sp);
 void SpMergeDuplicates(SparseMatrix * sp);

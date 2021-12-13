@@ -6,7 +6,7 @@ add_library(math math.h)
 set_target_properties(math PROPERTIES LINKER_LANGUAGE C)
 target_include_directories(math INTERFACE ..)
 
-add_library(vector vector.c vector.h)
+add_library(vector vector.h)
 set_target_properties(vector PROPERTIES LINKER_LANGUAGE C)
 target_include_directories(vector INTERFACE ..)
 target_link_libraries(vector math)

@@ -5,6 +5,4 @@
 
 #define MIN(a,b) ((a) < (b)) ? (a) : (b);
 
-#define CONTAINER_LEN(c) ((c).end - (c).begin)
-
 #endif

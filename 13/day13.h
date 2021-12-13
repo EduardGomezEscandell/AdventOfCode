@@ -21,10 +21,6 @@ typedef struct
 } FoldVector;
 
 
-FoldVector EmptyFoldVector();
-void FoldVectorPush(FoldVector * fv, char axis, size_t value);
-void FoldVectorClear(FoldVector * fv);
-
 void ReadLine(SparseMatrix * sp, char * line);
 void ReadData(FILE * file, SparseMatrix * sp, FoldVector * folds);
 

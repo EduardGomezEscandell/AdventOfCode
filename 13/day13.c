@@ -2,40 +2,7 @@
 
 #include <string.h>
 #include "common/file_utils.h"
-
-FoldVector EmptyFoldVector()
-{
-    FoldVector fv;
-    fv.capacity = 10;
-    fv.begin = malloc(fv.capacity * sizeof(Fold));
-    fv.end = fv.begin;
-    return fv;
-}
-
-void FoldVectorPush(FoldVector * fv, char axis, size_t value)
-{
-    const size_t size = fv->end - fv->begin;
-    
-    if(size >= fv->capacity)
-    {
-        fv->capacity *= 1.6;
-        fv->begin = realloc(fv->begin, fv->capacity * sizeof(Fold));
-        fv->end = fv->begin + size;
-    }
-
-    fv->end->axis = axis;
-    fv->end->value = value;
-
-    ++fv->end;
-}
-
-void FoldVectorClear(FoldVector * fv)
-{
-    free(fv->begin);
-    fv->begin = NULL;
-    fv->end = NULL;
-    fv->capacity = 0;
-}
+#include "common/vector.h"
 
 void ReadLine(SparseMatrix * sp, char * line)
 {
@@ -67,7 +34,7 @@ void ReadData(FILE * file, SparseMatrix * sp, FoldVector * folds)
     ssize_t read = 0;
 
     *sp = NewSparseMatrix();
-    *folds = EmptyFoldVector();
+    NEW_VECTOR(*folds);
 
     while((read = getline(&line, &len, file)) != -1)
     {       
@@ -76,9 +43,12 @@ void ReadData(FILE * file, SparseMatrix * sp, FoldVector * folds)
         ReadLine(sp, line);
     }
 
+    Fold f;
     while((read = getline(&line, &len, file)) != -1)
     {
-        FoldVectorPush(folds, line[11], atoi(&line[13]));
+        f.axis = line[11];
+        f.value = atoi(&line[13]);
+        PUSH(*folds, f);
     }
 
     free(line);
@@ -137,7 +107,7 @@ int SolvePart1(const bool is_test)
     {
         fprintf(stderr, "No fold instructions!");
         ClearSparseMatrix(&sp);
-        FoldVectorClear(&folds);
+        CLEAR(folds);
         exit(EXIT_FAILURE);
     }
     
@@ -148,14 +118,14 @@ int SolvePart1(const bool is_test)
         default:
             fprintf(stderr, "Wrong axis: %c!\n", folds.begin->axis);
             ClearSparseMatrix(&sp);
-            FoldVectorClear(&folds);
+            CLEAR(folds);
             exit(EXIT_FAILURE);
     }
 
     const size_t n_entries = sp.end - sp.begin;
 
     ClearSparseMatrix(&sp);
-    FoldVectorClear(&folds);
+    CLEAR(folds);
 
     return n_entries;
 }
@@ -167,7 +137,7 @@ int SolvePart2(const bool is_test)
     SparseMatrix sp;
     FoldVector folds;
 
-    ReadData(file, &sp, &folds);    
+    ReadData(file, &sp, &folds);
     
     for(Fold * it=folds.begin; it != folds.end; ++it)
     {
@@ -176,9 +146,9 @@ int SolvePart2(const bool is_test)
             case 'x': XFold(&sp, it->value); break;
             case 'y': YFold(&sp, it->value); break;
             default:
-                fprintf(stderr, "Wronng axis: %c!\n", folds.begin->axis);
+                fprintf(stderr, "Wrong axis: %c!\n", folds.begin->axis);
                 ClearSparseMatrix(&sp);
-                FoldVectorClear(&folds);
+                CLEAR(folds);
                 exit(EXIT_FAILURE);
         }
     }
@@ -199,7 +169,7 @@ int SolvePart2(const bool is_test)
     // 
 
     ClearSparseMatrix(&sp);
-    FoldVectorClear(&folds);
+    CLEAR(folds);
 
     return is_test;
 }

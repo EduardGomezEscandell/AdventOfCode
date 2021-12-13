@@ -7,6 +7,8 @@
 
 #include "common/vector.h"
 
+TEMPLATE_VECTOR(long) Vector;
+
 char * ReadSingleLine(FILE * file);
 
 int UniformCostExpense(const int source, const int destination);

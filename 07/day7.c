@@ -84,12 +84,14 @@ int Solve(const bool is_test, int(*fuel_formula)(const int, const int))
 	FILE* file = GetFile(is_test, 7);
 	char * line = ReadSingleLine(file);
 
-	Vector v = VectorFromString(line, ",\n");
+	Vector v;
+	NEW_VECTOR(v);
+	STRING_TO_VECTOR(v, line, ",", long int);
 	free(line);
 
 	int min = OptimizeFuelExpense(v, fuel_formula);
 
-	VectorClear(&v);
+	CLEAR(v);
 	return min;
 }
 

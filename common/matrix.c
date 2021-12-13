@@ -195,56 +195,16 @@ void SpAppend(SparseMatrix * reciever, const SparseMatrix * const giver)
 
 int TripletCompare(SpTriplet * a, SpTriplet * b)
 {
-    if(a->row > b->row) return -1;
+    if(a->row > b->row) return 1;
     
     if(a->row == b->row)
     {
-        if(a->col > b->col) return -1;
+        if(a->col > b->col) return 1;
         if(a->col == b->col) return 0;
     }
     
-    return 1;
+    return -1;
 }
-
-void SpQuickSort(SparseMatrix * sp)
-{
-
-    if(sp->end - sp->begin <= 1) return;
-
-    SpTriplet pivot = *sp->begin;
-
-    SparseMatrix low = NewSparseMatrix();
-    SparseMatrix high = NewSparseMatrix();
-    
-    for(SpTriplet * it = sp->begin + 1; it != sp->end; ++it)
-    {
-        if(TripletCompare(it, &pivot) == 1)
-        {
-            SpPush(&low, it);
-        }
-        else
-        {
-            SpPush(&high, it);
-        }
-    }
-
-    SpPush(&low, &pivot);
-
-    SpQuickSort(&low);
-    SpQuickSort(&high);
-
-    const size_t nrows = sp->nrows;
-    const size_t ncols = sp->ncols;
-    ClearSparseMatrix(sp);
-
-    *sp = low;
-    sp->nrows = nrows;
-    sp->ncols = ncols;
-
-    SpAppend(sp, &high);
-    ClearSparseMatrix(&high);
-}
-
 
 void SpPopZeros(SparseMatrix * sp)
 {
@@ -265,9 +225,11 @@ void SpPopZeros(SparseMatrix * sp)
     }
 }
 
+DEFINE_QUICKSORT_COMP(SpQuickSort, SpTriplet, TripletCompare)
+
 void SpMergeDuplicates(SparseMatrix * sp)
 {
-    SpQuickSort(sp);
+    SpQuickSort(sp->begin, sp->end);
 
     for(SpTriplet * it = sp->end - 1; it != sp->begin; --it)
     {
@@ -292,7 +254,7 @@ void SpPrint(SparseMatrix * sp)
 
 void SpPrintExpanded(SparseMatrix * sp)
 {
-    SpQuickSort(sp);
+    SpQuickSort(sp->begin, sp->end);
     SpTriplet * it = sp->begin;
 
     for(size_t i=0; i<sp->nrows; ++i)
@@ -316,7 +278,7 @@ void SpPrintExpanded(SparseMatrix * sp)
 
 void SpPrintSparsity(SparseMatrix * sp)
 {
-    SpQuickSort(sp);
+    SpQuickSort(sp->begin, sp->end);
     SpTriplet * it = sp->begin;
 
     for(size_t i=0; i<sp->nrows; ++i)
