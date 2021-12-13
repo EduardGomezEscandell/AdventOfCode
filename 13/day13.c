@@ -175,7 +175,8 @@ int SolvePart2(const bool is_test)
 	else        printf("Part 2 solution:\n");
 	SpPrintSparsity(&sp);
 
-	// Yeah... not going to implement a intepreter for this. Solution for my dataset is
+	// Yeah... not going to implement an intepreter for this.
+	// Solution for my dataset looks like:
 	// 
 	// ###  #### #  # #### #    ###   ##  #  # 
 	// #  #    # # #     # #    #  # #  # #  # 
