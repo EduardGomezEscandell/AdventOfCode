@@ -19,3 +19,15 @@ jobs:
 
       - name: Test
         run: bash test.sh
+
+  build_and_test_valgrind:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build
+        run: bash build.sh
+
+      - name: Test
+        run: bash test_valgrind.sh
