@@ -7,11 +7,11 @@
 // Dense matrices
 
 typedef struct {
-	long ** data;
-	size_t ncols;
-	size_t nrows;
-	size_t crows;
-	size_t ccols;
+    long ** data;
+    size_t ncols;
+    size_t nrows;
+    size_t crows;
+    size_t ccols;
 } Matrix;
 
 
@@ -31,18 +31,18 @@ typedef long spdata_type;
 
 typedef struct
 {
-	size_t row;
-	size_t col;
-	spdata_type data;
+    size_t row;
+    size_t col;
+    spdata_type data;
 } SpTriplet;
 
 typedef struct
 {
-	SpTriplet * begin;
-	SpTriplet * end;
-	size_t capacity;
-	size_t nrows;
-	size_t ncols;
+    SpTriplet * begin;
+    SpTriplet * end;
+    size_t capacity;
+    size_t nrows;
+    size_t ncols;
 } SparseMatrix;
 
 SparseMatrix NewSparseMatrix();
@@ -53,7 +53,6 @@ void SpAppend(SparseMatrix * reciever, const SparseMatrix * const giver);
 
 int TripletCompare(SpTriplet * a, SpTriplet * b);
 void SpQuickSort(SparseMatrix * sp);
-
 
 void SpPopZeros(SparseMatrix * sp);
 void SpMergeDuplicates(SparseMatrix * sp);
