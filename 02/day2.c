@@ -60,6 +60,9 @@ int SolvePart1(bool is_test)
 		}
 	}
 
+	free(line);
+	fclose(file);
+
 	return displ * depth;
 }
 
@@ -93,6 +96,9 @@ int SolvePart2(bool is_test)
 			break;
 		}
 	}
+
+	free(line);
+	fclose(file);
 
 	return displ * depth;
 }
