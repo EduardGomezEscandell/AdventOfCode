@@ -56,6 +56,8 @@ InstructionVector ReadInstructions(FILE * file)
         PUSH(v, inst);
     }
 
+    free(line);
+
     return v;
 }
 
@@ -148,6 +150,8 @@ solution_t SolvePart1(const bool is_test)
 
     CLEAR(instructions);
     ListClear(&polymer);
+
+    fclose(file);
     return max - min;
 }
 
@@ -297,5 +301,7 @@ solution_t SolvePart2(const bool is_test)
 
     CLEAR(instructions);
     ClearSparseMatrix(&polymer);
+
+    fclose(file);
     return max - min;
 }
