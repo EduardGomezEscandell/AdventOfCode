@@ -12,6 +12,8 @@
 DEFINE_TEST(1, 1588)
 DEFINE_TEST(2, 2188189693529)
 
+// Templates
+DEFINE_QUICKSORT_COMP(InstructionQuickSort, Instruction, CompareInstructions)
 DEFINE_FIND_COMP(Instruction, FindInstruction, CompareInstructions)
 
 List ReadPolymerTemplate(FILE * file)
@@ -73,8 +75,6 @@ int CompareInstructions(const Instruction * const a, const Instruction * const b
     }
     return -1;
 }
-
-DEFINE_QUICKSORT_COMP(InstructionQuickSort, Instruction, CompareInstructions)
 
 void NextStep(List * polymer, const InstructionVector * instructions)
 {
@@ -206,6 +206,8 @@ void NextStepOptimized(SparseMatrix * polymer, const InstructionVector * instruc
     Instruction searched;
 
     SparseMatrix new_entries = NewSparseMatrix();
+    const size_t n_pairs = SIZE(*polymer);
+    RESERVE(new_entries, n_pairs);
 
     for(SpTriplet * it = polymer->begin; it != polymer->end; ++it)
     {
@@ -267,7 +269,6 @@ solution_t SolvePart2(const bool is_test)
     for (size_t step=0; step < n_steps; ++step) {
         NextStepOptimized(&polymer, &instructions, &frequencies);
     }
-
 
     long long int max = frequencies.begin[0];
     long long int min = frequencies.begin[0];

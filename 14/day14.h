@@ -15,8 +15,7 @@ typedef struct {
 } Instruction;
 
 DECLARE_FIND_COMP(Instruction, FindInstruction);
-
-typedef Instruction InstructionTarget;
+DECLARE_QUICKSORT_COMP(InstructionQuickSort, Instruction)
 
 TEMPLATE_VECTOR(Instruction) InstructionVector;
 TEMPLATE_VECTOR(long long int) Vector;
@@ -26,14 +25,11 @@ List ReadPolymerTemplate(FILE * file);
 InstructionVector ReadInstructions(FILE * file);
 int CompareInstructions(const Instruction * const a, const Instruction * const b);
 
-DECLARE_QUICKSORT_COMP(InstructionQuickSort, Instruction)
-
 void NextStep(List * polymer, const InstructionVector * instructions);
 Vector CountFrequecies(List * polymer);
 
 SparseMatrix ReadPolymerTemplateOptimized(FILE * file, Vector * frequencies);
 void NextStepOptimized(SparseMatrix * polymer, const InstructionVector * instructions, Vector * frequencies);
-
 
 // Solving
 typedef long long int solution_t;

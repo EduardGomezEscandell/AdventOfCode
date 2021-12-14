@@ -145,7 +145,7 @@ CFIND_type * CFIND_fun_name(                                                  \
     CFIND_type * end,                                                         \
     const CFIND_type * const search,                                          \
     const bool is_sorted){                                                    \
-    if(is_sorted && (end-begin) < 10)                                         \
+    if(is_sorted && (end-begin) < 5)                                          \
     {                                                                         \
         CFIND_type * guess = begin + (end - begin)/2;                         \
         int comparisson = guess > search;                                     \
@@ -177,7 +177,7 @@ CFIND_type * CFIND_fun_name(                                                  \
     CFIND_type * end,                                                         \
     const CFIND_type * const search,                                          \
     const bool is_sorted){                                                    \
-    if(is_sorted && (end-begin) < 10)                                         \
+    if(is_sorted && (end-begin) < 5)                                         \
     {                                                                         \
         CFIND_type * guess = begin + (end - begin)/2;                         \
         int comparisson = CFIND_comparisson(guess, search);                   \
