@@ -194,59 +194,57 @@ CFIND_type * CFIND_fun_name(                                                  \
 }
 
 #define DECLARE_QUICKSORT(CQS_FUN_NAME, CQS_type)                             \
-void CQS_FUN_NAME(CQS_type * CQS_begin, CQS_type * CQS_end) {                 \
+void CQS_FUN_NAME(CQS_type * begin, CQS_type * end)
 
 #define DEFINE_QUICKSORT(CQS_FUN_NAME, CQS_type)                              \
-void CQS_FUN_NAME(CQS_type * CQS_begin, CQS_type * CQS_end) {                 \
-    if(CQS_end - CQS_begin <= 1) return;                                      \
-    CQS_type CQS_pivot = *CQS_begin;                                          \
-    SWAP(CQS_type, CQS_begin, CQS_end-1);                                     \
-    CQS_type * CQS_unsorted_begin = CQS_begin;                                \
-    CQS_type * CQS_unsorted_end = CQS_end-1;                                  \
-    for(CQS_type * CQS_it = CQS_unsorted_begin;                               \
-        CQS_it != CQS_unsorted_end;                                           \
-        ++CQS_it)                                                             \
+void CQS_FUN_NAME(CQS_type * begin, CQS_type * end) {                         \
+    if(end - begin <= 1) return;                                              \
+    CQS_type pivot = *begin;                                                  \
+    SWAP(CQS_type, begin, end-1);                                             \
+    CQS_type * unsorted_begin = begin;                                        \
+    CQS_type * unsorted_end = end-1;                                          \
+    for(CQS_type * it = unsorted_begin;                                       \
+        it != unsorted_end;                                                   \
+        ++it)                                                                 \
     {                                                                         \
-        if(*CQS_it <= CQS_pivot) {                                            \
-            SWAP(CQS_type, CQS_unsorted_begin, CQS_it);                       \
-            if(CQS_it != CQS_unsorted_begin) --CQS_it;                        \
-            ++CQS_unsorted_begin;                                             \
+        if(*it <= pivot) {                                                    \
+            SWAP(CQS_type, unsorted_begin, it);                               \
+            if(it != unsorted_begin) --it;                                    \
+            ++unsorted_begin;                                                 \
         } else {                                                              \
-            --CQS_unsorted_end;                                               \
-            SWAP(CQS_type, CQS_unsorted_end, CQS_it);                         \
-            --CQS_it;                                                         \
+            --unsorted_end;                                                   \
+            SWAP(CQS_type, unsorted_end, it);                                 \
+            --it;                                                             \
         }                                                                     \
     }                                                                         \
-    CQS_FUN_NAME(CQS_begin, CQS_unsorted_begin);                              \
-    CQS_FUN_NAME(CQS_unsorted_end, CQS_end);                                  \
+    CQS_FUN_NAME(begin, unsorted_begin);                                      \
+    CQS_FUN_NAME(unsorted_end, end);                                          \
 }
 
 #define DECLARE_QUICKSORT_COMP(CQSC_FUN_NAME, CQSC_type)                      \
-void CQSC_FUN_NAME(CQSC_type * CQSC_begin, CQSC_type * CQSC_end);
+void CQSC_FUN_NAME(CQSC_type * begin, CQSC_type * end);
 
 #define DEFINE_QUICKSORT_COMP(CQSC_FUN_NAME, CQSC_type, CQSC_comparisson)     \
-void CQSC_FUN_NAME(CQSC_type * CQSC_begin, CQSC_type * CQSC_end) {            \
-    if(CQSC_end - CQSC_begin <= 1) return;                                    \
-    SWAP(CQSC_type, CQSC_begin, CQSC_end-1);                                  \
-    CQSC_type * CQSC_pivot = CQSC_end-1;                                      \
-    CQSC_type * CQSC_unsorted_begin = CQSC_begin;                             \
-    CQSC_type * CQSC_unsorted_end = CQSC_end-1;                               \
-    for(CQSC_type * CQSC_it = CQSC_unsorted_begin;                            \
-        CQSC_it != CQSC_unsorted_end;                                         \
-        ++CQSC_it)                                                            \
+void CQSC_FUN_NAME(CQSC_type * begin, CQSC_type * end) {                      \
+    if(end - begin <= 1) return;                                              \
+    SWAP(CQSC_type, begin, end-1);                                            \
+    CQSC_type * pivot = end-1;                                                \
+    CQSC_type * unsorted_begin = begin;                                       \
+    CQSC_type * unsorted_end = end-1;                                         \
+    for(CQSC_type * it = unsorted_begin; it != unsorted_end; ++it)            \
     {                                                                         \
-        if(CQSC_comparisson(CQSC_it, CQSC_pivot) != 1) {                      \
-            SWAP(CQSC_type, CQSC_unsorted_begin, CQSC_it);                    \
-            if(CQSC_it > CQSC_unsorted_begin) --CQSC_it;                      \
-            ++CQSC_unsorted_begin;                                            \
+        if(CQSC_comparisson(it, pivot) != 1) {                                \
+            SWAP(CQSC_type, unsorted_begin, it);                              \
+            if(it > unsorted_begin) --it;                                     \
+            ++unsorted_begin;                                                 \
         } else {                                                              \
-            --CQSC_unsorted_end;                                              \
-            SWAP(CQSC_type, CQSC_unsorted_end, CQSC_it);                      \
-            --CQSC_it;                                                        \
+            --unsorted_end;                                                   \
+            SWAP(CQSC_type, unsorted_end, it);                                \
+            --it;                                                             \
         }                                                                     \
     }                                                                         \
-    CQSC_FUN_NAME(CQSC_begin, CQSC_unsorted_begin);                           \
-    CQSC_FUN_NAME(CQSC_unsorted_end, CQSC_end);                               \
+    CQSC_FUN_NAME(begin, unsorted_begin);                                     \
+    CQSC_FUN_NAME(unsorted_end, end);                                         \
 }
 
 #define STRING_TO_VECTOR(S2V_vector, S2V_line, S2V_separator, S2V_data_type) do {   \
