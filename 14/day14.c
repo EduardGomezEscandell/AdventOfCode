@@ -16,6 +16,33 @@ DEFINE_TEST(2, 2188189693529)
 DEFINE_QUICKSORT_COMP(InstructionQuickSort, Instruction, CompareInstructions)
 DEFINE_FIND_COMP(FindInstruction, Instruction, CompareInstructions)
 
+LIST_DEFINE_NEW_NODE(char, List)
+LIST_DEFINE_NEW_LIST(char, List)
+LIST_DEFINE_INSERT(char, List)
+LIST_DEFINE_EMPLACE(char, List)
+LIST_DEFINE_CLEAR(char, List)
+// LIST_DEFINE_PRINT(char, List)
+
+List ListFromString(const char * const line) {
+    List list = NewList();
+
+
+    ListNode * prev = NULL;
+    for(char const * it=line; *it != '\0' && *it != '\n'; ++it)
+    {
+        ListNode * new_node = NewListNode(it);
+
+        if(prev == NULL)
+            list.begin = new_node;
+        else
+            ListInstert(prev, new_node);
+
+        prev = new_node;
+    }
+
+    return list;
+}
+
 List ReadPolymerTemplate(FILE * file)
 {
     char * line = NULL;
@@ -87,8 +114,8 @@ void NextStep(List * polymer, const InstructionVector * instructions)
     Instruction searched;
     Instruction const * result;
 
-    Node * node1 = polymer->begin;
-    Node * node2 = node1->next;
+    ListNode * node1 = polymer->begin;
+    ListNode * node2 = node1->next;
 
     while(node2)
     {
@@ -98,7 +125,7 @@ void NextStep(List * polymer, const InstructionVector * instructions)
         result = FindInstruction(instructions->begin, instructions->end, &searched, true);
         if(!result) continue;
 
-        ListEmplace(node1, result->data);
+        ListEmplace(node1, &result->data);
 
         node1 = node2;
         node2 = node1->next;
@@ -115,7 +142,7 @@ Vector CountFrequecies(List * polymer)
     freqs.end = freqs.begin + alphabet_size;
     for(long long int * it=freqs.begin; it != freqs.end; ++it) *it = 0;
 
-    Node const * curr = polymer->begin;
+    ListNode const * curr = polymer->begin;
     while(curr)
     {
         freqs.begin[curr->data - 'A'] += 1;

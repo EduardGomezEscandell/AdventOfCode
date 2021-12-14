@@ -20,6 +20,9 @@ DECLARE_QUICKSORT_COMP(InstructionQuickSort, Instruction)
 TEMPLATE_VECTOR(Instruction) InstructionVector;
 TEMPLATE_VECTOR(long long int) Vector;
 
+TEMPLATE_LIST(char, List);
+
+List ListFromString(const char * const line);
 List ReadPolymerTemplate(FILE * file);
 
 InstructionVector ReadInstructions(FILE * file);
