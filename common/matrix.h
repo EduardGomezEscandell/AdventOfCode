@@ -30,7 +30,7 @@ void ClearMatrix(Matrix * mat);
 
 // Sparse matrices
 
-typedef long spdata_type;
+typedef long long int spdata_type;
 
 typedef struct
 {

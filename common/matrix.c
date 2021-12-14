@@ -247,7 +247,7 @@ void SpPrint(SparseMatrix * sp)
     printf("SparseMatrix [%ld x %ld] {\n", sp->nrows, sp->ncols);
     for(SpTriplet * it = sp->begin; it != sp->end; ++it)
     {
-        printf("    (%ld, %ld): %ld\n", it->row, it->col, it->data);
+        printf("    (%ld, %ld): %lld\n", it->row, it->col, it->data);
     }
     printf("}\n");
 }
@@ -263,7 +263,7 @@ void SpPrintExpanded(SparseMatrix * sp)
         {
             if(it != sp->end && it->row==i && it->col ==j)
             {
-                printf("%ld", it->data);
+                printf("%lld", it->data);
                 ++it;
             }
             else

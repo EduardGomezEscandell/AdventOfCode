@@ -87,6 +87,26 @@
     (CSHRINK_v).capacity = new_size;                                          \
 } while(0)
 
+#define FIND(CFIND_v, CFIND_search, CFIND_result) do {                        \
+    for((CFIND_result) = (CFIND_v).begin;                                     \
+        (CFIND_result) != (CFIND_v).end;                                      \
+        ++CFIND_result)                                                       \
+    {                                                                         \
+        if(*(CFIND_result) == *(CFIND_search)) break;                         \
+    }                                                                         \
+    if((CFIND_result) == (CFIND_v).end) (CFIND_result) = NULL                 \
+} while(0)
+
+#define FIND_COMP(CFIND_v, CFIND_search, CFIND_result, CFIND_comp) do { \
+    for((CFIND_result) = (CFIND_v).begin;                                     \
+        (CFIND_result) != (CFIND_v).end;                                      \
+        ++CFIND_result)                                                       \
+    {                                                                         \
+        if(CFIND_comp(CFIND_result, &CFIND_search) == 0) break;               \
+    }                                                                         \
+    if((CFIND_result) == (CFIND_v).end) (CFIND_result) = NULL;                \
+} while(0)
+
 #define MIN_ENTRY(CMIN_ENTRY_v, CMIN_ENTRY_type, CMIN_ENTRY_result) do {      \
     (CMIN_ENTRY_result) = (CMIN_ENTRY_v).begin;                               \
     for(CMIN_ENTRY_type * CMIN_ENTRY_it = (CMIN_ENTRY_v).begin;               \
