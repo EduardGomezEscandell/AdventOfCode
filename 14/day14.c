@@ -14,7 +14,7 @@ DEFINE_TEST(2, 2188189693529)
 
 // Templates
 DEFINE_QUICKSORT_COMP(InstructionQuickSort, Instruction, CompareInstructions)
-DEFINE_FIND_COMP(Instruction, FindInstruction, CompareInstructions)
+DEFINE_FIND_COMP(FindInstruction, Instruction, CompareInstructions)
 
 List ReadPolymerTemplate(FILE * file)
 {

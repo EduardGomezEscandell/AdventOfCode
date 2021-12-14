@@ -14,7 +14,7 @@ typedef struct {
 	char data;
 } Instruction;
 
-DECLARE_FIND_COMP(Instruction, FindInstruction);
+DECLARE_FIND_COMP(FindInstruction, Instruction);
 DECLARE_QUICKSORT_COMP(InstructionQuickSort, Instruction)
 
 TEMPLATE_VECTOR(Instruction) InstructionVector;

@@ -129,7 +129,7 @@
 } while(0)
 
 
-#define DECLARE_FIND(CFIND_type, CFIND_fun_name)                              \
+#define DECLARE_FIND(CFIND_fun_name, CFIND_type)                              \
 CFIND_type * CFIND_fun_name(                                                  \
     CFIND_type * const begin,                                                 \
     CFIND_type * const end,                                                   \
@@ -139,7 +139,7 @@ CFIND_type * CFIND_fun_name(                                                  \
 /* 
  * Must be sorted in ascending order
  */
-#define DEFINE_FIND(CFIND_type, CFIND_fun_name)                               \
+#define DEFINE_FIND(CFIND_fun_name, CFIND_type)                               \
 CFIND_type * CFIND_fun_name(                                                  \
     CFIND_type * begin,                                                       \
     CFIND_type * end,                                                         \
@@ -161,17 +161,17 @@ CFIND_type * CFIND_fun_name(                                                  \
     return NULL;                                                              \
 }
 
-#define DECLARE_FIND_COMP(CFIND_type, CFIND_fun_name)                         \
+#define DECLARE_FIND_COMP(CFIND_fun_name, CFIND_type)                         \
 CFIND_type * CFIND_fun_name(                                                  \
-    CFIND_type * const begin,                                           \
-    CFIND_type * const end,                                             \
+    CFIND_type * const begin,                                                 \
+    CFIND_type * const end,                                                   \
     const CFIND_type * const search,                                          \
     const bool is_sorted)
 
 /* 
- * Comparisson must be the same function used to sort the vector
+ * Comparison must be the same function used to sort the vector
  */
-#define DEFINE_FIND_COMP(CFIND_type, CFIND_fun_name, CFIND_comparisson)       \
+#define DEFINE_FIND_COMP(CFIND_fun_name, CFIND_type, CFIND_comparisson)       \
 CFIND_type * CFIND_fun_name(                                                  \
     CFIND_type * begin,                                                       \
     CFIND_type * end,                                                         \
