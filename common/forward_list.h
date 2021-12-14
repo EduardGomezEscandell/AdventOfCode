@@ -85,9 +85,8 @@ void LIST_ListName##Print(                                                    \
     const char * format)                                                      \
 {                                                                             \
     printf("[ ");                                                             \
-    for(; begin != end; ++begin) {                                            \
+    for(; begin != end; begin = begin->next) {                                \
         printf(format, begin->data);                                          \
-        begin = begin->next;                                                  \
     }                                                                         \
     printf(" ]\n");                                                           \
 }                                                                             \
