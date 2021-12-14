@@ -233,6 +233,7 @@ void NextStepOptimized(SparseMatrix * polymer, const InstructionVector * instruc
     }
 
     SpAppend(polymer, &new_entries);
+    ClearSparseMatrix(&new_entries);
 
     SpMergeDuplicates(polymer);
     SpPopZeros(polymer);
