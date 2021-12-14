@@ -87,26 +87,6 @@
     (CSHRINK_v).capacity = new_size;                                          \
 } while(0)
 
-#define FIND(CFIND_v, CFIND_search, CFIND_result) do {                        \
-    for((CFIND_result) = (CFIND_v).begin;                                     \
-        (CFIND_result) != (CFIND_v).end;                                      \
-        ++CFIND_result)                                                       \
-    {                                                                         \
-        if(*(CFIND_result) == *(CFIND_search)) break;                         \
-    }                                                                         \
-    if((CFIND_result) == (CFIND_v).end) (CFIND_result) = NULL                 \
-} while(0)
-
-#define FIND_COMP(CFIND_v, CFIND_search, CFIND_result, CFIND_comp) do { \
-    for((CFIND_result) = (CFIND_v).begin;                                     \
-        (CFIND_result) != (CFIND_v).end;                                      \
-        ++CFIND_result)                                                       \
-    {                                                                         \
-        if(CFIND_comp(CFIND_result, &CFIND_search) == 0) break;               \
-    }                                                                         \
-    if((CFIND_result) == (CFIND_v).end) (CFIND_result) = NULL;                \
-} while(0)
-
 #define MIN_ENTRY(CMIN_ENTRY_v, CMIN_ENTRY_type, CMIN_ENTRY_result) do {      \
     (CMIN_ENTRY_result) = (CMIN_ENTRY_v).begin;                               \
     for(CMIN_ENTRY_type * CMIN_ENTRY_it = (CMIN_ENTRY_v).begin;               \
@@ -148,6 +128,70 @@
     *(CSWAP_it2) = CSWAP_tmp;                                                 \
 } while(0)
 
+
+#define DECLARE_FIND(CFIND_type, CFIND_fun_name)                              \
+CFIND_type * CFIND_fun_name(                                                  \
+    CFIND_type * const begin,                                                 \
+    CFIND_type * const end,                                                   \
+    const CFIND_type * const search,                                          \
+    const bool is_sorted)
+
+/* 
+ * Must be sorted in ascending order
+ */
+#define DEFINE_FIND(CFIND_type, CFIND_fun_name)                               \
+CFIND_type * CFIND_fun_name(                                                  \
+    CFIND_type * begin,                                                       \
+    CFIND_type * end,                                                         \
+    const CFIND_type * const search,                                          \
+    const bool is_sorted){                                                    \
+    if(is_sorted && (end-begin) < 10)                                         \
+    {                                                                         \
+        CFIND_type * guess = begin + (end - begin)/2;                         \
+        int comparisson = guess > search;                                     \
+        if(guess > search)                                                    \
+            return CFIND_fun_name(begin, guess, search, true);                \
+        if(guess ==  search) return guess;                                    \
+        return CFIND_fun_name(begin, guess, search, true);                    \
+    }                                                                         \
+    for(CFIND_type * it = begin; it != end; ++it)                             \
+    {                                                                         \
+        if(it == search) return it;                                           \
+    }                                                                         \
+    return NULL;                                                              \
+}
+
+#define DECLARE_FIND_COMP(CFIND_type, CFIND_fun_name)                         \
+CFIND_type * CFIND_fun_name(                                                  \
+    CFIND_type * const begin,                                           \
+    CFIND_type * const end,                                             \
+    const CFIND_type * const search,                                          \
+    const bool is_sorted)
+
+/* 
+ * Comparisson must be the same function used to sort the vector
+ */
+#define DEFINE_FIND_COMP(CFIND_type, CFIND_fun_name, CFIND_comparisson)       \
+CFIND_type * CFIND_fun_name(                                                  \
+    CFIND_type * begin,                                                       \
+    CFIND_type * end,                                                         \
+    const CFIND_type * const search,                                          \
+    const bool is_sorted){                                                    \
+    if(is_sorted && (end-begin) < 10)                                         \
+    {                                                                         \
+        CFIND_type * guess = begin + (end - begin)/2;                         \
+        int comparisson = CFIND_comparisson(guess, search);                   \
+        if(comparisson == 1) /*guess > search*/                               \
+            return CFIND_fun_name(begin, guess, search, true);                \
+        if(comparisson ==  0) return guess;                                   \
+        return CFIND_fun_name(begin, guess, search, true);                    \
+    }                                                                         \
+    for(CFIND_type * it = begin; it != end; ++it)                             \
+    {                                                                         \
+        if(CFIND_comparisson(it, search)==0) return it;                       \
+    }                                                                         \
+    return NULL;                                                              \
+}
 
 #define DECLARE_QUICKSORT(CQS_FUN_NAME, CQS_type)                             \
 void CQS_FUN_NAME(CQS_type * CQS_begin, CQS_type * CQS_end) {                 \

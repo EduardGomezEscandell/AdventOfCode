@@ -12,6 +12,8 @@
 DEFINE_TEST(1, 1588)
 DEFINE_TEST(2, 2188189693529)
 
+DEFINE_FIND_COMP(Instruction, FindInstruction, CompareInstructions)
+
 List ReadPolymerTemplate(FILE * file)
 {
     char * line = NULL;
@@ -93,7 +95,8 @@ void NextStep(List * polymer, const InstructionVector * instructions)
         searched.input[0] = node1->data;
         searched.input[1] = node2->data;
 
-        FIND_COMP(*instructions, searched, result, CompareInstructions);
+        result = FindInstruction(instructions->begin, instructions->end, &searched, true);
+        if(!result) continue;
 
         ListEmplace(node1, result->data);
 
@@ -201,7 +204,6 @@ SparseMatrix ReadPolymerTemplateOptimized(FILE * file, Vector * frequencies)
 void NextStepOptimized(SparseMatrix * polymer, const InstructionVector * instructions, Vector * frequencies)
 {
     Instruction searched;
-    Instruction const * result;
 
     SparseMatrix new_entries = NewSparseMatrix();
 
@@ -210,26 +212,25 @@ void NextStepOptimized(SparseMatrix * polymer, const InstructionVector * instruc
         searched.input[0] = it->row;
         searched.input[1] = it->col;
 
-        FIND_COMP(*instructions, searched, result, CompareInstructions);
+        Instruction const * result = FindInstruction(instructions->begin, instructions->end, &searched, true);
 
-        if(result)
-        {
-            SpTriplet left;
-            left.row = it->row;
-            left.col = result->data;
-            left.data = it->data;
+        if(result == NULL) continue;
 
-            SpTriplet right;
-            right.row = result->data;
-            right.col = it->col;
-            right.data = it->data;
+        SpTriplet left;
+        left.row = it->row;
+        left.col = result->data;
+        left.data = it->data;
 
-            frequencies->begin[result->data - 'A'] += it->data;
-            it->data = 0;
-            
-            SpPush(&new_entries, &left);
-            SpPush(&new_entries, &right);
-        }
+        SpTriplet right;
+        right.row = result->data;
+        right.col = it->col;
+        right.data = it->data;
+
+        frequencies->begin[result->data - 'A'] += it->data;
+        it->data = 0;
+        
+        SpPush(&new_entries, &left);
+        SpPush(&new_entries, &right);
     }
 
     SpAppend(polymer, &new_entries);

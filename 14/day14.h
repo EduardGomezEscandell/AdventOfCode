@@ -14,6 +14,8 @@ typedef struct {
 	char data;
 } Instruction;
 
+DECLARE_FIND_COMP(Instruction, FindInstruction);
+
 typedef Instruction InstructionTarget;
 
 TEMPLATE_VECTOR(Instruction) InstructionVector;
