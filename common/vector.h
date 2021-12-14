@@ -137,7 +137,7 @@ CFIND_type * CFIND_fun_name(                                                  \
     const bool is_sorted)
 
 /* 
- * Must be sorted in ascending order
+ *If sorted, it must be in ascending order
  */
 #define DEFINE_FIND(CFIND_fun_name, CFIND_type)                               \
 CFIND_type * CFIND_fun_name(                                                  \
@@ -169,7 +169,7 @@ CFIND_type * CFIND_fun_name(                                                  \
     const bool is_sorted)
 
 /* 
- * Comparison must be the same function used to sort the vector
+ * If sorted, comparison must be the same function used to sort the vector
  */
 #define DEFINE_FIND_COMP(CFIND_fun_name, CFIND_type, CFIND_comparisson)       \
 CFIND_type * CFIND_fun_name(                                                  \
@@ -177,8 +177,8 @@ CFIND_type * CFIND_fun_name(                                                  \
     CFIND_type * end,                                                         \
     const CFIND_type * const search,                                          \
     const bool is_sorted){                                                    \
-    if(is_sorted && (end-begin) < 5)                                         \
-    {                                                                         \
+    if(is_sorted && (end-begin) < 5)                                          \
+    {   /* Binary search */                                                   \
         CFIND_type * guess = begin + (end - begin)/2;                         \
         int comparisson = CFIND_comparisson(guess, search);                   \
         if(comparisson == 1) /*guess > search*/                               \
@@ -187,7 +187,7 @@ CFIND_type * CFIND_fun_name(                                                  \
         return CFIND_fun_name(begin, guess, search, true);                    \
     }                                                                         \
     for(CFIND_type * it = begin; it != end; ++it)                             \
-    {                                                                         \
+    {   /* Linear search */                                                   \
         if(CFIND_comparisson(it, search)==0) return it;                       \
     }                                                                         \
     return NULL;                                                              \
