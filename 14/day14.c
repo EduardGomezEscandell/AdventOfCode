@@ -238,30 +238,6 @@ void NextStepOptimized(SparseMatrix * polymer, const InstructionVector * instruc
     SpPopZeros(polymer);
 }
 
-Vector CountFrequeciesOptimized(SparseMatrix * polymer)
-{
-    Vector freqs;
-    NEW_VECTOR(freqs);
-    const size_t alphabet_size = 'Z' - 'A';
-    RESERVE(freqs, alphabet_size);
-
-
-    freqs.end = freqs.begin + alphabet_size;
-    for(long long int * it=freqs.begin; it != freqs.end; ++it) *it = 0;
-
-    for(SpTriplet * it=polymer->begin; it != polymer->end; ++it)
-    {
-        char left = it->row;
-        char right = it->col;
-        const long long int count = it->data;
-
-        freqs.begin[left - 'A'] += count;
-        freqs.begin[right - 'A'] += count;
-    }
-
-    return freqs;
-}
-
 void SpPrintPolymer(SparseMatrix * sp)
 {
     printf("SparseMatrix [%ld x %ld] {\n", sp->nrows, sp->ncols);
