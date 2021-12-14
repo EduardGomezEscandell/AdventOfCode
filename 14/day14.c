@@ -148,6 +148,7 @@ solution_t SolvePart1(const bool is_test)
         if(min == 0 && *it != 0) min = *it;
     }
 
+    CLEAR(freqs);
     CLEAR(instructions);
     ListClear(&polymer);
 
@@ -299,6 +300,7 @@ solution_t SolvePart2(const bool is_test)
         if(min == 0 && *it != 0) min = *it;
     }
 
+    CLEAR(frequencies);
     CLEAR(instructions);
     ClearSparseMatrix(&polymer);
 
