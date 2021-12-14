@@ -82,7 +82,7 @@ InstructionVector ReadInstructions(FILE * file)
         Instruction inst;
         inst.input[0] = line[0];
         inst.input[1] = line[1];
-        inst.data     = line[6];
+        inst.output   = line[6];
 
         PUSH(v, inst);
     }
@@ -125,7 +125,7 @@ void NextStep(List * polymer, const InstructionVector * instructions)
         result = FindInstruction(instructions->begin, instructions->end, &searched, true);
         if(!result) continue;
 
-        ListEmplace(node1, &result->data);
+        ListEmplace(node1, &result->output);
 
         node1 = node2;
         node2 = node1->next;
@@ -247,15 +247,15 @@ void NextStepOptimized(SparseMatrix * polymer, const InstructionVector * instruc
 
         SpTriplet left;
         left.row = it->row;
-        left.col = result->data;
+        left.col = result->output;
         left.data = it->data;
 
         SpTriplet right;
-        right.row = result->data;
+        right.row = result->output;
         right.col = it->col;
         right.data = it->data;
 
-        frequencies->begin[result->data - 'A'] += it->data;
+        frequencies->begin[result->output - 'A'] += it->data;
         it->data = 0;
         
         SpPush(&new_entries, &left);

@@ -11,7 +11,7 @@
 
 typedef struct {
 	char input[2];
-	char data;
+	char output;
 } Instruction;
 
 DECLARE_FIND_COMP(FindInstruction, Instruction);
