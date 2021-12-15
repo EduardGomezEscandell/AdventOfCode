@@ -1,27 +1,34 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "common/hash_table.h"
 
-TEMPLATE_HASH_TABLE          (size_t, int, int, HashTable);
+TEMPLATE_HASH_TABLE       (size_t, int, int, HashTable);
 
-HT_DEFINE_NEW_AND_CLEAR_TABLE(size_t, int, int, HashTable)
-HT_DEFINE_PRINT              (size_t, int, int, HashTable)
-HT_DEFINE_HASH_INTEGERS      (size_t, int, int, HashTable)
-HT_DEFINE_FIND               (size_t, int, int, HashTable)
-HT_DEFINE_FIND_OR_EMPLACE    (size_t, int, int, HashTable)
-HT_DEFINE_REMOVE             (size_t, int, int, HashTable)
+HT_DEFINE_DEFAULT_COMPARE (size_t, int, int, HashTable)
+HT_DEFINE_NEW_AND_CLEAR   (size_t, int, int, HashTable)
+HT_DEFINE_PRINT           (size_t, int, int, HashTable)
+HT_DEFINE_HASH_INTEGERS   (size_t, int, int, HashTable)
+HT_DEFINE_FIND            (size_t, int, int, HashTable)
+HT_DEFINE_FIND_OR_EMPLACE (size_t, int, int, HashTable)
+HT_DEFINE_REMOVE          (size_t, int, int, HashTable)
 
 
 typedef char* cstring; // Pointer types need to be typedef'd
 TEMPLATE_HASH_TABLE          (size_t, cstring, long int, Map);
 
-HT_DEFINE_NEW_AND_CLEAR_TABLE(size_t, cstring, long int, Map)
-HT_DEFINE_PRINT              (size_t, cstring, long int, Map)
-HT_DEFINE_HASH_STRINGS       (size_t, cstring, long int, Map)
-HT_DEFINE_FIND               (size_t, cstring, long int, Map)
-HT_DEFINE_FIND_OR_EMPLACE    (size_t, cstring, long int, Map)
-HT_DEFINE_REMOVE             (size_t, cstring, long int, Map)
+int CompareStringPtrs(const cstring * const A, const cstring * const B) {
+    return strcmp(*A, *B);
+}
+
+HT_DEFINE_SET_COMPARISON  (size_t, cstring, long int, Map)
+HT_DEFINE_NEW_AND_CLEAR   (size_t, cstring, long int, Map)
+HT_DEFINE_PRINT           (size_t, cstring, long int, Map)
+HT_DEFINE_HASH_STRINGS    (size_t, cstring, long int, Map)
+HT_DEFINE_FIND            (size_t, cstring, long int, Map)
+HT_DEFINE_FIND_OR_EMPLACE (size_t, cstring, long int, Map)
+HT_DEFINE_REMOVE          (size_t, cstring, long int, Map)
 
 
 typedef struct {int real; int imag;} Complex; // Can use custom classes
@@ -38,13 +45,13 @@ size_t HashComplex(const Complex * const key, const size_t n_buckets)
     return mod % n_buckets;
 }
 
-TEMPLATE_HASH_TABLE          (size_t, Complex, int, ComplexMapping);
+TEMPLATE_HASH_TABLE       (size_t, Complex, int, ComplexMapping);
 
-HT_DEFINE_NEW_AND_CLEAR_TABLE(size_t, Complex, int, ComplexMapping)
-HT_DEFINE_SET_COMPARISON     (size_t, Complex, int, ComplexMapping)
-HT_DEFINE_FIND               (size_t, Complex, int, ComplexMapping)
-HT_DEFINE_FIND_OR_EMPLACE    (size_t, Complex, int, ComplexMapping)
-HT_DEFINE_REMOVE             (size_t, Complex, int, ComplexMapping)
+HT_DEFINE_SET_COMPARISON  (size_t, Complex, int, ComplexMapping)
+HT_DEFINE_NEW_AND_CLEAR   (size_t, Complex, int, ComplexMapping)
+HT_DEFINE_FIND            (size_t, Complex, int, ComplexMapping)
+HT_DEFINE_FIND_OR_EMPLACE (size_t, Complex, int, ComplexMapping)
+HT_DEFINE_REMOVE          (size_t, Complex, int, ComplexMapping)
 
 
 int main()
@@ -83,6 +90,7 @@ int main()
     **********************************************/
 
     Map map = NewMap(MapHashStrings);
+    MapSetComparison(&map, CompareStringPtrs);
     
     *MapFindOrEmplace(&map, "3", 0) += 5;
 
@@ -121,7 +129,8 @@ int main()
 
     e = a;
 
-    *ComplexMappingFindOrEmplace(&cmap, a, 1) = 100;
+    *ComplexMappingFindOrAllocate(&cmap, a) = 100; 
+    // ^ This function takes no default value. Can be useful to avoid expensive copies
 
     ComplexMappingFindOrEmplace(&cmap, b, 2);
     ComplexMappingFindOrEmplace(&cmap, c, 3);
@@ -132,7 +141,7 @@ int main()
     ComplexMappingRemove(&cmap, b);
 
     // Cannot use print function because it depends on printf
-    printf("{\n");
+    printf("ComplexMapping {\n");
     for(ComplexMappingPair *it=cmap.data.begin; it != cmap.data.end; ++it)
     {
         printf("    %d%+di\t-->\t%d\n",
