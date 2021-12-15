@@ -24,13 +24,13 @@ TestResult TestPart ## DEF_TEST_ID()                                          \
 printf("Running tests:\n\n");                                                 \
 const char * fmt                                                              \
     = "Wrong solution for test %d!\n> Expected: %ld\n> Obtained: %ld\n\n";    \
-printf("Running test 1\n");                                                   \
+printf("Running test 1\n"); fflush(stdout);                                   \
 const TestResult test_1 = TestPart1(true);                                    \
 if(test_1.success)                                                            \
     printf("Test 1 successful\n\n");                                          \
 else                                                                          \
     printf(fmt, 1, test_1.expected, test_1.obtained);                         \
-printf("Running test 2\n");                                                   \
+printf("Running test 2\n"); fflush(stdout);                                   \
 const TestResult test_2 = TestPart2(true);                                    \
 if(test_2.success)                                                            \
     printf("Test 2 successful\n\n");                                          \

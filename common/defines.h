@@ -26,19 +26,19 @@ int main(int argc, char ** argv) {                                            \
                                                                               \
     if(!run_solution) return result;                                          \
     printf("Running with real data\n\n");                                     \
-    printf("Running Part 1\n");                                               \
+    printf("Running Part 1\n"); fflush(stdout);                               \
     Timer t1 = StartTimer();                                                  \
     long long int solution_1 = SolvePart1(false);                             \
     long t = StopTimer(&t1);                                                  \
     printf("Solution: %lld\n", solution_1);                                   \
-    printf("Time:     %ld ns\n\n", t);                                        \
+    printf("Time:     %ld ns\n\n", t); fflush(stdout);                        \
                                                                               \
-    printf("Running Part 2\n");                                               \
+    printf("Running Part 2\n"); fflush(stdout);                               \
     Timer t2 = StartTimer();                                                  \
     long long int solution_2 = SolvePart2(false);                             \
     t = StopTimer(&t2);                                                       \
     printf("Solution: %lld\n", solution_2);                                   \
-    printf("Time:     %ld ns\n\n", t);                                        \
+    printf("Time:     %ld ns\n\n", t); fflush(stdout);                        \
     return result;                                                            \
 }
 
