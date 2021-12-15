@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "07/day7.h"
-#include "14/day14.h"
 #include "common/file_utils.h"
 
 DEFINE_TEST(1, 40)
@@ -169,13 +167,12 @@ void Dijkstra(Node * begin, Node * end, Node * start, Node * target)
 
 }
 
-
-solution_t SolvePart1(const bool is_test)
+solution_t Solve(const bool is_test, const size_t row_folds, const size_t col_folds)
 {
     FILE * file = GetFile(is_test, 15);
 
     Matrix data = ReadMatrix(file);
-    Graph graph = CreateGraph(&data, 1, 1);
+    Graph graph = CreateGraph(&data, row_folds, col_folds);
     ClearMatrix(&data);
 
     Dijkstra(graph.begin, graph.end, graph.begin, graph.end-1);
@@ -187,21 +184,12 @@ solution_t SolvePart1(const bool is_test)
     return total_distance;
 }
 
+solution_t SolvePart1(const bool is_test)
+{
+    return Solve(is_test, 1, 1);
+}
+
 solution_t SolvePart2(const bool is_test)
 {
-    FILE * file = GetFile(is_test, 15);
-
-    Matrix data = ReadMatrix(file);
-
-    Graph graph = CreateGraph(&data, 5, 5);
-    ClearMatrix(&data);
-    
-    Dijkstra(graph.begin, graph.end, graph.begin, graph.end-1);
-
-
-    Node * node = graph.end-1;
-    long long int total_distance = node->distance;
-
-    CLEAR(graph);
-    return total_distance;
+    return Solve(is_test, 5, 5);
 }

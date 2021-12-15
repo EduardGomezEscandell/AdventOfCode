@@ -1,10 +1,9 @@
-#ifndef DAY_14_H
-#define DAY_14_H
+#ifndef DAY_15_H
+#define DAY_15_H
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "07/day7.h"
 #include "common/testing.h"
 #include "common/vector.h"
 #include "common/matrix.h"
@@ -40,6 +39,7 @@ void Dijkstra(Node * begin, Node * end, Node * start, Node * target);
 
 // Solving
 typedef int solution_t;
+solution_t Solve(const bool is_test,const size_t row_folds, const size_t col_folds);
 solution_t SolvePart1(const bool is_test);
 solution_t SolvePart2(const bool is_test);
 
