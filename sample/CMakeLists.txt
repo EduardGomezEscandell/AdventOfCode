@@ -1,0 +1,2 @@
+add_executable(aoc_2021_map_sample map_sample.c)
+target_link_libraries(aoc_2021_map_sample matrix)
