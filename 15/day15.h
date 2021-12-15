@@ -13,12 +13,12 @@ typedef short Flag;
 typedef struct graph_node_{
 	// Graph stuff
 	size_t id;
-	struct graph_node_ * prev;
 	struct graph_node_ * neighbours[4];
 	// Dijkstra stuff
 	unsigned int danger;
-	int distance;
+	unsigned int distance;
 	bool visited;
+	// struct graph_node_ * prev; // Uneeded in the challenge, needed if want to print path
 } Node;
 
 TEMPLATE_VECTOR(Node) Graph;
@@ -33,12 +33,12 @@ size_t GetId(const size_t row, const size_t col, const size_t ncols);
 Graph CreateGraph(Matrix * data, const size_t row_folds, const size_t col_folds);
 
 Node ** MinEntry(Node ** begin, Node ** end);
-long long int Distance(const Node * const A, const Node * const B);
+unsigned int Distance(const Node * const A, const Node * const B);
 void Dijkstra(Node * begin, Node * end, Node * start, Node * target);
 
 
 // Solving
-typedef int solution_t;
+typedef unsigned int solution_t;
 solution_t Solve(const bool is_test,const size_t row_folds, const size_t col_folds);
 solution_t SolvePart1(const bool is_test);
 solution_t SolvePart2(const bool is_test);

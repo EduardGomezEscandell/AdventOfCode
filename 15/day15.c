@@ -28,22 +28,10 @@ void PrintNode(Node * node)
     printf("\n");
 }
 
-int CompareDistances(const Node * const A, const Node * const B)
+int GreaterThan(const Node * const A, const Node * const B)
 {
-    // Negative distances
-    if(A->distance < 0 && B->distance < 0) return 0;
-    if(A->distance < 0) return 1;
-    if(B->distance < 0) return -1;
-
-    // Unvisited
-    if(A->visited && B->visited) return 0;
-    if(A->visited) return 1;
-    if(B->visited) return -1;
-
     // Real comparison
-    if(A->distance > B->distance) return 1;
-    if(A->distance < B->distance) return -1;
-    return 0;
+    return A->distance > B->distance;
 }
 
 Node ** MinEntry(Node ** begin, Node ** end)
@@ -51,7 +39,8 @@ Node ** MinEntry(Node ** begin, Node ** end)
     Node ** min = begin;
     for(++begin; begin != end; ++begin)
     {
-        if(CompareDistances(*min, *begin) == 1) min = begin;
+        if(GreaterThan(*min, *begin)) 
+            min = begin;
     }
     return min;
 }
@@ -101,7 +90,7 @@ Graph CreateGraph(Matrix * data, const size_t row_folds, const size_t col_folds)
     return g;
 }
 
-long long int Distance(const Node * const A, const Node * const B)
+unsigned int Distance(const Node * const A, const Node * const B)
 {
     if(!A || !B)
     {
@@ -120,8 +109,8 @@ void Dijkstra(Node * begin, Node * end, Node * start, Node * target)
 
     for(Node * it = begin; it != end; ++it)
     {
-        it->distance = -1;
-        it->prev = NULL;
+        it->distance = -1;  // Purposefully under-flowing
+        // it->prev = NULL;
         it->visited = false;
 
         PUSH(Q, it);
@@ -155,10 +144,10 @@ void Dijkstra(Node * begin, Node * end, Node * start, Node * target)
 
             long long int alt = u->distance + Distance(u, neigh);
 
-            if(neigh->distance == -1 || alt < neigh->distance)
+            if(alt < neigh->distance)
             {
                 neigh->distance = alt;
-                neigh->prev = u;
+                // neigh->prev = u;
             }
         }
     }
@@ -178,7 +167,7 @@ solution_t Solve(const bool is_test, const size_t row_folds, const size_t col_fo
     Dijkstra(graph.begin, graph.end, graph.begin, graph.end-1);
 
     Node * node = graph.end-1;
-    long long int total_distance = node->distance;
+    unsigned int total_distance = node->distance;
 
     CLEAR(graph);
     return total_distance;
