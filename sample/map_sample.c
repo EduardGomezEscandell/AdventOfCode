@@ -58,7 +58,7 @@ int main()
 {
     /**********************************************
        
-       Playing with [string, int] map
+       Playing with [int, int] map
 
     **********************************************/
 
@@ -113,7 +113,7 @@ int main()
 
     /**********************************************
        
-       Playing with [string, int] map
+       Playing with [Complex, int] map
 
     **********************************************/
 
