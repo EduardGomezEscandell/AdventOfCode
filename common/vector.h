@@ -33,7 +33,7 @@
 #define PUSH(CPUSH_v, CPUSH_data) do {                                        \
     const size_t PUSH_size = (CPUSH_v).end - (CPUSH_v).begin;                 \
     if(PUSH_size >= (CPUSH_v).capacity) {                                     \
-        (CPUSH_v).capacity += 3;   /* Minimum size */                         \
+        (CPUSH_v).capacity += 1;   /* Minimum size */                         \
         (CPUSH_v).capacity *= 1.6; /* Growth factor */                        \
         (CPUSH_v).begin = realloc(                                            \
             (CPUSH_v).begin,                                                  \
@@ -42,6 +42,20 @@
     }                                                                         \
     *(CPUSH_v).end = CPUSH_data;                                              \
     ++(CPUSH_v).end;                                                          \
+} while(0)
+
+#define EMPLACE(CEMPLACE_v, CEMPLACE_ptr) do {                                   \
+    const size_t PUSH_size = (CEMPLACE_v).end - (CEMPLACE_v).begin;              \
+    if(PUSH_size >= (CEMPLACE_v).capacity) {                                     \
+        (CEMPLACE_v).capacity += 3;   /* Minimum size */                         \
+        (CEMPLACE_v).capacity *= 1.6; /* Growth factor */                        \
+        (CEMPLACE_v).begin = realloc(                                            \
+            (CEMPLACE_v).begin,                                                  \
+            (CEMPLACE_v).capacity * sizeof(*(CEMPLACE_v).begin));                \
+        (CEMPLACE_v).end = (CEMPLACE_v).begin + PUSH_size;                       \
+    }                                                                            \
+    CEMPLACE_ptr = (CEMPLACE_v).end;                                             \
+    ++(CEMPLACE_v).end;                                                          \
 } while(0)
 
 #define POP(CPOP_v) do { --(CPOP_v).end; } while(0)
@@ -123,7 +137,7 @@
 
 #define SWAP(CSWAP_type, CSWAP_it1, CSWAP_it2) do {                           \
     if((CSWAP_it1) == (CSWAP_it2)) break;                                     \
-    const CSWAP_type CSWAP_tmp = *(CSWAP_it1);                                \
+    CSWAP_type CSWAP_tmp = *(CSWAP_it1);                                      \
     *(CSWAP_it1) = *(CSWAP_it2);                                              \
     *(CSWAP_it2) = CSWAP_tmp;                                                 \
 } while(0)

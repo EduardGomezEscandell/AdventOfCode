@@ -19,9 +19,10 @@ cd $BUILD_DIR
 mkdir $BUILD_TYPE 2> /dev/null
 cd $BUILD_TYPE
 
-cmake $SOURCE_DIR 					\
--DCMAKE_BUILD_TYPE=$BUILD_TYPE		\
--DCMAKE_C_FLAGS="-Wall -Wextra -Wpedantic"
+cmake $SOURCE_DIR 								\
+-DCMAKE_BUILD_TYPE=$BUILD_TYPE					\
+-DCMAKE_C_FLAGS="-Wall -Wextra -Wpedantic"		\
+-DINCLUDE_SAMPLES="ON"
 cmake --build . -- -j $(nproc)
 
 cd $PROJECT_DIR

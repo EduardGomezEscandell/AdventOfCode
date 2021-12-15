@@ -7,6 +7,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 add_subdirectory(common)
 
+if(INCLUDE_SAMPLES)
+    message("Samples included")
+    add_subdirectory(sample)
+endif()
+
 # Week 1
 add_subdirectory(01)
 add_subdirectory(02)
