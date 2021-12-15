@@ -163,6 +163,8 @@ void Dijkstra(Node * begin, Node * end, Node * start, Node * target)
         }
     }
 
+    CLEAR(Q);
+
     printf("DIJKSTRA: Failed to find a shortest path\n");
 
 }
