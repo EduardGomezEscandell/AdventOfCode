@@ -1,7 +1,10 @@
 #include "day13.h"
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "common/file_utils.h"
+#include "common/matrix.h"
 #include "common/vector.h"
 
 DEFINE_TEST(1, 17)
@@ -22,12 +25,11 @@ void ReadLine(SparseMatrix * sp, char * line)
             begin = it+1;
         }
     }
-    SpTriplet t;
-    t.row = data[1];
-    t.col = data[0];
-    t.data = 1;
+    const size_t row = data[1];
+    const size_t col = data[0];
+    const spdata_type value = 1;
     
-    SpPush(sp, &t);
+    SpPush(sp, row, col, &value);
 }
 
 void ReadData(FILE * file, SparseMatrix * sp, FoldVector * folds)
@@ -40,7 +42,7 @@ void ReadData(FILE * file, SparseMatrix * sp, FoldVector * folds)
     NEW_VECTOR(*folds);
 
     while((read = getline(&line, &len, file)) != -1)
-    {       
+    {
         if(*line == '\n') break;
 
         ReadLine(sp, line);
@@ -60,42 +62,71 @@ void ReadData(FILE * file, SparseMatrix * sp, FoldVector * folds)
 
 void YFold(SparseMatrix * sp, const size_t y_fold)
 {
-    for(SpTriplet * it = sp->begin; it != sp->end; ++it)
+    const size_t size = SIZE(sp->data.data);
+    for(size_t i=0; i < size; ++i)
     {
-        if(it->row < y_fold) continue;
+        DokMatrixPair * it = sp->data.data.begin + i;
 
-        if(it->row == y_fold) {
-            it->data = 0;
-            continue;
+        if(it->key.row < y_fold) continue;
+ 
+        spdata_type value = it->value;
+        it->value = 0;
+        
+        if(it->key.row > y_fold)
+        {
+            const size_t row = 2*y_fold - it->key.row;
+            const size_t col = it->key.col;
+            SpPush(sp, row, col, &value);
         }
-
-        it->row = 2*y_fold - it->row;
     }
 
     sp->nrows = y_fold;
-    SpPopZeros(sp);
-    SpMergeDuplicates(sp);
+    SpPurgeZeros(sp);
 }
 
 void XFold(SparseMatrix * sp, const size_t x_fold)
 {
-    for(SpTriplet * it = sp->begin; it != sp->end; ++it)
+    const size_t size = SIZE(sp->data.data);
+    for(size_t i=0; i < size; ++i)
     {
-        if(it->col < x_fold) continue;
+        DokMatrixPair * it = sp->data.data.begin + i;
 
-        if(it->col == x_fold) {
-            it->data = 0;
-            continue;
+        if(it->key.col < x_fold) continue;
+
+        spdata_type value = it->value;
+        it->value = 0;
+ 
+        if(it->key.col > x_fold)
+        {
+            const size_t row = it->key.row;
+            const size_t col = 2*x_fold - it->key.col;
+            SpPush(sp, row, col, &value);
         }
-
-        it->col = 2*x_fold - it->col;
     }
 
     sp->ncols = x_fold;
-    SpPopZeros(sp);
-    SpMergeDuplicates(sp);
+    SpPurgeZeros(sp);
 }
 
+
+void MatrixPrint(const DokMatrix * ht)
+{
+    printf("{\n");
+    
+    // printf("  Bucket with hash %ld {\n", b - ht->buckets.begin);     
+    for(DokMatrixPair * it =  ht->data.begin; it != ht->data.end; ++it)  
+    { 
+        printf("    ");      
+        printf("[%ld, %ld]", it->key.row, it->key.col);
+        printf(" : ");
+        printf(" %lld ", it->value);
+        printf("\n"); 
+
+        it->value = 1;
+    } 
+    printf("  }\n");  
+    
+}
 
 int SolvePart1(const bool is_test)
 {
@@ -125,7 +156,7 @@ int SolvePart1(const bool is_test)
             exit(EXIT_FAILURE);
     }
 
-    const size_t n_entries = sp.end - sp.begin;
+    const size_t n_entries = SIZE(sp.data.data);
 
     ClearSparseMatrix(&sp);
     CLEAR(folds);

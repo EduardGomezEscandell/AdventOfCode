@@ -1,5 +1,7 @@
 #include "matrix.h"
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 void StringToRow(long * result, char * line, const size_t len)
@@ -124,17 +126,28 @@ void PrintMatrix(const Matrix * const mat)
 
 
 
+// Dictionary of keys sparse matrix
 
 
+HT_DEFINE_SET_COMPARISON    (size_t, SpIndex, spdata_type, DokMatrix)
+HT_DEFINE_NEW_AND_CLEAR     (size_t, SpIndex, spdata_type, DokMatrix)
+HT_DEFINE_FIND              (size_t, SpIndex, spdata_type, DokMatrix)
+HT_DEFINE_FIND_OR_EMPLACE   (size_t, SpIndex, spdata_type, DokMatrix)
+HT_DEFINE_RESERVE           (size_t, SpIndex, spdata_type, DokMatrix)
+HT_DEFINE_REMOVE            (size_t, SpIndex, spdata_type, DokMatrix)
+HT_DEFINE_PRINT             (size_t, SpIndex, spdata_type, DokMatrix)
+
+size_t HashFun(const SpIndex * key, size_t n_buckets)
+{
+    return (key->row * key->row + key->col * key->col) % n_buckets;
+}
 
 SparseMatrix NewSparseMatrix()
 {
     SparseMatrix sp;
 
-    sp.capacity = 10;
-
-    sp.begin = malloc(sp.capacity * sizeof(SpTriplet));
-    sp.end = sp.begin;
+    sp.data = NewDokMatrix(HashFun);
+    DokMatrixSetComparison(&sp.data, SpIndexCompare);
 
     sp.nrows = 0;
     sp.ncols = 0;
@@ -144,132 +157,76 @@ SparseMatrix NewSparseMatrix()
 
 void ClearSparseMatrix(SparseMatrix * sp)
 {
-    free(sp->begin);
-
-    sp->begin = NULL;
-    sp->end = NULL;
-
-    sp->capacity = 0;
+    ClearDokMatrix(&sp->data);
+    sp->ncols = 0;
+    sp->nrows = 0;
 }
 
-void SpPush(SparseMatrix * sp, SpTriplet * t)
+void SpPush(SparseMatrix * sp, size_t row, size_t col, const spdata_type * value)
 {
-    const size_t size = sp->end - sp->begin;
+    if(*value == 0) return;
+
+    SpIndex key = {row, col};
+    *DokMatrixFindOrEmplace(&sp->data, key, 0) += *value;
+
+    if(row >= sp->nrows) sp->nrows = row + 1;
+    if(col >= sp->ncols) sp->ncols = col + 1;
+}
+
+void SpAppend(SparseMatrix * reciever, const SparseMatrix * giver)
+{
+    DokMatrixReserve(&reciever->data, SIZE(reciever->data.data) + SIZE(giver->data.data));
     
-    if(size >= sp->capacity)
+    for(const DokMatrixPair * it = giver->data.data.begin; it != giver->data.data.end; ++it)
     {
-        sp->capacity *= 1.6;
-        sp->begin = realloc(sp->begin, sp->capacity * sizeof(SpTriplet));
-        sp->end = sp->begin + size;
+        if(it->value == 0) continue;
+        spdata_type res = *DokMatrixFindOrEmplace(&reciever->data, it->key, 0) += it->value;
+        
+        if(res != 0) continue;
+        
+        DokMatrixRemove(&reciever->data, it->key);
     }
 
-    *sp->end = *t;
-
-    if(t->row >= sp->nrows) sp->nrows = t->row + 1;
-    if(t->col >= sp->ncols) sp->ncols = t->col + 1;
-
-    ++sp->end;
+    reciever->nrows = MAX(reciever->nrows, giver->nrows);
+    reciever->ncols = MAX(reciever->ncols, giver->ncols);
 }
 
-void SpAppend(SparseMatrix * reciever, const SparseMatrix * const giver)
+int SpIndexCompare(const SpIndex * a, const SpIndex * b)
 {
-    const size_t size = reciever->end - reciever->begin;
-    const size_t appended_size = giver->end - giver->begin;
-
-    if(size + appended_size >= reciever->capacity)
-    {
-        reciever->capacity = size + appended_size;
-        reciever->begin = realloc(reciever->begin, reciever->capacity * sizeof(SpTriplet));
-        reciever->end = reciever->begin + size;
-    }
-
-    if(giver->nrows > reciever->nrows) reciever->nrows = giver->nrows;
-    if(giver->ncols > reciever->ncols) reciever->ncols = giver->ncols;
-
-    for(SpTriplet const * it = giver->begin; it != giver->end; ++it)
-    {
-        *reciever->end = *it;
-        ++reciever->end;
-    }
-}
-
-int TripletCompare(SpTriplet * a, SpTriplet * b)
-{
-    if(a->row > b->row) return 1;
-    
-    if(a->row == b->row)
-    {
-        if(a->col > b->col) return 1;
-        if(a->col == b->col) return 0;
-    }
-    
-    return -1;
-}
-
-void SpPopZeros(SparseMatrix * sp)
-{
-    SpTriplet dummy;
-    dummy.row = 0;
-    dummy.col = 0;
-    dummy.data = 1;
-    SpPush(sp, &dummy);
-    --sp->end;
-
-    for(SpTriplet * it = sp->end; it != sp->begin; --it)
-    {
-        if(it->data == 0)
-        {
-            *it = *(sp->end-1);
-            --sp->end;
-        }
-    }
-}
-
-DEFINE_QUICKSORT_COMP(SpQuickSort, SpTriplet, TripletCompare)
-
-void SpMergeDuplicates(SparseMatrix * sp)
-{
-    SpQuickSort(sp->begin, sp->end);
-
-    for(SpTriplet * it = sp->end - 1; it != sp->begin; --it)
-    {
-        if(TripletCompare(it, it-1) == 0)
-        {
-            (it-1)->data += it->data;
-            *it = *(sp->end-1);
-            --sp->end;
-        }
-    }
+    return (a->row==b->row && a->col==b->col) ? 0 : 1;
 }
 
 void SpPrint(SparseMatrix * sp)
 {
     printf("SparseMatrix [%ld x %ld] {\n", sp->nrows, sp->ncols);
-    for(SpTriplet * it = sp->begin; it != sp->end; ++it)
+    for(DokMatrixPair * it = sp->data.data.begin; it != sp->data.data.end; ++it)
     {
-        printf("    (%ld, %ld): %lld\n", it->row, it->col, it->data);
+        printf("    (%ld, %ld): %lld\n", it->key.row, it->key.col, it->value);
     }
     printf("}\n");
 }
 
-void SpPrintExpanded(SparseMatrix * sp)
+void SpPurgeZeros(SparseMatrix * sp)
 {
-    SpQuickSort(sp->begin, sp->end);
-    SpTriplet * it = sp->begin;
-
-    for(size_t i=0; i<sp->nrows; ++i)
+    for(DokMatrixPair * it = sp->data.data.end-1; it+1 != sp->data.data.begin; --it)
     {
-        for(size_t j=0; j<sp->ncols; ++j)
+        if(it->value == 0)
+            DokMatrixRemove(&sp->data, it->key);
+    }
+}
+
+void SpPrintExpanded(SparseMatrix * sp, const char * format, const char * blank)
+{
+    SpIndex index;
+    for(index.row=0; index.row<sp->nrows; ++index.row)
+    {
+        for(index.col=0; index.col<sp->ncols; ++index.col)
         {
-            if(it != sp->end && it->row==i && it->col ==j)
-            {
-                printf("%lld", it->data);
-                ++it;
-            }
+            DokMatrixSearchResult res = DokMatrixFind(&sp->data, &index);
+            if(res.pair)
+                printf(format, res.pair->value);
             else
-            {
-                printf(".");
-            }
+                printf("%s", blank);
         }
         printf("\n");
     }
@@ -278,24 +235,19 @@ void SpPrintExpanded(SparseMatrix * sp)
 
 void SpPrintSparsity(SparseMatrix * sp)
 {
-    SpQuickSort(sp->begin, sp->end);
-    SpTriplet * it = sp->begin;
-
-    for(size_t i=0; i<sp->nrows; ++i)
+    SpIndex index;
+    for(index.row=0; index.row<sp->nrows; ++index.row)
     {
-        for(size_t j=0; j<sp->ncols; ++j)
+        printf("[");
+        for(index.col=0; index.col<sp->ncols; ++index.col)
         {
-            if(it != sp->end && it->row==i && it->col ==j)
-            {
+            DokMatrixSearchResult res = DokMatrixFind(&sp->data, &index);
+            if(res.pair)
                 printf("#");
-                ++it;
-            }
             else
-            {
                 printf(" ");
-            }
         }
-        printf("\n");
+        printf("]\n");
     }
     printf("\n");
 }

@@ -2,10 +2,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include "common/file_utils.h"
+#include "common/math.h"
 #include "common/forward_list.h"
-#include "common/matrix.h"
+#include "common/hash_table.h"
 #include "common/vector.h"
 
 
@@ -14,7 +16,22 @@ DEFINE_TEST(2, 2188189693529)
 
 // Templates
 DEFINE_QUICKSORT_COMP(InstructionQuickSort, Instruction, CompareInstructions)
-DEFINE_FIND_COMP(FindInstruction, Instruction, CompareInstructions)
+
+
+HT_DEFINE_SET_COMPARISON    (size_t, Target, count_t, Polymer)
+HT_DEFINE_NEW_AND_CLEAR     (size_t, Target, count_t, Polymer)
+HT_DEFINE_FIND              (size_t, Target, count_t, Polymer)
+HT_DEFINE_FIND_OR_EMPLACE   (size_t, Target, count_t, Polymer)
+HT_DEFINE_RESERVE           (size_t, Target, count_t, Polymer)
+HT_DEFINE_REMOVE            (size_t, Target, count_t, Polymer)
+
+HT_DEFINE_DEFAULT_COMPARE   (size_t, char, count_t, FreqMap)
+HT_DEFINE_NEW_AND_CLEAR     (size_t, char, count_t, FreqMap)
+HT_DEFINE_HASH_INTEGERS     (size_t, char, count_t, FreqMap)
+HT_DEFINE_FIND              (size_t, char, count_t, FreqMap)
+HT_DEFINE_FIND_OR_EMPLACE   (size_t, char, count_t, FreqMap)
+HT_DEFINE_RESERVE           (size_t, char, count_t, FreqMap)
+HT_DEFINE_REMOVE            (size_t, char, count_t, FreqMap)
 
 LIST_DEFINE_NEW_NODE(char, List)
 LIST_DEFINE_NEW_LIST(char, List)
@@ -22,6 +39,32 @@ LIST_DEFINE_INSERT(char, List)
 LIST_DEFINE_EMPLACE(char, List)
 LIST_DEFINE_CLEAR(char, List)
 // LIST_DEFINE_PRINT(char, List)
+
+Instruction *FindInstruction(
+    Instruction * begin,
+    Instruction * end,
+    const Target * search)
+{ // Binary search. Instruction vector must be sorted.
+    if (end - begin < 5) {
+        Instruction *guess = begin + (end - begin) / 2;
+        
+        int comparisson = CompareTargets(&guess->target, search);
+        
+        if (comparisson == 1)
+            return FindInstruction(begin, guess, search);
+        if (comparisson == 0)
+            return guess;
+        
+        return FindInstruction(begin, guess, search);
+    }
+    for (Instruction *it = begin; it != end; ++it)
+    {
+        if (CompareTargets(&it->target, search) == 0)
+            return it;
+    }
+    return NULL;
+}
+
 
 List ListFromString(const char * const line) {
     List list = NewList();
@@ -80,9 +123,9 @@ InstructionVector ReadInstructions(FILE * file)
     while((read = getline(&line, &len, file)) != -1)
     {
         Instruction inst;
-        inst.input[0] = line[0];
-        inst.input[1] = line[1];
-        inst.output   = line[6];
+        inst.target.left = line[0];
+        inst.target.right = line[1];
+        inst.insert = line[6];
 
         PUSH(v, inst);
     }
@@ -92,13 +135,24 @@ InstructionVector ReadInstructions(FILE * file)
     return v;
 }
 
-int CompareInstructions(const Instruction * const a, const Instruction * const b)
+int CompareInstructions(const Instruction * a, const Instruction * b)
 {
-    if(a->input[0] > b->input[0]) return 1;
-    if(a->input[0] == b->input[0])
+    if(a->target.left > b->target.left) return 1;
+    if(a->target.left == b->target.left)
     {
-        if(a->input[1] > b->input[1]) return 1;
-        if(a->input[1] == b->input[1]) return 0;
+        if(a->target.right > b->target.right) return 1;
+        if(a->target.right == b->target.right) return 0;
+    }
+    return -1;
+}
+
+int CompareTargets(const Target * a, const Target * b)
+{
+    if(a->left > b->left) return 1;
+    if(a->left == b->left)
+    {
+        if(a->right > b->right) return 1;
+        if(a->right == b->right) return 0;
     }
     return -1;
 }
@@ -111,7 +165,7 @@ void NextStep(List * polymer, const InstructionVector * instructions)
         exit(EXIT_FAILURE);
     }
 
-    Instruction searched;
+    Target searched;
     Instruction const * result;
 
     ListNode * node1 = polymer->begin;
@@ -119,33 +173,27 @@ void NextStep(List * polymer, const InstructionVector * instructions)
 
     while(node2)
     {
-        searched.input[0] = node1->data;
-        searched.input[1] = node2->data;
+        searched.left  = node1->data;
+        searched.right = node2->data;
 
-        result = FindInstruction(instructions->begin, instructions->end, &searched, true);
+        result = FindInstruction(instructions->begin, instructions->end, &searched);
         if(!result) continue;
 
-        ListEmplace(node1, &result->output);
+        ListEmplace(node1, &result->insert);
 
         node1 = node2;
         node2 = node1->next;
     }
 }
 
-Vector CountFrequecies(List * polymer)
+FreqMap CountFrequecies(List * polymer)
 {
-    Vector freqs;
-    NEW_VECTOR(freqs);
-    const size_t alphabet_size = 'Z' - 'A';
-    RESERVE(freqs, alphabet_size);
-
-    freqs.end = freqs.begin + alphabet_size;
-    for(long long int * it=freqs.begin; it != freqs.end; ++it) *it = 0;
+    FreqMap freqs = NewFreqMap(FreqMapHashIntegers);
 
     ListNode const * curr = polymer->begin;
     while(curr)
     {
-        freqs.begin[curr->data - 'A'] += 1;
+        *FreqMapFindOrEmplace(&freqs, curr->data, 0) += 1;
         curr = curr->next;
     }
 
@@ -167,18 +215,19 @@ solution_t SolvePart1(const bool is_test)
         NextStep(&polymer, &instructions);
     }
 
-    Vector freqs = CountFrequecies(&polymer);
+    FreqMap freqs = CountFrequecies(&polymer);
 
-    long long int max = freqs.begin[0];
-    long long int min = freqs.begin[0];
+    count_t max = 0;
+    count_t min = LONG_MAX;
 
-    for (long long int *it = freqs.begin; it != freqs.end; ++it) {
-        if(*it > max) max = *it;
-        if(*it!=0 && *it < min) min = *it;
-        if(min == 0 && *it != 0) min = *it;
+    for (const FreqMapPair * it = freqs.data.begin; it != freqs.data.end; ++it) {
+        if(it->value == 0) continue;
+        
+        max = MAX(max, it->value);
+        min = MIN(min, it->value);
     }
 
-    CLEAR(freqs);
+    ClearFreqMap(&freqs);
     CLEAR(instructions);
     ListClear(&polymer);
 
@@ -186,31 +235,35 @@ solution_t SolvePart1(const bool is_test)
     return max - min;
 }
 
-SparseMatrix ReadPolymerTemplateOptimized(FILE * file, Vector * frequencies)
+size_t HashTarget(const Target * A, size_t n_buckets)
+{
+    return (A->left * A->left + A->right * A->right) % n_buckets;
+}
+
+Polymer ReadPolymerTemplateOptimized(FILE * file, FreqMap * frequencies)
 {
     char * line = NULL;
     size_t len = 0;
     ssize_t read = 0;
 
-    SparseMatrix targets = NewSparseMatrix();
+    Polymer polymer = NewPolymer(HashTarget);
+    PolymerSetComparison(&polymer, CompareTargets);
 
-    const size_t alphabet_size = 'Z' - 'A';
-    RESERVE(*frequencies, alphabet_size);
-    frequencies->end = frequencies->begin + alphabet_size;
-    for(long long int * it=frequencies->begin; it != frequencies->end; ++it) *it = 0;
+    *frequencies = NewFreqMap(FreqMapHashIntegers);
     
     if((read = getline(&line, &len, file)) != -1) {       
         
-        ++frequencies->begin[*line - 'A'];
+        *FreqMapFindOrEmplace(frequencies, *line, 0) += 1;
+        
         for(char * it = line+1; *it != '\0' && *it!='\n'; ++it)
         {
-            SpTriplet target;
-            target.row = it[-1];
-            target.col = it[0];
-            target.data = 1;
+            Target target = {
+                .left = it[-1],
+                .right = it[0]
+            };
 
-            SpPush(&targets, &target);
-            ++frequencies->begin[*it - 'A'];
+            *PolymerFindOrEmplace(&polymer, target, 0) += 1;
+            *FreqMapFindOrEmplace(frequencies, *it, 0) += 1;
         }
 
     } else {
@@ -225,56 +278,59 @@ SparseMatrix ReadPolymerTemplateOptimized(FILE * file, Vector * frequencies)
 
     free(line);
 
-    return targets;
+    return polymer;
 }
 
-void NextStepOptimized(SparseMatrix * polymer, const InstructionVector * instructions, Vector * frequencies)
+void NextStepOptimized(Polymer * polymer, const InstructionVector * instructions, FreqMap * frequencies)
 {
-    Instruction searched;
+    Polymer new_inserts = NewPolymer(HashTarget);
+    PolymerSetComparison(&new_inserts, polymer->Compare);
 
-    SparseMatrix new_entries = NewSparseMatrix();
-    const size_t n_pairs = SIZE(*polymer);
-    RESERVE(new_entries, n_pairs);
+    PolymerReserve(&new_inserts, SIZE(polymer->data));
 
-    for(SpTriplet * it = polymer->begin; it != polymer->end; ++it)
+    for(PolymerPair * it = polymer->data.begin; it != polymer->data.end; ++it)
     {
-        searched.input[0] = it->row;
-        searched.input[1] = it->col;
-
-        Instruction const * result = FindInstruction(instructions->begin, instructions->end, &searched, true);
-
-        if(result == NULL) continue;
-
-        SpTriplet left;
-        left.row = it->row;
-        left.col = result->output;
-        left.data = it->data;
-
-        SpTriplet right;
-        right.row = result->output;
-        right.col = it->col;
-        right.data = it->data;
-
-        frequencies->begin[result->output - 'A'] += it->data;
-        it->data = 0;
+        const Target * target = &it->key;
+        const count_t count = it->value;
         
-        SpPush(&new_entries, &left);
-        SpPush(&new_entries, &right);
+        Instruction const * result = FindInstruction(instructions->begin, instructions->end, target);
+        if(result == NULL)
+        {
+            *PolymerFindOrEmplace(&new_inserts, *target, 0) += count;
+            continue;
+        }
+        
+        char insert = result->insert;
+
+        Target left = {
+            .left = target->left,
+            .right = insert
+        };
+
+        Target right = {
+            .left  = insert,
+            .right = target->right
+        };
+
+        *PolymerFindOrEmplace(&new_inserts, left, 0) += count;
+        *PolymerFindOrEmplace(&new_inserts, right, 0) += count;
+        *FreqMapFindOrEmplace(frequencies, insert, 0) += count;        
     }
 
-    SpAppend(polymer, &new_entries);
-    ClearSparseMatrix(&new_entries);
-
-    SpMergeDuplicates(polymer);
-    SpPopZeros(polymer);
+    ClearPolymer(polymer);
+    *polymer = new_inserts;
 }
 
-void SpPrintPolymer(SparseMatrix * sp)
+void PrintPolymer(const Polymer * polymer, const char * keyformat, const char * valueformat)
 {
-    printf("SparseMatrix [%ld x %ld] {\n", sp->nrows, sp->ncols);
-    for(SpTriplet * it = sp->begin; it != sp->end; ++it)
+    printf("Polymer {\n");
+    for(PolymerPair * it = polymer->data.begin; it != polymer->data.end; ++it)
     {
-        printf("    (%c, %c): %lld\n", (char) it->row, (char) it->col, it->data);
+        printf("    ");
+        printf(keyformat, (char) it->key.left, (char) it->key.right);
+        printf(" : ");
+        printf(valueformat, it->value);
+        printf("\n");
     }
     printf("}\n");
 }
@@ -283,11 +339,9 @@ solution_t SolvePart2(const bool is_test)
 {
     FILE * file = GetFile(is_test, 14);
 
-    Vector frequencies;
-    NEW_VECTOR(frequencies);
+    FreqMap frequencies;
 
-    SparseMatrix polymer = ReadPolymerTemplateOptimized(file, &frequencies);
-    SpMergeDuplicates(&polymer);
+    Polymer polymer = ReadPolymerTemplateOptimized(file, &frequencies);
 
     InstructionVector instructions = ReadInstructions(file);
     InstructionQuickSort(instructions.begin, instructions.end);
@@ -297,18 +351,20 @@ solution_t SolvePart2(const bool is_test)
         NextStepOptimized(&polymer, &instructions, &frequencies);
     }
 
-    long long int max = frequencies.begin[0];
-    long long int min = frequencies.begin[0];
+    count_t max = 0;
+    count_t min = LONG_MAX;
 
-    for (long long int *it = frequencies.begin; it != frequencies.end; ++it) {
-        if(*it > max) max = *it;
-        if(*it!=0 && *it < min) min = *it;
-        if(min == 0 && *it != 0) min = *it;
+    for (const FreqMapPair * it = frequencies.data.begin; it != frequencies.data.end; ++it)
+    {
+        if(it->value == 0) continue;
+        
+        max = MAX(max, it->value);
+        min = MIN(min, it->value);
     }
 
-    CLEAR(frequencies);
+    ClearFreqMap(&frequencies);
     CLEAR(instructions);
-    ClearSparseMatrix(&polymer);
+    ClearPolymer(&polymer);
 
     fclose(file);
     return max - min;

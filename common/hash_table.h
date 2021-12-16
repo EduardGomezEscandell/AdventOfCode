@@ -6,6 +6,7 @@
 #include <stddef.h>
 
 #include "vector.h"
+#include "math.h"
 
 /******************************************************************************
  *           This template implements a hash-table based map                  *
@@ -110,6 +111,21 @@ void HT_name##SetComparison(HT_name * ht, HT_name##CompFun comp_fun) {        \
     ht->Compare = comp_fun;                                                   \
 }
 
+#define HT_DEFINE_RESERVE(HT_hash_t, HT_key_t, HT_val_t, HT_name)             \
+void HT_name##Reserve(HT_name * ht, size_t new_capacity)                      \
+{                                                                             \
+    /* Input validation */                                                    \
+    if(new_capacity < ht->data.capacity) return;                              \
+                                                                              \
+    const size_t curr_buckets = SIZE(ht->buckets);                            \
+    size_t n_buckets = new_capacity * 0.6;                                    \
+    n_buckets = MAX(n_buckets, curr_buckets);                                 \
+                                                                              \
+    /* Updating container */                                                  \
+    RESERVE(ht->data, new_capacity);                                          \
+    HT_name##_Private_Rehash(ht, n_buckets);                                  \
+}
+
 #define HT_DEFINE_NEW_AND_CLEAR(HT_hash_t, HT_key_t, HT_val_t, HT_name)       \
 HT_name##Bucket HT_name##NewBucket() {                                        \
     HT_name##Bucket bucket;                                                   \
@@ -147,7 +163,29 @@ void Clear##HT_name(HT_name * ht)                                             \
     CLEAR(ht->data);                                                          \
     ht->Hash = NULL;                                                          \
     ht->Compare = NULL;                                                       \
-}
+}                                                                             \
+void HT_name##_Private_Rehash(HT_name * ht, size_t n_buckets)                 \
+{                                                                             \
+    for(HT_name##Bucket * it = ht->buckets.begin; it != ht->buckets.end; ++it)\
+        CLEAR(*it);                                                           \
+    CLEAR(ht->buckets);                                                       \
+                                                                              \
+    NEW_VECTOR(ht->buckets);                                                  \
+    RESERVE(ht->buckets, n_buckets);                                          \
+    ht->buckets.end += n_buckets;                                             \
+                                                                              \
+    for(HT_name##Bucket * it = ht->buckets.begin;                             \
+        it != ht->buckets.end;                                                \
+        ++it)                                                                 \
+        *it = HT_name##NewBucket();                                           \
+                                                                              \
+    for(HT_name##Pair * it = ht->data.begin; it != ht->data.end; ++it)        \
+    {                                                                         \
+        const HT_hash_t hash = ht->Hash(&it->key, n_buckets);                 \
+        PUSH(ht->buckets.begin[hash], it);                                    \
+    }                                                                         \
+}                                                                             \
+                                                                              \
 
 #define HT_DEFINE_PRINT(HT_hash_t, HT_key_t, HT_val_t, HT_name)               \
 void HT_name##Print(                                                          \
@@ -231,28 +269,6 @@ HT_name##SearchResult HT_name##Find(HT_name * ht, const HT_key_t * key)       \
 }
 
 #define HT_DEFINE_FIND_OR_EMPLACE(HT_hash_t, HT_key_t, HT_val_t, HT_name)     \
-void HT_name##_Private_Rehash(HT_name * ht, size_t n_buckets)                 \
-{                                                                             \
-    for(HT_name##Bucket * it = ht->buckets.begin; it != ht->buckets.end; ++it)\
-        CLEAR(*it);                                                           \
-    CLEAR(ht->buckets);                                                       \
-                                                                              \
-    NEW_VECTOR(ht->buckets);                                                  \
-    RESERVE(ht->buckets, n_buckets);                                          \
-    ht->buckets.end += n_buckets;                                             \
-                                                                              \
-    for(HT_name##Bucket * it = ht->buckets.begin;                             \
-        it != ht->buckets.end;                                                \
-        ++it)                                                                 \
-        *it = HT_name##NewBucket();                                           \
-                                                                              \
-    for(HT_name##Pair * it = ht->data.begin; it != ht->data.end; ++it)        \
-    {                                                                         \
-        const HT_hash_t hash = ht->Hash(&it->key, n_buckets);                 \
-        PUSH(ht->buckets.begin[hash], it);                                    \
-    }                                                                         \
-}                                                                             \
-                                                                              \
 HT_name##Pair * HT_name##_Private_Expand(HT_name * ht)                        \
 {                                                                             \
     const size_t size = SIZE(ht->data);                                       \
@@ -313,15 +329,16 @@ HT_val_t * HT_name##Remove(HT_name * ht, const HT_key_t key)                  \
     HT_name##SearchResult loc = HT_name##Find(ht, &key);                      \
     if(!loc.pair) return NULL;                                                \
                                                                               \
+    /* Updating bucket references */                                          \
+    HT_name##Pair ** it = loc.bucket->begin;                                  \
+    for(; it != loc.bucket->end; ++it)                                        \
+        if(*it == loc.pair) break;                                            \
+    *it = loc.bucket->end[-1];                                                \
+    --loc.bucket->end;                                                        \
+                                                                              \
     /* Removing from data */                                                  \
     *loc.pair = ht->data.end[-1];                                             \
     --ht->data.end;                                                           \
-                                                                              \
-    /* Updating bucket references */                                          \
-    const ptrdiff_t pos = loc.pair - *loc.bucket->begin;                      \
-    HT_name##Pair ** it = loc.bucket->begin + pos;                            \
-    SWAP(HT_name##Pair*, it, loc.bucket->end-1);                              \
-    --loc.bucket->end;                                                        \
                                                                               \
     return &loc.pair->value;                                                  \
 }                                                                             \
