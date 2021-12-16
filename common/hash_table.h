@@ -75,9 +75,7 @@ HT_val_t * HT_name##FindOrEmplace(                                            \
     const HT_key_t key,                                                       \
     const HT_val_t default_value);                                            \
 HT_val_t * HT_name##Remove(HT_name * ht, const HT_key_t key);                 \
-void HT_name##_Private_Repair(                                                \
-    HT_name * ht,                                                             \
-    const HT_name##Pair * const old_begin);                                   \
+void HT_name##_Private_Rehash(HT_name * ht, size_t n_buckets);                \
 HT_name##Pair * HT_name##_Private_Expand(HT_name * ht);                       \
 void HT_name##SetComparison(HT_name * ht, HT_name##CompFun comp_fun);         \
 int HT_name##DefaultCompare(                                                  \
@@ -168,6 +166,28 @@ void HT_name##Print(                                                          \
         printf("\n");                                                         \
     }                                                                         \
     printf("}\n");                                                            \
+}                                                                             \
+                                                                              \
+void HT_name##PrintDebug(                                                     \
+    const HT_name * ht,                                                       \
+    const char * key_format,                                                  \
+    const char * value_format)                                                \
+{                                                                             \
+printf(#HT_name" internal structure: {\n");                                   \
+    for(HT_name##Bucket * b = ht->buckets.begin; b!=ht->buckets.end; ++b)     \
+    {                                                                         \
+        printf("  Bucket with hash %ld {\n", b - ht->buckets.begin);          \
+        for(HT_name##Pair ** it =  b->begin; it != b->end; ++it)              \
+        {                                                                     \
+            printf("    ");                                                   \
+            printf(key_format, (*it)->key);                                   \
+            printf(" : ");                                                    \
+            printf(value_format, (*it)->value);                               \
+            printf("\n");                                                     \
+        }                                                                     \
+        printf("  }\n");                                                      \
+    }                                                                         \
+    printf("}\n");                                                            \
 }
 
 
@@ -212,34 +232,38 @@ HT_name##SearchResult HT_name##Find(HT_name * ht, const HT_key_t * key)       \
 }
 
 #define HT_DEFINE_FIND_OR_EMPLACE(HT_hash_t, HT_key_t, HT_val_t, HT_name)     \
-void HT_name##_Private_Repair(                                                \
-    HT_name * ht,                                                             \
-    const HT_name##Pair * const old_begin)                                    \
+void HT_name##_Private_Rehash(HT_name * ht, size_t n_buckets)                 \
 {                                                                             \
-    for(HT_name##Bucket * b = ht->buckets.begin; b != ht->buckets.end; ++b)   \
+    for(HT_name##Bucket * it = ht->buckets.begin; it != ht->buckets.end; ++it)\
+        CLEAR(*it);                                                           \
+    CLEAR(ht->buckets);                                                       \
+                                                                              \
+    NEW_VECTOR(ht->buckets);                                                  \
+    RESERVE(ht->buckets, n_buckets);                                          \
+    ht->buckets.end += n_buckets;                                             \
+                                                                              \
+    for(HT_name##Bucket * it = ht->buckets.begin;                             \
+        it != ht->buckets.end;                                                \
+        ++it)                                                                 \
+        *it = HT_name##NewBucket();                                           \
+                                                                              \
+    for(HT_name##Pair * it = ht->data.begin; it != ht->data.end; ++it)        \
     {                                                                         \
-        for(HT_name##Pair ** it = b->begin; it != b->end; ++it)               \
-        {                                                                     \
-            const ptrdiff_t index = (*it) - old_begin;                        \
-            (*it) = ht->data.begin + index;                                   \
-        }                                                                     \
+        const HT_hash_t hash = ht->Hash(&it->key, n_buckets);                 \
+        PUSH(ht->buckets.begin[hash], it);                                    \
     }                                                                         \
 }                                                                             \
                                                                               \
 HT_name##Pair * HT_name##_Private_Expand(HT_name * ht)                        \
 {                                                                             \
     const size_t size = SIZE(ht->data);                                       \
-    if(size*1.3 >= ht->data.capacity)                                         \
+    if(size >= 0.7 * ht->data.capacity)                                       \
     {                                                                         \
-        const HT_name##Pair * old_begin = ht->data.begin;                     \
-                                                                              \
         const size_t new_size = 2*size;                                       \
         RESERVE(ht->data, new_size);                                          \
         /* ^This may invalidate references. They need be repaired.*/          \
-        if(ht->data.begin != old_begin)                                       \
-        {                                                                     \
-            HT_name##_Private_Repair(ht, old_begin);                          \
-        }                                                                     \
+        HT_name##_Private_Rehash(ht, 1+2*SIZE(ht->buckets));                  \
+        /* We use this to expand the number of buckets */                     \
     }                                                                         \
                                                                               \
     ++ht->data.end;                                                           \
@@ -255,7 +279,15 @@ HT_val_t * HT_name##FindOrAllocate(                                           \
         return &loc.pair->value;                                              \
     }                                                                         \
                                                                               \
+    const ptrdiff_t old_size = SIZE(ht->buckets);                             \
     HT_name##Pair * back = HT_name##_Private_Expand(ht);                      \
+                                                                              \
+    if(old_size != SIZE(ht->buckets)) { /* Rehashing has happended */         \
+        loc = HT_name##Find(ht, &key);                                        \
+        if(loc.pair) {                                                        \
+            return &loc.pair->value;                                          \
+        }                                                                     \
+    }                                                                         \
     back->key = key;                                                          \
                                                                               \
     PUSH(*loc.bucket, back);                                                  \
@@ -268,19 +300,13 @@ HT_val_t * HT_name##FindOrEmplace(                                            \
     const HT_key_t key,                                                       \
     const HT_val_t default_value)                                             \
 {                                                                             \
-    HT_name##SearchResult loc = HT_name##Find(ht, &key);                      \
-    if(loc.pair) {                                                            \
-        return &loc.pair->value;                                              \
-    }                                                                         \
-                                                                              \
-    HT_name##Pair * back = HT_name##_Private_Expand(ht);                      \
-    back->key = key;                                                          \
-    back->value = default_value;                                              \
-                                                                              \
-    PUSH(*loc.bucket, back);                                                  \
-                                                                              \
-    return &back->value;                                                      \
+    HT_name##Pair * prev_end = ht->data.end;                                  \
+    HT_val_t * value = HT_name##FindOrAllocate(ht, key);                      \
+    if(ht->data.end != prev_end) /* Allocated */                              \
+        *value = default_value;                                               \
+    return value;                                                             \
 }
+
 
 #define HT_DEFINE_REMOVE(HT_hash_t, HT_key_t, HT_val_t, HT_name)              \
 HT_val_t * HT_name##Remove(HT_name * ht, const HT_key_t key)                  \

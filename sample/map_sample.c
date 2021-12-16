@@ -80,6 +80,7 @@ int main()
     HashTableRemove(&ht, 3);
 
     HashTablePrint(&ht, "%d", "%d");
+    HashTablePrintDebug(&ht, "%d", "%d");
 
     ClearHashTable(&ht);
 
