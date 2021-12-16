@@ -4,11 +4,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include "common/testing.h"
 #include "common/vector.h"
 
-#define WORD_SIZE 4
-typedef unsigned short word_t;
+// Bits in a hex
+#define HEX_SIZE 4
+
+typedef uint_least8_t word_t;
+
+// (Relevant) bits in a word_t
+#define WORD_SIZE 8
+
+
 
 enum PacketType {
 	ADD = 0,
@@ -32,16 +40,17 @@ typedef struct packet_t {
     PacketVector subpackets;
 } Packet;
 
+TEMPLATE_VECTOR(word_t) ByteVector;
+
 typedef struct {
     size_t bitcount;
-    char * line;
-    char * line_pos;
-    word_t buffer;
+    ByteVector buffer;
+    word_t * buffer_ptr;
     word_t mask;
 } BitReader;
 
 BitReader GetBitReader(const char * line);
-unsigned short InterpretByte(char c_repr);
+word_t InterpretByte(char c_repr);
 int NextBit(BitReader * reader, word_t * bit);
 void ClearBitReader(BitReader * reader);
 

@@ -11,19 +11,38 @@
 DEFINE_TEST(1, 31)
 DEFINE_TEST(2, 1)
 
+bool IsEnd(const char * it)
+{
+    return *it == '\0' || *it == '\n';
+}
+
 BitReader GetBitReader(const char * line)
 {
     BitReader r;
-    r.line = malloc((strlen(line)+1) * sizeof(char));
-    strcpy(r.line, line);
-    r.line_pos = r.line;
-    r.buffer = 0;
-    r.mask = 0;
+    NEW_VECTOR(r.buffer);
+    const size_t size = strlen(line);
+    RESERVE(r.buffer, size);
+    
+    bool half_word = false;
+    for(const char * it = line; !IsEnd(it) && !half_word; it = it+2)
+    {
+        half_word = IsEnd(it+1);
+
+        word_t upper = InterpretByte(it[0]);
+        word_t lower = half_word ? 0 : InterpretByte(it[1]);
+
+        word_t word = upper << HEX_SIZE | lower;
+
+        PUSH(r.buffer, word);
+    }
+
+    r.buffer_ptr = r.buffer.begin;
+    r.mask = 1 << (WORD_SIZE-1);
     r.bitcount = 0;
     return r;
 }
 
-unsigned short InterpretByte(char c_repr)
+word_t InterpretByte(char c_repr)
 {
     if(c_repr <= '9') return c_repr - '0';
     return 10 + c_repr - 'A';
@@ -33,27 +52,25 @@ int NextBit(BitReader * reader, word_t * bit)
 {
     if(reader->mask == 0)
     {
-        if(*reader->line_pos == '\0' || *reader->line_pos == '\n') return -1; // Line is over
+        ++reader->buffer_ptr;
+        if(reader->buffer_ptr == reader->buffer.end) return -1; // Line is over
 
-        reader->buffer = InterpretByte(*reader->line_pos);
         reader->mask = 1 << (WORD_SIZE-1);
-        ++reader->line_pos;
     }
 
-    *bit = (reader->mask & reader->buffer) ? 1 : 0;
+    *bit = (reader->mask & *reader->buffer_ptr) ? 1 : 0;
     reader->mask = reader->mask >> 1;
     ++reader->bitcount;
-
-    // printf("%d", *bit);
 
     return 0;
 }
 
 void ClearBitReader(BitReader * reader)
 {
-    free(reader->line);
-    reader->buffer = 0;
+    CLEAR(reader->buffer);
+    reader->buffer_ptr = NULL;
     reader->mask = 0;
+    reader->bitcount = 0;
 }
 
 unsigned int ReadInt(BitReader * br, size_t n_bits)
@@ -75,7 +92,7 @@ void ReadLiteral(BitReader * reader, Packet * packet)
 
     while(flag == 1) {
         NextBit(reader, &flag);
-        packet->value = (packet->value << (WORD_SIZE)) + ReadInt(reader, WORD_SIZE);
+        packet->value = (packet->value << HEX_SIZE) + ReadInt(reader, HEX_SIZE);
     }
 }
 
@@ -288,16 +305,15 @@ solution_t SolvePart1(const bool is_test)
     }
 
     BitReader reader = GetBitReader(line);
+    free(line);
+    fclose(file);
     
     Packet root = ReadPacket(&reader);
+    ClearBitReader(&reader);
 
     // PrintPacket(&root, 0);
     size_t ids = AccumulatePacketVersions(&root);
-
     ClearPacket(&root);
-    ClearBitReader(&reader);
-    free(line);
-    fclose(file);
 
     return ids;
 }
@@ -320,16 +336,15 @@ solution_t SolvePart2(const bool is_test)
     if(is_test) read = getline(&line, &len, file);
 
     BitReader reader = GetBitReader(line);
-    
-    Packet root = ReadPacket(&reader);
-
-    long result = Operate(&root);
-    // PrintPacket(&root, 0);
-
-    ClearPacket(&root);
-    ClearBitReader(&reader);
     free(line);
     fclose(file);
+    
+    Packet root = ReadPacket(&reader);
+    ClearBitReader(&reader);
+    // PrintPacket(&root, 0);
+
+    long result = Operate(&root);
+    ClearPacket(&root);
 
     return result;
 }
