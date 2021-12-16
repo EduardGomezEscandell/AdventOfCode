@@ -11,9 +11,16 @@ do
 
 	echo "------------------------------Testing day ${DAY}------------------------------"
 
+	if [ "$DAY" = "15" ]; then
+		# We skip day 15 solution because it takes very long. We only check the tests.
+	    export FLAGS="-t"
+	else
+	    export FLAGS="-t -s"
+	fi
+
 	export EXECUTABLE=build/Debug/${DAY}/aoc_2021_${DAY}
 
-	valgrind --error-exitcode=1 --leak-check=full --show-leak-kinds=all "./${EXECUTABLE}" -t -s
+	valgrind --error-exitcode=1 --leak-check=full --show-leak-kinds=all "./${EXECUTABLE}" ${FLAGS}
 
 	export LOCAL_EXIT_CODE=$?
 	echo "Day ${DAY} exit code: ${LOCAL_EXIT_CODE}"

@@ -135,7 +135,10 @@ void Dijkstra(Node * begin, Node * end, Node * start, Node * target)
         Node * u = *it;
         u->visited = true;
 
-        if(u->id == target->id) return;
+        if(u->id == target->id) {
+            CLEAR(Q);
+            return;
+        }
 
         for(size_t i=0; i<4; ++i)
         {
@@ -151,6 +154,8 @@ void Dijkstra(Node * begin, Node * end, Node * start, Node * target)
             }
         }
     }
+
+    CLEAR(Q);
 
     printf("DIJKSTRA: Failed to find a shortest path\n");
 
