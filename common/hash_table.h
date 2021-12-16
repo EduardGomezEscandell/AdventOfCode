@@ -22,10 +22,9 @@
  * in order to have "constructor" and "destructor" for memory management.     *
  *                                                                            *
  * Other macros are used to define more functions.                            *
- * Avoid using function with the word _Private_ in their name                 *
+ * Avoid using functions with the word _Private_ in their name                *
  *                                                                            *
- *                                                                            *
- * Any linker errors are likely to be due to missing a DEFINE_ macro          *
+ * Any linker errors are likely to be due to missing a HT_DEFINE_* macro      *
  * For an example, see See /sample/map_sample.c                               *
  *****************************************************************************/
 
