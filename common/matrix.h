@@ -6,6 +6,7 @@
 #include <stdbool.h>
 
 #include "vector.h"
+#include "hash_table.h"
 
 // Dense matrices
 
@@ -36,14 +37,13 @@ typedef struct
 {
     size_t row;
     size_t col;
-    spdata_type data;
-} SpTriplet;
+} SpIndex;
+
+TEMPLATE_HASH_TABLE(size_t, SpIndex, spdata_type, DokMatrix);
 
 typedef struct
 {
-    SpTriplet * begin;
-    SpTriplet * end;
-    size_t capacity;
+    DokMatrix data;
     size_t nrows;
     size_t ncols;
 } SparseMatrix;
@@ -51,19 +51,15 @@ typedef struct
 SparseMatrix NewSparseMatrix();
 void ClearSparseMatrix(SparseMatrix * sp);
 
-void SpPush(SparseMatrix * sp, SpTriplet * t);
-void SpAppend(SparseMatrix * reciever, const SparseMatrix * const giver);
+void SpPush(SparseMatrix * sp, size_t row, size_t col, const spdata_type * value);
+void SpAppend(SparseMatrix * reciever, const SparseMatrix * giver);
 
-int TripletCompare(SpTriplet * a, SpTriplet * b);
-bool TripletGreaterThan(SpTriplet * a, SpTriplet * b);
+int SpIndexCompare(const SpIndex * A, const SpIndex * B);
 
-DECLARE_QUICKSORT_COMP(SpQuickSort, SpTriplet)
-
-void SpPopZeros(SparseMatrix * sp);
-void SpMergeDuplicates(SparseMatrix * sp);
+void SpPurgeZeros(SparseMatrix * sp);
 
 void SpPrint(SparseMatrix * sp);
-void SpPrintExpanded(SparseMatrix * sp);
+void SpPrintExpanded(SparseMatrix * sp, const char * format, const char * blank);
 void SpPrintSparsity(SparseMatrix * sp);
 
 #endif

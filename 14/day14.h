@@ -6,36 +6,53 @@
 #include <stdbool.h>
 #include "common/testing.h"
 #include "common/vector.h"
-#include "common/matrix.h"
 #include "common/forward_list.h"
+#include "common/hash_table.h"
+
+typedef struct
+{
+	char left;
+	char right;
+} Target;
 
 typedef struct {
-	char input[2];
-	char output;
+	Target target;
+	char insert;
 } Instruction;
 
-DECLARE_FIND_COMP(FindInstruction, Instruction);
-DECLARE_QUICKSORT_COMP(InstructionQuickSort, Instruction)
+typedef unsigned long long count_t;
 
 TEMPLATE_VECTOR(Instruction) InstructionVector;
-TEMPLATE_VECTOR(long long int) Vector;
+TEMPLATE_HASH_TABLE(size_t, Target, count_t, Polymer);
+
+TEMPLATE_HASH_TABLE(size_t, char, count_t, FreqMap);
 
 TEMPLATE_LIST(char, List);
+
+
+int CompareInstructions(const Instruction * a, const Instruction * b);
+int CompareTargets(const Target * a, const Target * b);
+
+Instruction *FindInstruction(
+    Instruction * begin,
+    Instruction * end,
+    const Target * search);
+
+DECLARE_QUICKSORT_COMP(InstructionQuickSort, Instruction);
 
 List ListFromString(const char * const line);
 List ReadPolymerTemplate(FILE * file);
 
 InstructionVector ReadInstructions(FILE * file);
-int CompareInstructions(const Instruction * const a, const Instruction * const b);
 
 void NextStep(List * polymer, const InstructionVector * instructions);
-Vector CountFrequecies(List * polymer);
+FreqMap CountFrequecies(List * polymer);
 
-SparseMatrix ReadPolymerTemplateOptimized(FILE * file, Vector * frequencies);
-void NextStepOptimized(SparseMatrix * polymer, const InstructionVector * instructions, Vector * frequencies);
+Polymer ReadPolymerTemplateOptimized(FILE * file, FreqMap * frequencies);
+void NextStepOptimized(Polymer * polymer, const InstructionVector * instructions, FreqMap * frequencies);
 
 // Solving
-typedef long long int solution_t;
+typedef count_t solution_t;
 solution_t SolvePart1(const bool is_test);
 solution_t SolvePart2(const bool is_test);
 

@@ -7,6 +7,7 @@
 
 #include "common/matrix.h"
 #include "common/testing.h"
+#include "common/vector.h"
 
 typedef struct
 {
@@ -14,13 +15,7 @@ typedef struct
 	size_t value;
 } Fold;
 
-typedef struct
-{
-	Fold * begin;
-	Fold * end;
-	size_t capacity;
-} FoldVector;
-
+TEMPLATE_VECTOR(Fold) FoldVector;
 
 void ReadLine(SparseMatrix * sp, char * line);
 void ReadData(FILE * file, SparseMatrix * sp, FoldVector * folds);

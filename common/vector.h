@@ -236,7 +236,7 @@ void CQS_FUN_NAME(CQS_type * begin, CQS_type * end) {                         \
 }
 
 #define DECLARE_QUICKSORT_COMP(CQSC_FUN_NAME, CQSC_type)                      \
-void CQSC_FUN_NAME(CQSC_type * begin, CQSC_type * end);
+void CQSC_FUN_NAME(CQSC_type * begin, CQSC_type * end)
 
 #define DEFINE_QUICKSORT_COMP(CQSC_FUN_NAME, CQSC_type, CQSC_comparisson)     \
 void CQSC_FUN_NAME(CQSC_type * begin, CQSC_type * end) {                      \
