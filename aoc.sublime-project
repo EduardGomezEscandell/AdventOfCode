@@ -24,7 +24,10 @@
 			"variants" : [
 				{
 					"name" : "Debug",
-					"env" :{"BUILD_TYPE" : "Debug"}
+					"env" : {
+						"BUILD_TYPE" : "Debug",
+						"ADRESS_SANITIZER" : "1"
+					}
 				}
 			]
 		},
@@ -34,8 +37,9 @@
 			"shell_cmd" : "export FILEPATH=${file_path}; bash run.sh \\${FILEPATH##*/}",
 			"variants" : [
 				{
-					"name" : "Debug+Valgrind",
-					"shell_cmd" : "export FILEPATH=${file_path}; export DAY=\\${FILEPATH##*/}; valgrind --leak-check=full --show-leak-kinds=all --log-file=\\$FILEPATH/log.valgrind ./build/Debug/\\${DAY}/aoc_2021_\\${DAY} -t -s"
+					"name" : "sanitizer",
+					"shell_cmd" : "export FILEPATH=${file_path}; bash run.sh \\${FILEPATH##*/} Debug | tee \\$FILEPATH/log.valgrind",
+					"file_regex": "\/home\/[a-zA-z0-9/]*\/AdventOfCode2021\/([^:]*):([0-9]*)",
 				}
 			]
 		},
