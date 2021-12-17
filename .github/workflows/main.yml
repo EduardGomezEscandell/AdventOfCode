@@ -20,21 +20,17 @@ jobs:
       - name: Test
         run: bash test.sh
 
-  Valgrind-check:
+  Sanitizer tests:
     runs-on: ubuntu-latest
     env:
       BUILD_TYPE: Debug
+      ADRESS_SANITIZER: 1
 
     steps:
       - uses: actions/checkout@v2
-
-      - name: Install valgrind
-        run: |
-             sudo apt update
-             sudo apt install -y valgrind
       
       - name: Build
         run: bash build.sh
 
       - name: Test
-        run: bash test_valgrind.sh
+        run: bash test_sanitizer.sh
