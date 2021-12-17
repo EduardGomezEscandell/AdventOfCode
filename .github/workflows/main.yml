@@ -20,7 +20,7 @@ jobs:
       - name: Test
         run: bash test.sh
 
-  Sanitizer tests:
+  test-fsanitize:
     runs-on: ubuntu-latest
     env:
       BUILD_TYPE: Debug
