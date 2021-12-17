@@ -1,7 +1,7 @@
 build/
-log.valgrind
 __pycache__/**
 .vscode/**
 .clangd/**
+*.valgrind
 *.sublime-workspace
 compile_commands.json
