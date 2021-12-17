@@ -1,8 +1,8 @@
 #ifndef DEFINES_INCLUDED_H
 #define DEFINES_INCLUDED_H
 
-#include "common/timing.h"
-#include "common/testing.h"
+#include "timing.h"
+#include "testing.h"
 #include <stdlib.h>
 #include <string.h>
 
