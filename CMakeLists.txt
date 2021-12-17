@@ -7,10 +7,17 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 add_subdirectory(common)
 
+if(ADRESS_SANITIZER)
+    message("Adress sanitizer enabled")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
+endif()
+message("-- C compiler flags: ${CMAKE_C_FLAGS}")
+
 if(INCLUDE_SAMPLES)
-    message("Samples included")
+    message("-- Samples included")
     add_subdirectory(sample)
 endif()
+
 
 # Week 1
 add_subdirectory(01)
