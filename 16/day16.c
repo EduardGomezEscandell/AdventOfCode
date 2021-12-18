@@ -176,7 +176,7 @@ void PrintPacket(Packet * packet, size_t indentation)
         }
 
         for(size_t i=0; i<indentation; ++i) printf(" ");
-        printf("<Packet/>\n");
+        printf("</Packet>\n");
     }
 }
 
