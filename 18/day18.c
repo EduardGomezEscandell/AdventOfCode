@@ -6,18 +6,7 @@
 #include <stdio.h>
 
 #include "common/vector.h"
-
-typedef int Int;
-
-struct snail_number {
-    Int data_left;
-    Int data_right;
-    struct snail_number * parent;
-    struct snail_number * left;
-    struct snail_number * right;
-};
-
-typedef struct snail_number* SnailNumber; // SnailNumbers always allocated on the heap
+#include "common/math.h"
 
 SnailNumber NewSnailNumber() {
     SnailNumber p = malloc(sizeof(*p));
@@ -243,21 +232,23 @@ bool ReduceSplit(SnailNumber * it, size_t depth)
     return false;
 }
 
-void LeftAccumulate(SnailNumber* accumulator, SnailNumber it)
+void LeftAccumulate(SnailNumber* accumulator, SnailNumber* it)
 {
     if(!*accumulator)  // First accumulation
     {
-        *accumulator = it;
-        it->parent = NULL;
+        *accumulator = *it;
+        (*it)->parent = NULL;
     }
     else 
     {
         SnailNumber new_num = NewSnailNumber();
         SetLeftChild(new_num, *accumulator);
-        SetRightChild(new_num, it);
+        SetRightChild(new_num, *it);
 
         *accumulator = new_num;
     }
+
+    *it = NULL;
     
     while(true)
     {
@@ -278,6 +269,23 @@ solution_t Magnitude(SnailNumber num)
     return mag;
 }
 
+SnailNumber CopySnailNumber(SnailNumber orig)
+{
+    SnailNumber num = NewSnailNumber();
+    
+    if(orig->left)
+        SetLeftChild(num, CopySnailNumber(orig->left));
+    else
+        num->data_left = orig->data_left;
+    
+    if(orig->right)
+        SetRightChild(num, CopySnailNumber(orig->right));
+    else
+        num->data_right = orig->data_right;
+
+    return num;
+}
+
 solution_t SolvePart1(const bool is_test)
 {
     FILE * file = GetFile(is_test, 18);
@@ -293,7 +301,7 @@ solution_t SolvePart1(const bool is_test)
         if(len == 0) continue;
         SnailNumber p = ReadSnailNumber(&it);
 
-        LeftAccumulate(&acc, p);
+        LeftAccumulate(&acc, &p);
     }
 
     solution_t magnitude = Magnitude(acc);
@@ -306,36 +314,55 @@ solution_t SolvePart1(const bool is_test)
     return magnitude;
 }
 
-TEMPLATE_VECTOR(struct snail_number) SnailNumberVector;
+TEMPLATE_VECTOR(SnailNumber) SnailNumberVector;
 
 solution_t SolvePart2(const bool is_test)
 {
-    // FILE * file = GetFile(is_test, 18);
+    FILE * file = GetFile(is_test, 18);
 
-    // size_t len = 0;
-    // char * line = NULL;
+    size_t len = 0;
+    char * line = NULL;
 
-    // SnailNumberVector numbers;
+    SnailNumberVector numbers;
+    NEW_VECTOR(numbers);
     
-    // while(getline(&line, &len, file) != -1)
-    // {
-    //     char * it = line;
-    //     if(len == 0) continue;
-    //     SnailNumber p = ReadSnailNumber(&it);
+    while(getline(&line, &len, file) != -1)
+    {
+        char * it = line;
+        if(len == 0) continue;
+        PUSH(numbers, ReadSnailNumber(&it));
 
-    //     LeftAccumulate(&acc, p);
-    // }
+        // PrintSnailNumber(numbers.end[-1]); printf("\n");
+    }
 
-    // solution_t magnitude = Magnitude(acc);
+    solution_t max_magnitude = 0;
+    for(SnailNumber* it_i = numbers.begin; it_i != numbers.end; ++it_i)
+    {
+        for(SnailNumber* it_j = numbers.begin; it_j != numbers.end; ++it_j)
+        {
+            if(it_i == it_j) continue;
 
+            SnailNumber lhs = CopySnailNumber(*it_i);
+            SnailNumber rhs = CopySnailNumber(*it_j);
 
-    // ClearSnailNumber(&acc);
-    // free(line);
-    // fclose(file);
+            // num_i + num_j
+            LeftAccumulate(&lhs, &rhs);
+            solution_t magnitude = Magnitude(lhs);
+            max_magnitude = MAX(max_magnitude, magnitude);
 
-    return is_test;
+            ClearSnailNumber(&lhs);
+        }
+    }
+
+    for(SnailNumber* it = numbers.begin; it != numbers.end; ++it)
+        ClearSnailNumber(it);
+
+    CLEAR(numbers);
+    free(line);
+    fclose(file);
+
+    return max_magnitude;
 }
-
 
 
 DEFINE_TEST(1, 4140)
