@@ -9,7 +9,7 @@ add_subdirectory(common)
 
 if(ADRESS_SANITIZER)
     message("Adress sanitizer enabled")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fsanitize=leak -fsanitize=undefined")
 endif()
 message("-- C compiler flags: ${CMAKE_C_FLAGS}")
 
