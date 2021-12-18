@@ -10,7 +10,8 @@
 				".github"
 			],
 			"file_exclude_patterns": [
-				"*.sublime-workspace"
+				"*.sublime-workspace",
+				"compile_commands.json"
 			]
 		}
 	],
@@ -20,22 +21,26 @@
 			"name" : "CMake build",
 			"working_dir" : "${project_path}",
 			"file_regex": "\/home\/[a-zA-z0-9/]*\/AdventOfCode2021\/([^:]*):([0-9]*)",
-		    "shell_cmd": "bash build.sh",
+		    "shell_cmd": "bash scripts/build.sh",
 			"variants" : [
 				{
 					"name" : "Debug",
-					"env" :{"BUILD_TYPE" : "Debug"}
+					"env" : {
+						"BUILD_TYPE" : "Debug",
+						"ADRESS_SANITIZER" : "1"
+					}
 				}
 			]
 		},
 		{
 			"name" : "Run AoC",
 			"working_dir" : "${project_path}",
-			"shell_cmd" : "export FILEPATH=${file_path}; bash run.sh \\${FILEPATH##*/}",
+			"shell_cmd" : "export FILEPATH=${file_path}; bash scripts/run.sh \\${FILEPATH##*/}",
 			"variants" : [
 				{
-					"name" : "Debug+Valgrind",
-					"shell_cmd" : "export FILEPATH=${file_path}; export DAY=\\${FILEPATH##*/}; valgrind --leak-check=full --show-leak-kinds=all --log-file=\\$FILEPATH/log.valgrind ./build/Debug/\\${DAY}/aoc_2021_\\${DAY} -t -s"
+					"name" : "sanitizer",
+					"shell_cmd" : "export FILEPATH=${file_path}; bash scripts/run.sh \\${FILEPATH##*/} Debug | tee \\$FILEPATH/sanitizer.valgrind",
+					"file_regex": "\/home\/[a-zA-z0-9/]*\/AdventOfCode2021\/([^:]*):([0-9]*)",
 				}
 			]
 		},

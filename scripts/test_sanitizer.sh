@@ -20,7 +20,7 @@ do
 
 	export EXECUTABLE=build/Debug/${DAY}/aoc_2021_${DAY}
 
-	valgrind --error-exitcode=1 --leak-check=full --show-leak-kinds=all "./${EXECUTABLE}" ${FLAGS}
+	"./${EXECUTABLE}" ${FLAGS}
 
 	export LOCAL_EXIT_CODE=$?
 	echo "Day ${DAY} exit code: ${LOCAL_EXIT_CODE}"
