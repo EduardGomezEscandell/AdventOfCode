@@ -35,6 +35,15 @@ BeaconPtr NewBeaconPtr(Int x, Int y, Int z)
     return ptr;
 }
 
+BeaconPtr NullPtr()
+{
+    BeaconPtr ptr;
+    ptr.data = NULL;
+    ptr.refcount = NULL;
+
+    return ptr;
+}
+
 BeaconPtr CopyPtr(BeaconPtr ptr)
 {
     printf("Copied beacon rc=%ld data=", *ptr.refcount);
@@ -45,15 +54,17 @@ BeaconPtr CopyPtr(BeaconPtr ptr)
 
 void DeletePtr(BeaconPtr ptr)
 {
-    --(*ptr.refcount);
+    if(ptr.refcount != NULL) // Ensuring it has not been freed already is NULLPTR
+        --(*ptr.refcount);
 
-    if(*ptr.refcount == 0)
+    if(ptr.refcount && *ptr.refcount == 0)
     {
         free(ptr.data);
         free(ptr.refcount);
     }
 
     ptr.data = NULL;
+    ptr.refcount = NULL;
 }
 
 Orientation ConstructOrientation(size_t permutation_id)
@@ -228,8 +239,10 @@ ScannerArray ReadInput(const bool is_test)
 /**
  * Given a vector t, returns all ordered beacon pairs {U,V} such that
  *  V-U == t
+ *
+ * Validated assumption: Only one match is ever found
  */
-MatchArray CheckMatch(BeaconPtrArray beacons, Vector3D target)
+BeaconPtr CheckMatch(BeaconPtrArray beacons, Vector3D target)
 {
     MatchArray matches;
     NEW_VECTOR(matches);
@@ -244,13 +257,11 @@ MatchArray CheckMatch(BeaconPtrArray beacons, Vector3D target)
 
             if(eq(delta_X, target))
             {
-                Match m = {*it1, *it2};
-                PUSH(matches, m);
+                return *it2;
             }
         }
     }
-
-    return matches;
+    return NullPtr();
 }
 
 
@@ -269,13 +280,13 @@ int CheckOrientation(Scanner * A, Scanner * B, size_t permutation_id)
             Vector3D delta_Y = sub(*Y_j->data, *Y_i->data);
             Vector3D delta_X = mult(&D, delta_Y);
 
-            MatchArray result = CheckMatch(A->beacons, delta_X);
+            BeaconPtr result = CheckMatch(A->beacons, delta_X);
 
-            if(SIZE(result)) {
-                n_matches +=  1;
+            if(result.data)
+            {
+                n_matches += 1;
             }
 
-            CLEAR(result);
 
             if(n_matches >= 11) // 11 pairs -> 12 numbers!
             {
@@ -309,8 +320,11 @@ solution_t SolvePart1(const bool is_test)
         for(Scanner * it2=it1+1; it2 != scanners.end; ++it2)
         {
             int n = CheckCompatibility(it1, it2);
-            if(n != -1)
-                printf("Scanners #%ld and %ld are compatible (n=%d)!\n", it1->id, it2->id, n);
+            if(n != -1){
+                printf("Scanners #%ld and %ld are compatible (Orientation=%d)\n", it1->id, it2->id, n);
+                fflush(stdout);
+            }
+
         }
     }
 
