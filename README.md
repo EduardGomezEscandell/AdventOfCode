@@ -12,8 +12,8 @@ They must be run from the project's root folder
 - `bash scripts/test.sh`:   Runs tests for all days. Project must have been built in Release mode.
 - `bash scripts/test_sanitizer.sh`:   Runs tests and solutions for all days in debug mode. Project must have been previously built in Debug mode with sanitizer enabled.
 
-# Data
-To change the data you may modify file `data/xx/data.txt` where `xx` is the zero-padded day.
+# Data input
+To change the problem input data you may modify file `data/xx/data.txt` where `xx` is the zero-padded day.
 
 Some solutions assume that there is a newline at the end of the file, some others don't care.
 Just write it always to ensure it works.
