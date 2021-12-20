@@ -418,7 +418,7 @@ solution_t SolvePart1(const bool is_test)
         {
             PUSH(all_beacons, CopyPtr(*ptr));
 
-            ptr->data = vecmult(it->orientation, *ptr);
+            *ptr->data = vecmult(&it->orientation, *ptr->data);
         }
 
         ClearScanner(it);

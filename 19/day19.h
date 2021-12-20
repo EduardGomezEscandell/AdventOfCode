@@ -74,7 +74,6 @@ typedef struct scanner
     Vector3D location;
     
     BeaconPtrArray beacons;
-    Vector3D location;
 } Scanner;
 
 TEMPLATE_VECTOR(Scanner) ScannerArray;
