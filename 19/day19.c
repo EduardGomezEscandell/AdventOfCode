@@ -156,9 +156,9 @@ unsigned int CountMatches(
 }
 
 
-bool ValidOrientation(Scanner * A, Scanner * B, size_t permutation_id, BeaconPtr match[2])
+bool ValidOrientation(Scanner * A, Scanner * B, size_t orientation_id, BeaconPtr match[2])
 {
-    Orientation D = ConstructOrientation(permutation_id);
+    Orientation D = ConstructOrientation(orientation_id);
 
     for(Beacon * source_A = A->beacons.begin; source_A != A->beacons.end; ++source_A)
     {
@@ -211,11 +211,7 @@ ConnexionArray FindOverlaps(ScannerArray scanners)
     for(Scanner * it1=scanners.begin; it1 != scanners.end; ++it1) {
         for(Scanner * it2=it1+1; it2 != scanners.end; ++it2)
         {
-            if(CheckOverlap(it1, it2, &overlaps))
-            {
-                printf("Scanners #%ld and %ld are compatible\n", it1->id, it2->id);
-                fflush(stdout);
-            }
+            CheckOverlap(it1, it2, &overlaps);
         }
     }
 
@@ -325,8 +321,6 @@ long FindGreatestManhatanDistance(ScannerArray scanners)
 solution_t Solve(const bool is_test)
 {
     solution_t solution = {0,0};
-    
-    if(!is_test) return solution;
     
     // Reading
     ScannerArray scanners = ReadInput(is_test);

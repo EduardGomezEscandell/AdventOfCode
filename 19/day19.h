@@ -17,11 +17,12 @@ typedef struct
     Vector3D loc;
 } Beacon;
 
+struct scanner_connection;
+
 TEMPLATE_VECTOR(Vector3D) PointsArray;
 TEMPLATE_VECTOR(Beacon) BeaconArray;
-
-struct scanner_connection;
 TEMPLATE_VECTOR(struct scanner_connection) ConnexionArray;
+TEMPLATE_HASH_TABLE(size_t, Vector3D, int, Vector3DSet);
 
 typedef struct scanner
 {
@@ -36,6 +37,8 @@ typedef struct scanner
     BeaconArray beacons;
 } Scanner;
 
+TEMPLATE_VECTOR(Scanner) ScannerArray;
+
 typedef struct scanner_connection
 {
     Scanner * ruler;
@@ -48,12 +51,35 @@ typedef struct scanner_connection
     Beacon * beacon_dependent;
 } ScannerConnection;
 
-TEMPLATE_VECTOR(Scanner) ScannerArray;
-
-TEMPLATE_HASH_TABLE(size_t, Vector3D, int, Vector3DSet);
 
 Beacon NewBeacon(size_t id, Int x, Int y, Int z);
 void PrintBeacon(Beacon * b);
+void ClearScanner(Scanner * scanner);
+
+Scanner ReadScanner(FILE* file, bool * last_scanner, size_t * line_count);
+ScannerArray ReadInput(const bool is_test);
+
+typedef Beacon * BeaconPtr;
+
+unsigned int CountMatches(
+    Beacon const * source_A,
+    Beacon const * source_B,
+    BeaconArray targets_A,
+    BeaconArray targets_B,
+    Orientation * D);
+bool ValidOrientation(Scanner * A, Scanner * B, size_t orientation_id, BeaconPtr match[2]);
+bool CheckOverlap(Scanner * A, Scanner * B, ConnexionArray * overlaps);
+ConnexionArray FindOverlaps(ScannerArray scanners);
+
+void TransformBeaconCoordinates(Scanner * scanner);
+void PropagateInformation(Scanner * this);
+
+int compare(Vector3D const * u, Vector3D const * v);
+Vector3DSet CreateVector3DSet(ScannerArray scanners);
+
+
+long Manhattan(Vector3D * u, Vector3D * v);
+long FindGreatestManhatanDistance(ScannerArray scanners);
 
 // Solving
 typedef struct {
