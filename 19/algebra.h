@@ -41,7 +41,7 @@ typedef union {
  *    > D is the transformation matrix from Y to X
  */
 typedef struct { 
-    unsigned short sparsity[DIM]; // Which column is non-zero for each colum
+    unsigned short sparsity[DIM]; // Which column is non-zero for each row
     short values[DIM];            // The value of the non-zero entry (+1 or -1)
 } Orientation;
 
