@@ -112,12 +112,12 @@ Orientation transpose(Orientation const * input)
 // Matrix inversion
 Orientation inv(Orientation const * D)
 {
-    return transpose(D); // Bless you orthonormal matrices
+    return transpose(D); // Blessed be orthonormal matrices
 }
 
 
 /**
- * Computes out=A-B
+ * Computes out = destination - source
  */
 Vector3D VectorFromSourceAndDestination(Vector3D source, Vector3D destination)
 {

@@ -36,9 +36,9 @@ typedef union {
  *  - All non-zero entries are either +1 or -1
  *  - Has determinant 1
  *  - The following property holds: X=D*Y, where:
- *    > X are the coordinates of a beacons in the reference basis
+ *    > X are the coordinates of a beacon in the reference basis
  *    > Y are the coordinates of a beacon in this scanner's basis
- *    > D is the orientation matrix 
+ *    > D is the transformation matrix from Y to X
  */
 typedef struct { 
     unsigned short sparsity[DIM]; // Which column is non-zero for each colum

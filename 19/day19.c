@@ -115,13 +115,75 @@ ScannerArray ReadInput(const bool is_test)
     return scanners;
 }
 
-typedef Beacon * BeaconPtr;
+typedef Beacon * BeaconPtr; // Convenience typedef
 
 /**
+ * Checks if an orientation allows for 12 shared points.
+ * 
+ * Since we know that we can express any linear transformation as
+ * 
+ *                  X - S = D * Y
+ * 
+ *  - X are the coordinates according to A
+ *  - Y are the coordinates according to B
+ *  - D is the transformation matrix of this orientation
+ *  - S are the coordinates of B according to A
+ * 
+ * We can take a pair of points and subtract their equations:
+ *
+ *                  Xi - S = D * Yi
+ *                -(Xj - S = D * Yj)
+ *                -------------------
+ *                 Xi - Xj = D * (Yi - Yj)
+ *
+ * we have removed the 3 degrees of freedom related to S, leaving us with only 1 more (orientation)
+ * 
+ * We can check for all combinations (i,j) in order to find valid overlaps. If, for a given
+ * orientation we have 11 pairs with a common member {(i, j1), (i, j2), ... (i, j11)}, we know
+ * there will be 12 possibly shared points P={j1 ... j11, i}. The statement of the problem assures us
+ * this is enough to consider this an overlap.
+ * 
+ * Hence we will know that D corresponds to a valid orientation. The only missing information will be
+ * the offset S. This has 3 degrees of freedom, so a single point known in both coordinate systems will
+ * be enough. Hence, the pair {Xi, Yi} is returned in the last argument.
+ */
+bool ValidOrientation(Scanner * A, Scanner * B, size_t orientation_id, BeaconPtr match[2])
+{
+    Orientation D = ConstructOrientation(orientation_id);
+
+    for(Beacon * source_A = A->beacons.begin; source_A != A->beacons.end; ++source_A)
+    {
+        for(Beacon * source_B = B->beacons.begin; source_B != B->beacons.end; ++source_B)
+        {
+            // Assume source_A and source_B are the same point seen form diferent coordinates
+            // Can we find 11 other shared points?
+            unsigned int n_matches = CountMatches(source_A, source_B, A->beacons, B->beacons, &D);
+
+            if(n_matches >= 11) {
+                match[0] = source_A;
+                match[1] = source_B;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
+ *
  * D is the matrix to convert:
- *    X = D*Y
- * - X are the coordinate in A's basis
- * - Y are the coordinate in B's basis
+ * 
+ *                         ΔX = D*ΔY
+ * 
+ * - ΔX = Xj - Xi      are the coordinate's offsets in A's basis
+ * - ΔY = Yj - Yi      are the coordinate's offsets in B's basis
+ * 
+ * Source_A and _B are X_i and Y_i
+ * targets_A and _B are the set of possible X_j and Y_j
+ * 
+ * See ValidOrientation's comment for better context
+ * 
  */
 unsigned int CountMatches(
     Beacon const * source_A,
@@ -155,32 +217,9 @@ unsigned int CountMatches(
     return n_valid_vectors;
 }
 
-
-bool ValidOrientation(Scanner * A, Scanner * B, size_t orientation_id, BeaconPtr match[2])
-{
-    Orientation D = ConstructOrientation(orientation_id);
-
-    for(Beacon * source_A = A->beacons.begin; source_A != A->beacons.end; ++source_A)
-    {
-        for(Beacon * source_B = B->beacons.begin; source_B != B->beacons.end; ++source_B)
-        {
-            // Assume source_A and source_B are the same point seen form diferent coordinates
-            // Can we find 11 other shared points?
-            unsigned int n_matches = CountMatches(source_A, source_B, A->beacons, B->beacons, &D);
-
-            if(n_matches >= 11) {
-                match[0] = source_A;
-                match[1] = source_B;
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
 /**
- * Returns the first orientation which works
+ * Returns the first orientation of B with respect to A which allows for 12
+ * overlapping points
  */
 bool CheckOverlap(Scanner * A, Scanner * B, ConnexionArray * overlaps)
 {
@@ -218,6 +257,9 @@ ConnexionArray FindOverlaps(ScannerArray scanners)
     return overlaps;
 }
 
+/**
+ * Transforms the coordinates of all beacons detected by a scanner
+ */
 void TransformBeaconCoordinates(Scanner * scanner)
 {
     for(Beacon * it=scanner->beacons.begin; it!=scanner->beacons.end; ++it)
