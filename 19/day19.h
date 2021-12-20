@@ -52,6 +52,7 @@ typedef struct {
  */
 typedef struct 
 {
+    size_t * id;
     Vector3D * data;
     size_t * refcount;
 } BeaconPtr;
@@ -59,25 +60,32 @@ typedef struct
 TEMPLATE_VECTOR(Vector3D) PointsArray;
 TEMPLATE_VECTOR(BeaconPtr) BeaconPtrArray;
 
-typedef struct 
+struct scanner_connection;
+TEMPLATE_VECTOR(struct scanner_connection) ConnexionArray;
+
+typedef struct scanner
 {
     size_t id; // Probably won't use it
+    
+    ConnexionArray connections;
+    bool connected;
+
     Orientation orientation;
+    Vector3D location;
+    
     BeaconPtrArray beacons;
     Vector3D location;
 } Scanner;
 
 TEMPLATE_VECTOR(Scanner) ScannerArray;
 
-typedef struct {
-    BeaconPtr X_i;
-    BeaconPtr X_j;
-} Match;
+typedef struct scanner_connection {
+    Scanner * parent;
+    Scanner * child;
+    Orientation orientation_change;
+} ScannerConnection;
 
-TEMPLATE_VECTOR(Match) MatchArray;
-
-
-BeaconPtr NewBeaconPtr(Int x, Int y, Int z);
+BeaconPtr NewBeaconPtr(size_t id, Int x, Int y, Int z);
 BeaconPtr CopyPtr(BeaconPtr ptr);
 void FreePtr(BeaconPtr ptr);
 void PrintBeacon(BeaconPtr b);
