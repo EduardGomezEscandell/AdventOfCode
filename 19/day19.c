@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "common/file_utils.h"
+#include "common/matrix.h"
 #include "common/vector.h"
 
 Beacon NewBeacon(size_t id, Int x, Int y, Int z)
@@ -222,30 +223,58 @@ ConnexionArray FindOverlaps(ScannerArray scanners)
     return overlaps;
 }
 
-void PropagateOrientation(Scanner * this)
+void TransformBeaconCoordinates(Scanner * scanner)
+{
+    for(Beacon * it=scanner->beacons.begin; it!=scanner->beacons.end; ++it)
+    {
+        it->loc = vecmult(&scanner->orientation, it->loc);
+        accumulate(&it->loc, scanner->location);
+    }
+}
+
+
+void PropagateInformation(Scanner * this)
 {
     for(ScannerConnection * it = this->connections.begin; it != this->connections.end; ++it)
     {
-        bool this_is_parent = it->parent == this;
-        Scanner * other = this_is_parent ? it->child : it->parent;
+        bool this_is_ruler = it->ruler == this;
+        
+        Scanner * other = this_is_ruler ? it->dependent : it->ruler;
 
         if(other->connected) continue;
-        printf("Propagating %ld -> %ld\n", this->id, other->id);
-        
+
+        // Obtaining orientation relative to scanner #0
         Orientation T;
-        if(this_is_parent)
-        {
-            T = it->orientation_change;
-        }
-        else
+        if(this_is_ruler)
         {
             T = inv(&it->orientation_change);
         }
+        else
+        {
+            T = it->orientation_change;
+        }
 
         other->orientation = matmul(&this->orientation, &T);
-        other->connected = true;
 
-        PropagateOrientation(other);
+        // Obtaining location relative to scanner #0
+        Vector3D x = this_is_ruler ? it->beacon_ruler->loc     : it->beacon_dependent->loc;
+        Vector3D y = this_is_ruler ? it->beacon_dependent->loc : it->beacon_ruler->loc;
+
+        Vector3D T_y = vecmult(&other->orientation, y);
+        other->location = VectorFromSourceAndDestination(T_y, x);
+
+        printf("--------------------------------\n");
+        printf("Propagating %ld -> %ld with:\n", this->id, other->id);
+        printf("  Master: "); PrintVector3D(x);
+        printf("  Slave: "); PrintVector3D(y);
+        printf("Orig. Orientation: \n"); PrintOrientation(&this->orientation);
+        printf("Rel. Orientation: \n"); PrintOrientation(&T);
+        printf("Location: "); PrintVector3D(other->location);
+        printf("Orientation: \n"); PrintOrientation(&other->orientation);
+
+        other->connected = true;
+        TransformBeaconCoordinates(other);
+        PropagateInformation(other);
     }
 
     fflush(stdout);
@@ -262,14 +291,16 @@ solution_t SolvePart1(const bool is_test)
     ConnexionArray overlaps = FindOverlaps(scanners);
 
     scanners.begin->connected = true;
-    scanners.begin->orientation = ConstructOrientation(1);
+    scanners.begin->orientation = ConstructOrientation(0);
+    scanners.begin->location = NewVector3D(0,0,0);
 
-    PropagateOrientation(scanners.begin);
+    PropagateInformation(scanners.begin);
 
     for(Scanner *s = scanners.begin; s != scanners.end; ++s)
         ClearScanner(s);
     CLEAR(scanners);
     CLEAR(overlaps);
+
 
     return is_test;
 }

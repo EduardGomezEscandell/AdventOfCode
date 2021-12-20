@@ -37,15 +37,16 @@ typedef struct scanner
     BeaconArray beacons;
 } Scanner;
 
-typedef struct scanner_connection {
-    Scanner * parent;
-    Scanner * child;
+typedef struct scanner_connection
+{
+    Scanner * ruler;
+    Scanner * dependent;
     
     Orientation orientation_change;
     
     // Same beacon seen from both perspectives:
-    Beacon * beacon_parent;
-    Beacon * beacon_child;
+    Beacon * beacon_ruler;
+    Beacon * beacon_dependent;
 } ScannerConnection;
 
 TEMPLATE_VECTOR(Scanner) ScannerArray;

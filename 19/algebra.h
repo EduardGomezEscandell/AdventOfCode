@@ -51,6 +51,7 @@ Vector3D VectorFromSourceAndDestination(Vector3D source, Vector3D destination);
 
 Orientation ConstructOrientation(size_t permutation_id);
 
+void accumulate(Vector3D * accumulator, Vector3D added);
 Vector3D vecmult(Orientation * D, Vector3D in);
 Orientation matmul(Orientation * A, Orientation * B);
 

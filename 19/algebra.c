@@ -1,6 +1,5 @@
 #include "algebra.h"
 
-
 #define SET_ARRAY(arr, x, y, z) do {        \
     arr[0]=x;                               \
     arr[1]=y;                               \
@@ -45,6 +44,15 @@ Orientation ConstructOrientation(size_t permutation_id)
     return D;
 }
 
+// accumulator += added
+void accumulate(Vector3D * accumulator, Vector3D added)
+{
+    for(size_t i=0; i<DIM; ++i)
+    {
+        accumulator->data[i] += added.data[i];
+    }
+}
+
 // Matrix-vector product
 Vector3D vecmult(Orientation * D, Vector3D in)
 {
@@ -56,11 +64,11 @@ Vector3D vecmult(Orientation * D, Vector3D in)
     return out;
 }
 
-unsigned short which_row_has_column(unsigned short sparsity[DIM], unsigned short column)
+size_t find_row_with_non_zero_column(unsigned short sparsity[DIM], unsigned short non_zero_column)
 {
     for(size_t i=0; i<DIM; ++i)
     {
-        if(sparsity[i] == column) return i;
+        if(sparsity[i] == non_zero_column) return i;
     }
     return -1;
 }
@@ -71,7 +79,7 @@ Orientation matmul(Orientation * A, Orientation * B)
     Orientation out;
     for(size_t i=0; i<DIM; ++i)
     {
-        short j =  which_row_has_column(B->sparsity, A->sparsity[i]);
+        short j = find_row_with_non_zero_column(B->sparsity, A->sparsity[i]);
         out.sparsity[i] = j;
         out.values[i]   = A->values[i] * B->values[j];
     }
@@ -84,8 +92,10 @@ Orientation inv(Orientation * D)
     Orientation out;
     for(size_t i=0; i<DIM; ++i)
     {
-        out.sparsity[i] = D->sparsity[i];
-        out.values[i]   = D->values[(i+1)%DIM] * D->values[(i+2)%DIM];
+        const size_t j = (i+1)%DIM;
+        const size_t k = (i+2)%DIM;
+        out.values[i] = D->values[j]*D->values[k];
+        out.sparsity[i] = find_row_with_non_zero_column(D->sparsity, i);
     }
     return out;
 }
