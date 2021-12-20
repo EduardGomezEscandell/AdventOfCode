@@ -115,11 +115,9 @@ unsigned int CountMatches(
     Beacon const * source_B,
     BeaconArray targets_A,
     BeaconArray targets_B,
-    Orientation * D,
-    BeaconPtr * sample_match_B)
+    Orientation * D)
 {
     unsigned int n_valid_vectors = 0;
-    *sample_match_B = NULL;
 
     for(Beacon * target_B=targets_B.begin; target_B != targets_B.end; ++target_B)
     {
@@ -136,7 +134,6 @@ unsigned int CountMatches(
 
             if(eq(searched_delta_x, delta_x))
             {
-                *sample_match_B = target_B;
                 n_valid_vectors += 1;
             }
         }
@@ -152,27 +149,15 @@ bool ValidOrientation(Scanner * A, Scanner * B, size_t permutation_id, BeaconPtr
 
     for(Beacon * source_A = A->beacons.begin; source_A != A->beacons.end; ++source_A)
     {
-        unsigned int n_matches_global = 0;
-        Beacon * matcher_B = NULL;
-
         for(Beacon * source_B = B->beacons.begin; source_B != B->beacons.end; ++source_B)
         {
             // Assume source_A and source_B are the same point seen form diferent coordinates
             // Can we find 11 other shared points?
-            unsigned int n_matches = CountMatches(source_A, source_B, A->beacons, B->beacons, &D, &matcher_B);
+            unsigned int n_matches = CountMatches(source_A, source_B, A->beacons, B->beacons, &D);
 
             if(n_matches >= 11) {
                 match[0] = source_A;
                 match[1] = source_B;
-                return true;
-            }
-
-            n_matches_global += n_matches;
-
-            if(n_matches_global >= 11)
-            {
-                match[0] = source_A;
-                match[1] = matcher_B;
                 return true;
             }
         }
@@ -285,6 +270,9 @@ void PropagateInformation(Scanner * this)
 solution_t SolvePart1(const bool is_test)
 {
     if(!is_test) return 0;
+
+    Orientation M = ConstructOrientation(8);
+    PrintOrientation(&M);
 
     ScannerArray scanners = ReadInput(is_test);
 

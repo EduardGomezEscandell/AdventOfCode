@@ -25,20 +25,22 @@ Orientation ConstructOrientation(size_t permutation_id)
 
     Orientation D;
 
+    Int d; // Determinant if filled with ones
+
     switch (permutation_id % 6) {
-        case 0: SET_ARRAY(D.sparsity, 0, 1, 2); break;
-        case 1: SET_ARRAY(D.sparsity, 0, 2, 1); break;
-        case 2: SET_ARRAY(D.sparsity, 1, 0, 2); break;
-        case 3: SET_ARRAY(D.sparsity, 1, 2, 0); break;
-        case 4: SET_ARRAY(D.sparsity, 2, 0, 1); break;
-        case 5: SET_ARRAY(D.sparsity, 2, 1, 0); break;
+        case 0: SET_ARRAY(D.sparsity, 0, 1, 2); d =  1; break;
+        case 1: SET_ARRAY(D.sparsity, 0, 2, 1); d = -1; break;
+        case 2: SET_ARRAY(D.sparsity, 1, 0, 2); d = -1; break;
+        case 3: SET_ARRAY(D.sparsity, 1, 2, 0); d =  1; break;
+        case 4: SET_ARRAY(D.sparsity, 2, 0, 1); d =  1; break;
+        case 5: SET_ARRAY(D.sparsity, 2, 1, 0); d = -1; break;
     }
 
     switch (permutation_id / 6) {
-        case 0: SET_ARRAY(D.values,  1, 1, 1); break;
-        case 1: SET_ARRAY(D.values, -1,-1, 1); break;
-        case 2: SET_ARRAY(D.values, -1, 1,-1); break;
-        case 3: SET_ARRAY(D.values,  1,-1,-1); break;
+        case 0: SET_ARRAY(D.values,  d, d, d); break;
+        case 1: SET_ARRAY(D.values, -d,-d, d); break;
+        case 2: SET_ARRAY(D.values, -d, d,-d); break;
+        case 3: SET_ARRAY(D.values,  d,-d,-d); break;
     }
 
     return D;
