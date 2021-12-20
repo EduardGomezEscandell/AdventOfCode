@@ -5,47 +5,12 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include "07/day7.h"
 #include "common/testing.h"
 #include "common/vector.h"
 
+#include "algebra.h"
+
 typedef int solution_t; // Just in case we have to switch to long
-typedef int Int; // Vector3D coordinate data type
-
-TEMPLATE_VECTOR(int) IntArray;
-
-/* Do not change! This is defined for readibility,
- * the code is not valid for values other than 3
- */
-#define DIM 3 
-
-/**
- * Good'ol vectors. Can be accessed with indeces or coordinates:
- *
- *            vector.data[0] == vector.coord.x
- * 
- */
-typedef union {
-    Int data[3];
-    struct {
-        Int x,y,z;
-    } coord;
-} Vector3D;
-
-
-/* A 3x3 matrix which:
- *  - In every row, and every column, there is a single non-zero value
- *  - All non-zero entries are either +1 or -1
- *  - Has determinant 1
- *  - The following property holds: X=D*Y, where:
- *    > X are the coordinates of a beacons in the reference basis
- *    > Y are the coordinates of a beacon in this scanner's basis
- *    > D is the orientation matrix 
- */
-typedef struct { 
-    unsigned short sparsity[DIM]; // Which column is non-zero for each colum
-    short values[DIM];            // The value of the non-zero entry (+1 or -1)
-} Orientation;
 
 typedef struct 
 {
@@ -72,24 +37,16 @@ typedef struct scanner
     BeaconArray beacons;
 } Scanner;
 
-TEMPLATE_VECTOR(Scanner) ScannerArray;
-
 typedef struct scanner_connection {
     Scanner * parent;
     Scanner * child;
     Orientation orientation_change;
 } ScannerConnection;
 
+TEMPLATE_VECTOR(Scanner) ScannerArray;
+
 Beacon NewBeacon(size_t id, Int x, Int y, Int z);
 void PrintBeacon(Beacon * b);
-
-Vector3D NewVector3D(Int x, Int y, Int z);
-Orientation ConstructOrientation(size_t permutation_id);
-
-void PrintOrientation(Orientation * D);
-void PrintVector3D(Vector3D v);
-
-Vector3D mult(Orientation * D, Vector3D in);
 
 // Solving
 solution_t SolvePart1(const bool is_test);
