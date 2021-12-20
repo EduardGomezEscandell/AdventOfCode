@@ -304,8 +304,6 @@ void PropagateInformation(Scanner * this)
         TransformBeaconCoordinates(other);
         PropagateInformation(other);
     }
-
-    fflush(stdout);
 }
 
 int compare(Vector3D const * u, Vector3D const * v)
