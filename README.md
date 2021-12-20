@@ -15,7 +15,8 @@ They must be run from the project's root folder
 # Data
 To change the data you may modify file `data/xx/data.txt` where `xx` is the zero-padded day.
 
-Some solutions assume that there is a single newline at the end of the file, so ensure it is there.
+Some solutions assume that there is a newline at the end of the file, some others don't care.
+Just write it always to ensure it works.
 
 # Advent of code
 The website of the challenge can be found at https://adventofcode.com/
