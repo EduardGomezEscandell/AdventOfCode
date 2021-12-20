@@ -10,6 +10,7 @@
 #include "common/file_utils.h"
 #include "common/hash_table.h"
 #include "common/matrix.h"
+#include "common/testing.h"
 #include "common/vector.h"
 
 HT_DEFINE_SET_COMPARISON   (size_t, Vector3D, int, Vector3DSet)
@@ -40,6 +41,7 @@ void PrintBeacon(Beacon * b)
 void ClearScanner(Scanner * scanner)
 {
     CLEAR(scanner->beacons);
+    CLEAR(scanner->connections);
 }
 
 Scanner ReadScanner(FILE* file, bool * last_scanner, size_t * line_count)
@@ -296,40 +298,73 @@ Vector3DSet CreateVector3DSet(ScannerArray scanners)
     return unique_beacons;
 }
 
-
-solution_t SolvePart1(const bool is_test)
+long Manhattan(Vector3D * u, Vector3D * v)
 {
+    long r = 0;
+    for(size_t i=0; i!=DIM; ++i)
+        r += abs(u->data[i] - v->data[i]);
+    return r;
+}
+
+
+long FindGreatestManhatanDistance(ScannerArray scanners)
+{
+    long max_distance = 0;
+    for(Scanner *it1 = scanners.begin; it1 != scanners.end; ++it1) {
+        for(Scanner *it2 = it1 + 1; it2 != scanners.end; ++it2)
+        {
+            long distance = Manhattan(&it1->location, &it2->location);
+
+            max_distance = MAX(max_distance, distance);
+        }
+    }
+    return max_distance;
+}
+
+
+solution_t Solve(const bool is_test)
+{
+    solution_t solution = {0,0};
+    
+    if(!is_test) return solution;
+    
+    // Reading
     ScannerArray scanners = ReadInput(is_test);
 
+    // Creating map
     ConnexionArray overlaps = FindOverlaps(scanners);
-
     scanners.begin->connected = true;
     scanners.begin->orientation = ConstructOrientation(0);
     scanners.begin->location = NewVector3D(0,0,0);
-    
     PropagateInformation(scanners.begin);
-
+    
+    // Solving
     Vector3DSet unique_beacons = CreateVector3DSet(scanners);
+    solution.part_1 = SIZE(unique_beacons.data);
+    solution.part_2 = FindGreatestManhatanDistance(scanners);
 
-    solution_t n_unique_beacons = SIZE(unique_beacons.data);
-
+    // Cleaning
     for(Scanner *s = scanners.begin; s != scanners.end; ++s)
         ClearScanner(s);
     ClearVector3DSet(&unique_beacons);
     CLEAR(scanners);
     CLEAR(overlaps);
 
-
-    return n_unique_beacons;
+    return solution;
 }
 
-solution_t SolvePart2(const bool is_test)
+
+day19_test_result Test()
 {
-    // FILE * file = GetFile(is_test, 18);
+    day19_test_result t;
+    
+    t.expected.part_1 = 79;
+    t.expected.part_2 = 3621;
 
-    return is_test;
+    t.obtained = Solve(true);
+    
+    t.success[0] = t.expected.part_1 == t.obtained.part_1;
+    t.success[1] = t.expected.part_2 == t.obtained.part_2;
+    
+    return t;
 }
-
-
-DEFINE_TEST(1, 79)
-DEFINE_TEST(2, 1)

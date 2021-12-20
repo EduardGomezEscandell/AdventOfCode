@@ -11,8 +11,6 @@
 
 #include "algebra.h"
 
-typedef int solution_t; // Just in case we have to switch to long
-
 typedef struct 
 {
     size_t id; // helpful for debugging
@@ -58,10 +56,20 @@ Beacon NewBeacon(size_t id, Int x, Int y, Int z);
 void PrintBeacon(Beacon * b);
 
 // Solving
-solution_t SolvePart1(const bool is_test);
-solution_t SolvePart2(const bool is_test);
+typedef struct {
+    size_t part_1;
+    long part_2;
+} solution_t;
 
-DECLARE_TEST(1);
-DECLARE_TEST(2);
+
+solution_t Solve(const bool is_test);
+
+typedef struct {
+    solution_t expected;
+    solution_t obtained;
+    bool success[2];
+} day19_test_result;
+
+day19_test_result Test();
 
 #endif
