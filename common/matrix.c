@@ -17,13 +17,13 @@ Matrix EmptyMatrix(size_t rows, size_t cols)
     Matrix mat;
 
     size_t min_capacity = 10;
-    
+
     mat.crows = rows > min_capacity ? rows : min_capacity;
     mat.ccols = cols > min_capacity ? cols : min_capacity;
-    
+
     mat.nrows = rows;
     mat.ncols = cols;
-    
+
     mat.data = malloc(mat.crows * sizeof(long*));
 
     for(size_t row=0; row < mat.nrows; ++row)
@@ -73,7 +73,7 @@ Matrix ReadMatrix(FILE * file)
     ssize_t read = 0;
 
     Matrix mat;
-    
+
     size_t row = 0;
     while((read = getline(&line, &len, file)) != -1)
     {
@@ -131,7 +131,20 @@ void PrintMatrix(const Matrix * const mat)
 
 HT_DEFINE_SET_COMPARISON    (size_t, SpIndex, spdata_type, DokMatrix)
 HT_DEFINE_NEW_AND_CLEAR     (size_t, SpIndex, spdata_type, DokMatrix)
-HT_DEFINE_FIND              (size_t, SpIndex, spdata_type, DokMatrix)
+DokMatrixSearchResult DokMatrixFind(DokMatrix *ht, const SpIndex *key) {
+  const size_t n_buckets = ((ht->buckets).end - (ht->buckets).begin);
+  const size_t hash = ht->Hash(key, n_buckets);
+  DokMatrixSearchResult sr;
+  sr.bucket = ht->buckets.begin + hash;
+  for (DokMatrixPair **it = sr.bucket->begin; it != sr.bucket->end; ++it) {
+    if (ht->Compare(&(*it)->key, key) == 0) {
+      sr.pair = *it;
+      return sr;
+    }
+  }
+  sr.pair = ((void *)0);
+  return sr;
+}
 HT_DEFINE_FIND_OR_EMPLACE   (size_t, SpIndex, spdata_type, DokMatrix)
 HT_DEFINE_RESERVE           (size_t, SpIndex, spdata_type, DokMatrix)
 HT_DEFINE_REMOVE            (size_t, SpIndex, spdata_type, DokMatrix)
@@ -151,6 +164,8 @@ SparseMatrix NewSparseMatrix()
 
     sp.nrows = 0;
     sp.ncols = 0;
+    sp.n_negrows = 0;
+    sp.n_negcols = 0;
 
     return sp;
 }
@@ -162,7 +177,7 @@ void ClearSparseMatrix(SparseMatrix * sp)
     sp->nrows = 0;
 }
 
-void SpPush(SparseMatrix * sp, size_t row, size_t col, const spdata_type * value)
+void SpPush(SparseMatrix * sp, ssize_t row, ssize_t col, const spdata_type * value)
 {
     if(*value == 0) return;
 
@@ -171,24 +186,30 @@ void SpPush(SparseMatrix * sp, size_t row, size_t col, const spdata_type * value
 
     if(row >= sp->nrows) sp->nrows = row + 1;
     if(col >= sp->ncols) sp->ncols = col + 1;
+
+    if(row < sp->n_negrows) sp->n_negrows = row;
+    if(col < sp->n_negcols) sp->n_negcols = col;
 }
 
 void SpAppend(SparseMatrix * reciever, const SparseMatrix * giver)
 {
     DokMatrixReserve(&reciever->data, SIZE(reciever->data.data) + SIZE(giver->data.data));
-    
+
     for(const DokMatrixPair * it = giver->data.data.begin; it != giver->data.data.end; ++it)
     {
         if(it->value == 0) continue;
         spdata_type res = *DokMatrixFindOrEmplace(&reciever->data, it->key, 0) += it->value;
-        
+
         if(res != 0) continue;
-        
+
         DokMatrixRemove(&reciever->data, it->key);
     }
 
     reciever->nrows = MAX(reciever->nrows, giver->nrows);
     reciever->ncols = MAX(reciever->ncols, giver->ncols);
+
+    reciever->n_negrows = MIN(reciever->n_negrows, giver->n_negrows);
+    reciever->n_negcols = MIN(reciever->n_negcols, giver->n_negcols);
 }
 
 int SpIndexCompare(const SpIndex * a, const SpIndex * b)
@@ -236,11 +257,22 @@ void SpPrintExpanded(SparseMatrix * sp, const char * format, const char * blank)
 void SpPrintSparsity(SparseMatrix * sp)
 {
     SpIndex index;
-    for(index.row=0; index.row<sp->nrows; ++index.row)
+    for(index.row=sp->n_negrows; index.row<sp->nrows; ++index.row)
     {
         printf("[");
-        for(index.col=0; index.col<sp->ncols; ++index.col)
+        if(sp->n_negrows < 0 && index.row==0){
+            for(ssize_t col=sp->n_negcols; col<sp->ncols; ++col){
+                if(sp->n_negcols < 0 && col==0) printf("+");
+                else                            printf("-");
+            }
+            if(sp->n_negcols < 0) printf("-");
+            printf("]\n[");
+        }
+
+        for(index.col=sp->n_negcols; index.col<sp->ncols; ++index.col)
         {
+            if(sp->n_negcols < 0 && index.col==0) printf("|");
+
             DokMatrixSearchResult res = DokMatrixFind(&sp->data, &index);
             if(res.pair)
                 printf("#");
@@ -250,4 +282,14 @@ void SpPrintSparsity(SparseMatrix * sp)
         printf("]\n");
     }
     printf("\n");
+}
+
+spdata_type SpRead(SparseMatrix * sp, ssize_t row, ssize_t col)
+{
+    SpIndex index = {row, col};
+    DokMatrixSearchResult res = DokMatrixFind(&sp->data, &index);
+
+    if(!res.pair) return 0;
+
+    return res.pair->value;
 }

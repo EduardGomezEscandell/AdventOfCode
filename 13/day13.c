@@ -60,7 +60,7 @@ void ReadData(FILE * file, SparseMatrix * sp, FoldVector * folds)
     fclose(file);
 }
 
-void YFold(SparseMatrix * sp, const size_t y_fold)
+void YFold(SparseMatrix * sp, const ssize_t y_fold)
 {
     const size_t size = SIZE(sp->data.data);
     for(size_t i=0; i < size; ++i)
@@ -84,7 +84,7 @@ void YFold(SparseMatrix * sp, const size_t y_fold)
     SpPurgeZeros(sp);
 }
 
-void XFold(SparseMatrix * sp, const size_t x_fold)
+void XFold(SparseMatrix * sp, const ssize_t x_fold)
 {
     const size_t size = SIZE(sp->data.data);
     for(size_t i=0; i < size; ++i)

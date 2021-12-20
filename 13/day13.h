@@ -20,8 +20,8 @@ TEMPLATE_VECTOR(Fold) FoldVector;
 void ReadLine(SparseMatrix * sp, char * line);
 void ReadData(FILE * file, SparseMatrix * sp, FoldVector * folds);
 
-void YFold(SparseMatrix * sp, const size_t y_fold);
-void XFold(SparseMatrix * sp, const size_t x_fold);
+void YFold(SparseMatrix * sp, const ssize_t y_fold);
+void XFold(SparseMatrix * sp, const ssize_t x_fold);
 
 // Solving
 typedef int solution_t;

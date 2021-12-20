@@ -35,8 +35,8 @@ typedef long long int spdata_type;
 
 typedef struct
 {
-    size_t row;
-    size_t col;
+    ssize_t row;
+    ssize_t col;
 } SpIndex;
 
 TEMPLATE_HASH_TABLE(size_t, SpIndex, spdata_type, DokMatrix);
@@ -44,14 +44,18 @@ TEMPLATE_HASH_TABLE(size_t, SpIndex, spdata_type, DokMatrix);
 typedef struct
 {
     DokMatrix data;
-    size_t nrows;
-    size_t ncols;
+    ssize_t nrows;
+    ssize_t ncols;
+
+    ssize_t n_negrows;
+    ssize_t n_negcols;
 } SparseMatrix;
 
 SparseMatrix NewSparseMatrix();
 void ClearSparseMatrix(SparseMatrix * sp);
 
-void SpPush(SparseMatrix * sp, size_t row, size_t col, const spdata_type * value);
+spdata_type SpRead(SparseMatrix * sp, ssize_t row, ssize_t col);
+void SpPush(SparseMatrix * sp, ssize_t row, ssize_t col, const spdata_type * value);
 void SpAppend(SparseMatrix * reciever, const SparseMatrix * giver);
 
 int SpIndexCompare(const SpIndex * A, const SpIndex * B);
