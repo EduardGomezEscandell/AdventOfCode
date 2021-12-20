@@ -293,3 +293,14 @@ spdata_type SpRead(SparseMatrix * sp, ssize_t row, ssize_t col)
 
     return res.pair->value;
 }
+
+void SpReserve(SparseMatrix * sp, size_t n_entries)
+{
+    DokMatrixReserve(&sp->data, n_entries);
+}
+
+size_t SpNumNonZero(SparseMatrix * sp)
+{
+    SpPurgeZeros(sp);
+    return SIZE(sp->data.data);
+}

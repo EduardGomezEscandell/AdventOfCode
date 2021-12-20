@@ -55,11 +55,13 @@ SparseMatrix NewSparseMatrix();
 void ClearSparseMatrix(SparseMatrix * sp);
 
 spdata_type SpRead(SparseMatrix * sp, ssize_t row, ssize_t col);
+size_t SpNumNonZero(SparseMatrix * sp);
+
 void SpPush(SparseMatrix * sp, ssize_t row, ssize_t col, const spdata_type * value);
 void SpAppend(SparseMatrix * reciever, const SparseMatrix * giver);
+void SpReserve(SparseMatrix * sp, size_t n_entries);
 
 int SpIndexCompare(const SpIndex * A, const SpIndex * B);
-
 void SpPurgeZeros(SparseMatrix * sp);
 
 void SpPrint(SparseMatrix * sp);

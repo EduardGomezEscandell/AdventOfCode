@@ -1,6 +1,7 @@
 #include "day20.h"
 #include "03/day3.h"
 #include "common/file_utils.h"
+#include "common/matrix.h"
 
 #include <stddef.h>
 
@@ -91,6 +92,7 @@ binary_t ExtractNeighbourhood(SparseMatrix * image, ssize_t row, ssize_t col, bo
 void Update(SparseMatrix * image, BoolArray algorithm, bool * fill_value)
 {
     SparseMatrix out = NewSparseMatrix();
+    SpReserve(&out, SpNumNonZero(image));
 
     for(ssize_t row=image->n_negrows-5; row<image->nrows+5; ++row) {
         for(ssize_t col=image->n_negcols-5; col<image->ncols+5; ++col)
@@ -136,7 +138,7 @@ solution_t Solve(const bool is_test, const size_t n_iterations)
         Update(&image, algorithm, &fill_value);
     }
 
-    solution_t nnz = SIZE(image.data.data);
+    solution_t nnz = SpNumNonZero(&image);
 
     CLEAR(algorithm);
     ClearSparseMatrix(&image);
