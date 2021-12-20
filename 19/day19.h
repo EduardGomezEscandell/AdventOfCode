@@ -7,6 +7,7 @@
 
 #include "common/testing.h"
 #include "common/vector.h"
+#include "common/hash_table.h"
 
 #include "algebra.h"
 
@@ -14,7 +15,7 @@ typedef int solution_t; // Just in case we have to switch to long
 
 typedef struct 
 {
-    size_t id;
+    size_t id; // helpful for debugging
     Vector3D loc;
 } Beacon;
 
@@ -50,6 +51,8 @@ typedef struct scanner_connection
 } ScannerConnection;
 
 TEMPLATE_VECTOR(Scanner) ScannerArray;
+
+TEMPLATE_HASH_TABLE(size_t, Vector3D, int, Vector3DSet);
 
 Beacon NewBeacon(size_t id, Int x, Int y, Int z);
 void PrintBeacon(Beacon * b);

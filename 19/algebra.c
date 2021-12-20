@@ -15,6 +15,15 @@ Vector3D NewVector3D(Int x, Int y, Int z)
     return t;
 }
 
+Int LeviCivita(const unsigned short indices[DIM])
+{
+    const unsigned short i = indices[0];
+    const unsigned short j = indices[1];
+    const unsigned short k = indices[2];
+    return ((i+1)%DIM==j && (i+2)%DIM==k) ? 1 : -1;
+}
+
+
 Orientation ConstructOrientation(size_t permutation_id)
 {
     if(permutation_id >= 24)
@@ -25,22 +34,22 @@ Orientation ConstructOrientation(size_t permutation_id)
 
     Orientation D;
 
-    Int d; // Determinant if filled with ones
-
     switch (permutation_id % 6) {
-        case 0: SET_ARRAY(D.sparsity, 0, 1, 2); d =  1; break;
-        case 1: SET_ARRAY(D.sparsity, 0, 2, 1); d = -1; break;
-        case 2: SET_ARRAY(D.sparsity, 1, 0, 2); d = -1; break;
-        case 3: SET_ARRAY(D.sparsity, 1, 2, 0); d =  1; break;
-        case 4: SET_ARRAY(D.sparsity, 2, 0, 1); d =  1; break;
-        case 5: SET_ARRAY(D.sparsity, 2, 1, 0); d = -1; break;
+        case 0: SET_ARRAY(D.sparsity, 0, 1, 2); break;
+        case 1: SET_ARRAY(D.sparsity, 0, 2, 1); break;
+        case 2: SET_ARRAY(D.sparsity, 1, 0, 2); break;
+        case 3: SET_ARRAY(D.sparsity, 1, 2, 0); break;
+        case 4: SET_ARRAY(D.sparsity, 2, 0, 1); break;
+        case 5: SET_ARRAY(D.sparsity, 2, 1, 0); break;
     }
 
+    Int e = LeviCivita(D.sparsity);
+
     switch (permutation_id / 6) {
-        case 0: SET_ARRAY(D.values,  d, d, d); break;
-        case 1: SET_ARRAY(D.values, -d,-d, d); break;
-        case 2: SET_ARRAY(D.values, -d, d,-d); break;
-        case 3: SET_ARRAY(D.values,  d,-d,-d); break;
+        case 0: SET_ARRAY(D.values,  e, e, e); break;
+        case 1: SET_ARRAY(D.values, -e,-e, e); break;
+        case 2: SET_ARRAY(D.values, -e, e,-e); break;
+        case 3: SET_ARRAY(D.values,  e,-e,-e); break;
     }
 
     return D;
@@ -127,6 +136,14 @@ bool eq(Vector3D A, Vector3D B)
         if(A.data[i] != B.data[i]) return false;
     }
     return true;
+}
+
+size_t hash_vector3d(Vector3D const * v, size_t n_buckets)
+{
+    Int mod = 0;
+    for(Int i=0; i<DIM; ++i)
+        mod += v->data[i];
+    return mod % n_buckets;
 }
 
 /** 

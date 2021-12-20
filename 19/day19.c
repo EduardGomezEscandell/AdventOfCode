@@ -8,8 +8,19 @@
 #include <string.h>
 
 #include "common/file_utils.h"
+#include "common/hash_table.h"
 #include "common/matrix.h"
 #include "common/vector.h"
+
+HT_DEFINE_SET_COMPARISON   (size_t, Vector3D, int, Vector3DSet)
+HT_DEFINE_NEW_AND_CLEAR    (size_t, Vector3D, int, Vector3DSet)
+HT_DEFINE_FIND             (size_t, Vector3D, int, Vector3DSet)
+HT_DEFINE_FIND_OR_EMPLACE  (size_t, Vector3D, int, Vector3DSet)
+HT_DEFINE_RESERVE          (size_t, Vector3D, int, Vector3DSet)
+// HT_DEFINE_REMOVE           (size_t, Vector3D, int, Vector3DSet)
+// HT_DEFINE_PRINT            (size_t, Vector3D, int, Vector3DSet)
+
+
 
 Beacon NewBeacon(size_t id, Int x, Int y, Int z)
 {
@@ -201,6 +212,7 @@ ConnexionArray FindOverlaps(ScannerArray scanners)
             if(CheckOverlap(it1, it2, &overlaps))
             {
                 printf("Scanners #%ld and %ld are compatible\n", it1->id, it2->id);
+                fflush(stdout);
             }
         }
     }
@@ -248,15 +260,6 @@ void PropagateInformation(Scanner * this)
         Vector3D T_y = vecmult(&other->orientation, y);
         other->location = VectorFromSourceAndDestination(T_y, x);
 
-        printf("--------------------------------\n");
-        printf("Propagating %ld -> %ld with:\n", this->id, other->id);
-        printf("  Master: "); PrintVector3D(x);
-        printf("  Slave: "); PrintVector3D(y);
-        printf("Transform1 Orientation: \n"); PrintOrientation(&this->orientation);
-        printf("Transform2 Orientation: \n"); PrintOrientation(&T);
-        printf("Combined orientation: \n"); PrintOrientation(&other->orientation);
-        printf("Location: "); PrintVector3D(other->location);
-
         other->connected = true;
         TransformBeaconCoordinates(other);
         PropagateInformation(other);
@@ -265,15 +268,37 @@ void PropagateInformation(Scanner * this)
     fflush(stdout);
 }
 
+int compare(Vector3D const * u, Vector3D const * v)
+{
+    return eq(*u, *v) ? 0 : 1;
+}
+
+Vector3DSet CreateVector3DSet(ScannerArray scanners)
+{
+    Vector3DSet unique_beacons = NewVector3DSet(hash_vector3d);
+    Vector3DSetSetComparison(&unique_beacons, compare);
+
+    size_t needed_capacity = 0;
+    for(Scanner const * it = scanners.begin; it!=scanners.end; ++it) {
+        needed_capacity += SIZE(it->beacons);
+    }
+
+    Vector3DSetReserve(&unique_beacons, needed_capacity);
+
+    for(Scanner const * s = scanners.begin; s!=scanners.end; ++s)
+    {
+        for(Beacon const * it = s->beacons.begin; it != s->beacons.end; ++it)
+        {
+            *Vector3DSetFindOrEmplace(&unique_beacons, it->loc, 0) += 1;
+        }
+    }
+
+    return unique_beacons;
+}
 
 
 solution_t SolvePart1(const bool is_test)
 {
-    if(!is_test) return 0;
-
-    Orientation M = ConstructOrientation(8);
-    PrintOrientation(&M);
-
     ScannerArray scanners = ReadInput(is_test);
 
     ConnexionArray overlaps = FindOverlaps(scanners);
@@ -281,16 +306,21 @@ solution_t SolvePart1(const bool is_test)
     scanners.begin->connected = true;
     scanners.begin->orientation = ConstructOrientation(0);
     scanners.begin->location = NewVector3D(0,0,0);
-
+    
     PropagateInformation(scanners.begin);
+
+    Vector3DSet unique_beacons = CreateVector3DSet(scanners);
+
+    solution_t n_unique_beacons = SIZE(unique_beacons.data);
 
     for(Scanner *s = scanners.begin; s != scanners.end; ++s)
         ClearScanner(s);
+    ClearVector3DSet(&unique_beacons);
     CLEAR(scanners);
     CLEAR(overlaps);
 
 
-    return is_test;
+    return n_unique_beacons;
 }
 
 solution_t SolvePart2(const bool is_test)
@@ -301,5 +331,5 @@ solution_t SolvePart2(const bool is_test)
 }
 
 
-DEFINE_TEST(1, 1)
+DEFINE_TEST(1, 79)
 DEFINE_TEST(2, 1)

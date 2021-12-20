@@ -57,6 +57,7 @@ Orientation matmul(Orientation const * A, Orientation const * B);
 Orientation transpose(Orientation const * input);
 Orientation inv(Orientation const * D);
 
+size_t hash_vector3d(Vector3D const * v, size_t n_buckets);
 
 bool eq(Vector3D A, Vector3D B);
 

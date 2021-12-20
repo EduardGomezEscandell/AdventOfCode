@@ -131,20 +131,7 @@ void PrintMatrix(const Matrix * const mat)
 
 HT_DEFINE_SET_COMPARISON    (size_t, SpIndex, spdata_type, DokMatrix)
 HT_DEFINE_NEW_AND_CLEAR     (size_t, SpIndex, spdata_type, DokMatrix)
-DokMatrixSearchResult DokMatrixFind(DokMatrix *ht, const SpIndex *key) {
-  const size_t n_buckets = ((ht->buckets).end - (ht->buckets).begin);
-  const size_t hash = ht->Hash(key, n_buckets);
-  DokMatrixSearchResult sr;
-  sr.bucket = ht->buckets.begin + hash;
-  for (DokMatrixPair **it = sr.bucket->begin; it != sr.bucket->end; ++it) {
-    if (ht->Compare(&(*it)->key, key) == 0) {
-      sr.pair = *it;
-      return sr;
-    }
-  }
-  sr.pair = ((void *)0);
-  return sr;
-}
+HT_DEFINE_FIND              (size_t, SpIndex, spdata_type, DokMatrix)
 HT_DEFINE_FIND_OR_EMPLACE   (size_t, SpIndex, spdata_type, DokMatrix)
 HT_DEFINE_RESERVE           (size_t, SpIndex, spdata_type, DokMatrix)
 HT_DEFINE_REMOVE            (size_t, SpIndex, spdata_type, DokMatrix)
