@@ -94,12 +94,12 @@ Orientation inv(Orientation * D)
 /**
  * Computes out=A-B
  */
-Vector3D sub(Vector3D A, Vector3D B)
+Vector3D VectorFromSourceAndDestination(Vector3D source, Vector3D destination)
 {
     Vector3D out;
     for(size_t i=0; i<DIM; ++i)
     {
-        out.data[i] = A.data[i] - B.data[i];
+        out.data[i] = destination.data[i] - source.data[i];
     }
     return out;
 }

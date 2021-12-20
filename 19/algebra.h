@@ -47,6 +47,8 @@ typedef struct {
 
 
 Vector3D NewVector3D(Int x, Int y, Int z);
+Vector3D VectorFromSourceAndDestination(Vector3D source, Vector3D destination);
+
 Orientation ConstructOrientation(size_t permutation_id);
 
 Vector3D vecmult(Orientation * D, Vector3D in);
@@ -54,7 +56,6 @@ Orientation matmul(Orientation * A, Orientation * B);
 
 Orientation inv(Orientation * D);
 
-Vector3D sub(Vector3D A, Vector3D B);
 
 bool eq(Vector3D A, Vector3D B);
 

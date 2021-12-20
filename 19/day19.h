@@ -15,7 +15,7 @@ typedef int solution_t; // Just in case we have to switch to long
 typedef struct 
 {
     size_t id;
-    Vector3D data;
+    Vector3D loc;
 } Beacon;
 
 TEMPLATE_VECTOR(Vector3D) PointsArray;
@@ -40,7 +40,12 @@ typedef struct scanner
 typedef struct scanner_connection {
     Scanner * parent;
     Scanner * child;
+    
     Orientation orientation_change;
+    
+    // Same beacon seen from both perspectives:
+    Beacon * beacon_parent;
+    Beacon * beacon_child;
 } ScannerConnection;
 
 TEMPLATE_VECTOR(Scanner) ScannerArray;
