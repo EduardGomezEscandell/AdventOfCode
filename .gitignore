@@ -2,6 +2,7 @@ build/
 __pycache__/**
 .vscode/**
 .clangd/**
+.cache/**
 *.valgrind
 *.sublime-workspace
 compile_commands.json
