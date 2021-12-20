@@ -267,10 +267,10 @@ void PropagateInformation(Scanner * this)
         printf("Propagating %ld -> %ld with:\n", this->id, other->id);
         printf("  Master: "); PrintVector3D(x);
         printf("  Slave: "); PrintVector3D(y);
-        printf("Orig. Orientation: \n"); PrintOrientation(&this->orientation);
-        printf("Rel. Orientation: \n"); PrintOrientation(&T);
+        printf("Transform1 Orientation: \n"); PrintOrientation(&this->orientation);
+        printf("Transform2 Orientation: \n"); PrintOrientation(&T);
+        printf("Combined orientation: \n"); PrintOrientation(&other->orientation);
         printf("Location: "); PrintVector3D(other->location);
-        printf("Orientation: \n"); PrintOrientation(&other->orientation);
 
         other->connected = true;
         TransformBeaconCoordinates(other);

@@ -54,7 +54,7 @@ void accumulate(Vector3D * accumulator, Vector3D added)
 }
 
 // Matrix-vector product
-Vector3D vecmult(Orientation * D, Vector3D in)
+Vector3D vecmult(Orientation const * D, Vector3D in)
 {
     Vector3D out;
     for(size_t i=0; i<DIM; ++i)
@@ -64,7 +64,7 @@ Vector3D vecmult(Orientation * D, Vector3D in)
     return out;
 }
 
-size_t find_row_with_non_zero_column(unsigned short sparsity[DIM], unsigned short non_zero_column)
+size_t find_row_with_non_zero_column(const unsigned short sparsity[DIM], unsigned short non_zero_column)
 {
     for(size_t i=0; i<DIM; ++i)
     {
@@ -74,7 +74,7 @@ size_t find_row_with_non_zero_column(unsigned short sparsity[DIM], unsigned shor
 }
 
 // Matrix multiplication
-Orientation matmul(Orientation * A, Orientation * B)
+Orientation matmul(Orientation const * A, Orientation const * B)
 {
     Orientation out;
     for(size_t i=0; i<DIM; ++i)
@@ -86,18 +86,22 @@ Orientation matmul(Orientation * A, Orientation * B)
     return out;
 }
 
-// Matrix inversion
-Orientation inv(Orientation * D)
+Orientation transpose(Orientation const * input)
 {
     Orientation out;
     for(size_t i=0; i<DIM; ++i)
     {
-        const size_t j = (i+1)%DIM;
-        const size_t k = (i+2)%DIM;
-        out.values[i] = D->values[j]*D->values[k];
-        out.sparsity[i] = find_row_with_non_zero_column(D->sparsity, i);
+        const Int col = find_row_with_non_zero_column(input->sparsity, i);
+        out.sparsity[i] = col;
+        out.values[i] = input->values[col];
     }
     return out;
+}
+
+// Matrix inversion
+Orientation inv(Orientation const * D)
+{
+    return transpose(D); // Bless you orthonormal matrices
 }
 
 
@@ -126,7 +130,7 @@ bool eq(Vector3D A, Vector3D B)
 /** 
  * Prints the orientation as a 3x3 matrix
  */
-void PrintOrientation(Orientation * D)
+void PrintOrientation(Orientation const * D)
 {
     for(size_t i=0; i<DIM; ++i)
     {

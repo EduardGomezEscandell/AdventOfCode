@@ -52,15 +52,15 @@ Vector3D VectorFromSourceAndDestination(Vector3D source, Vector3D destination);
 Orientation ConstructOrientation(size_t permutation_id);
 
 void accumulate(Vector3D * accumulator, Vector3D added);
-Vector3D vecmult(Orientation * D, Vector3D in);
-Orientation matmul(Orientation * A, Orientation * B);
-
-Orientation inv(Orientation * D);
+Vector3D vecmult(Orientation const * D, Vector3D in);
+Orientation matmul(Orientation const * A, Orientation const * B);
+Orientation transpose(Orientation const * input);
+Orientation inv(Orientation const * D);
 
 
 bool eq(Vector3D A, Vector3D B);
 
-void PrintOrientation(Orientation * D);
+void PrintOrientation(Orientation const * D);
 void PrintVector3D(Vector3D v);
 
 
