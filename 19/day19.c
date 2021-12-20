@@ -164,7 +164,7 @@ bool CheckOverlap(Scanner * A, Scanner * B, ConnexionArray * overlaps)
 {
     for(size_t orientation=0; orientation<24; ++orientation)
     {
-        if(ValidOrientation(B, A, orientation))
+        if(ValidOrientation(A, B, orientation))
         {
             Orientation D = ConstructOrientation(orientation);
             ScannerConnection c = { A, B, D };
@@ -180,11 +180,28 @@ bool CheckOverlap(Scanner * A, Scanner * B, ConnexionArray * overlaps)
     return false;
 }
 
+ConnexionArray FindOverlaps(ScannerArray scanners)
+{
+    ConnexionArray overlaps;
+    NEW_VECTOR(overlaps);
+
+    for(Scanner * it1=scanners.begin; it1 != scanners.end; ++it1) {
+        for(Scanner * it2=it1+1; it2 != scanners.end; ++it2)
+        {
+            if(CheckOverlap(it1, it2, &overlaps))
+            {
+                printf("Scanners #%ld and %ld are compatible\n", it1->id, it2->id);
+            }
+        }
+    }
+
+    return overlaps;
+}
+
 void PropagateOrientation(Scanner * this)
 {
     for(ScannerConnection * it = this->connections.begin; it != this->connections.end; ++it)
     {
-
         bool this_is_parent = it->parent == this;
         Scanner * other = this_is_parent ? it->child : it->parent;
 
@@ -206,25 +223,11 @@ void PropagateOrientation(Scanner * this)
 
         PropagateOrientation(other);
     }
+
+    fflush(stdout);
 }
 
-ConnexionArray FindOverlaps(ScannerArray scanners)
-{
-    ConnexionArray overlaps;
-    NEW_VECTOR(overlaps);
 
-    for(Scanner * it1=scanners.begin; it1 != scanners.end; ++it1) {
-        for(Scanner * it2=it1+1; it2 != scanners.end; ++it2)
-        {
-            if(CheckOverlap(it1, it2, &overlaps))
-            {
-                printf("Scanners #%ld and %ld are compatible\n", it1->id, it2->id);
-            }
-        }
-    }
-
-    return overlaps;
-}
 
 solution_t SolvePart1(const bool is_test)
 {
@@ -236,20 +239,6 @@ solution_t SolvePart1(const bool is_test)
     scanners.begin->orientation = ConstructOrientation(1);
 
     PropagateOrientation(scanners.begin);
-
-    BeaconArray all_beacons;
-    NEW_VECTOR(all_beacons);
-
-    for(Scanner *s = scanners.begin; s != scanners.end; ++s)
-    {
-        for(Beacon * it = s->beacons.begin; it != s->beacons.end; ++s)
-        {
-            PUSH(all_beacons, *it);
-
-            it->data = vecmult(&s->orientation, it->data);
-        }
-
-    }
 
     for(Scanner *s = scanners.begin; s != scanners.end; ++s)
         ClearScanner(s);

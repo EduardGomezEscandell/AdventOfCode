@@ -56,7 +56,7 @@ Vector3D vecmult(Orientation * D, Vector3D in)
     return out;
 }
 
-inline unsigned short which_row_has_column(unsigned short sparsity[DIM], unsigned short column)
+unsigned short which_row_has_column(unsigned short sparsity[DIM], unsigned short column)
 {
     for(size_t i=0; i<DIM; ++i)
     {
