@@ -47,18 +47,14 @@ typedef struct {
     short values[DIM];            // The value of the non-zero entry (+1 or -1)
 } Orientation;
 
-/**
- * A homemade shared pointer!
- */
 typedef struct 
 {
-    size_t * id;
-    Vector3D * data;
-    size_t * refcount;
-} BeaconPtr;
+    size_t id;
+    Vector3D data;
+} Beacon;
 
 TEMPLATE_VECTOR(Vector3D) PointsArray;
-TEMPLATE_VECTOR(BeaconPtr) BeaconPtrArray;
+TEMPLATE_VECTOR(Beacon) BeaconArray;
 
 struct scanner_connection;
 TEMPLATE_VECTOR(struct scanner_connection) ConnexionArray;
@@ -73,7 +69,7 @@ typedef struct scanner
     Orientation orientation;
     Vector3D location;
     
-    BeaconPtrArray beacons;
+    BeaconArray beacons;
 } Scanner;
 
 TEMPLATE_VECTOR(Scanner) ScannerArray;
@@ -84,10 +80,8 @@ typedef struct scanner_connection {
     Orientation orientation_change;
 } ScannerConnection;
 
-BeaconPtr NewBeaconPtr(size_t id, Int x, Int y, Int z);
-BeaconPtr CopyPtr(BeaconPtr ptr);
-void FreePtr(BeaconPtr ptr);
-void PrintBeacon(BeaconPtr b);
+Beacon NewBeacon(size_t id, Int x, Int y, Int z);
+void PrintBeacon(Beacon * b);
 
 Vector3D NewVector3D(Int x, Int y, Int z);
 Orientation ConstructOrientation(size_t permutation_id);

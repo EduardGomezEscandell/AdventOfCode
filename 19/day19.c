@@ -24,50 +24,14 @@ Vector3D NewVector3D(Int x, Int y, Int z)
     return t;
 }
 
-BeaconPtr NewBeaconPtr(size_t id, Int x, Int y, Int z)
+Beacon NewBeacon(size_t id, Int x, Int y, Int z)
 {
-    BeaconPtr ptr;
-    ptr.data = malloc(sizeof(*ptr.data));
-    ptr.id = malloc(sizeof(*ptr.id));
-    ptr.refcount = malloc(sizeof(*ptr.refcount));
+    Beacon b;
+ 
+    b.data = NewVector3D(x,y,z);
+    b.id = id;
 
-    *ptr.data = NewVector3D(x,y,z);
-    *ptr.refcount = 1;
-    *ptr.id = id;
-
-    return ptr;
-}
-
-BeaconPtr NullPtr()
-{
-    BeaconPtr ptr;
-    ptr.data = NULL;
-    ptr.refcount = NULL;
-
-    return ptr;
-}
-
-BeaconPtr CopyPtr(BeaconPtr ptr)
-{
-    ++(*ptr.refcount);
-    return ptr;
-}
-
-void DeletePtr(BeaconPtr ptr)
-{
-    if(ptr.refcount != NULL) // Ensuring it has not been freed already is NULLPTR
-        --(*ptr.refcount);
-
-    if(ptr.refcount && *ptr.refcount == 0)
-    {
-        free(ptr.id);
-        free(ptr.data);
-        free(ptr.refcount);
-    }
-
-    ptr.id = NULL;
-    ptr.data = NULL;
-    ptr.refcount = NULL;
+    return b;
 }
 
 Orientation ConstructOrientation(size_t permutation_id)
@@ -193,17 +157,13 @@ void PrintVector3D(Vector3D v)
     printf("[ %2d, %2d, %2d ]\n", v.coord.x, v.coord.y, v.coord.z);
 }
 
-void PrintBeacon(BeaconPtr b)
+void PrintBeacon(Beacon * b)
 {
-    PrintVector3D(*b.data);
+    PrintVector3D(b->data);
 }
 
 void ClearScanner(Scanner * scanner)
 {
-    for(BeaconPtr * it=scanner->beacons.begin; it != scanner->beacons.end; ++it)
-    {
-        DeletePtr(*it);
-    }
     CLEAR(scanner->beacons);
 }
 
@@ -251,7 +211,7 @@ Scanner ReadScanner(FILE* file, bool * last_scanner, size_t * n_beacons)
         token = strchr(token, ',') + 1;
         const Int z = atoi(token);
 
-        PUSH(s.beacons, NewBeaconPtr(*n_beacons, x,y,z));
+        PUSH(s.beacons, NewBeacon(*n_beacons, x,y,z));
         ++(*n_beacons);
     }
 
@@ -285,15 +245,15 @@ ScannerArray ReadInput(const bool is_test)
  *
  * Validated assumption: Only one match is ever found
  */
-bool CheckMatch(BeaconPtrArray beacons, Vector3D target)
+bool CheckMatch(BeaconArray beacons, Vector3D target)
 {
-    for(const BeaconPtr * it1 = beacons.begin; it1 != beacons.end; ++it1)
+    for(const Beacon * it1 = beacons.begin; it1 != beacons.end; ++it1)
     {
-        for(const BeaconPtr * it2 = beacons.begin; it2 != beacons.end; ++it2)
+        for(const Beacon * it2 = beacons.begin; it2 != beacons.end; ++it2)
         {
             if(it1 == it2) continue;
 
-            Vector3D delta_X = sub(*it2->data, *it1->data);
+            Vector3D delta_X = sub(it2->data, it1->data);
 
             if(eq(delta_X, target))
             {
@@ -308,15 +268,15 @@ bool ValidOrientation(Scanner * A, Scanner * B, size_t permutation_id)
 {
     Orientation D = ConstructOrientation(permutation_id);
 
-    for(const BeaconPtr * source = B->beacons.begin; source != B->beacons.end; ++source)
+    for(const Beacon * source = B->beacons.begin; source != B->beacons.end; ++source)
     {
         size_t n_matches = 0;
 
-        for(const BeaconPtr * destination = B->beacons.begin; destination != B->beacons.end; ++destination)
+        for(const Beacon * destination = B->beacons.begin; destination != B->beacons.end; ++destination)
         {
             if(source == destination) continue;
 
-            Vector3D delta_Y = sub(*destination->data, *source->data);
+            Vector3D delta_Y = sub(destination->data, source->data);
             Vector3D delta_X = vecmult(&D, delta_Y);
 
 
@@ -385,11 +345,8 @@ void PropagateOrientation(Scanner * this)
     }
 }
 
-
-solution_t SolvePart1(const bool is_test)
+ConnexionArray FindOverlaps(ScannerArray scanners)
 {
-    ScannerArray scanners = ReadInput(is_test);
-
     ConnexionArray overlaps;
     NEW_VECTOR(overlaps);
 
@@ -403,28 +360,38 @@ solution_t SolvePart1(const bool is_test)
         }
     }
 
+    return overlaps;
+}
+
+solution_t SolvePart1(const bool is_test)
+{
+    ScannerArray scanners = ReadInput(is_test);
+
+    ConnexionArray overlaps = FindOverlaps(scanners);
+
     scanners.begin->connected = true;
     scanners.begin->orientation = ConstructOrientation(1);
 
     PropagateOrientation(scanners.begin);
 
-    BeaconPtrArray all_beacons;
+    BeaconArray all_beacons;
     NEW_VECTOR(all_beacons);
 
-    for(Scanner *it=scanners.begin; it != scanners.end; ++it)
+    for(Scanner *s = scanners.begin; s != scanners.end; ++s)
     {
-        
-        for(BeaconPtr * ptr = it->beacons.begin; ptr != it->beacons.end; ++it)
+        for(Beacon * it = s->beacons.begin; it != s->beacons.end; ++s)
         {
-            PUSH(all_beacons, CopyPtr(*ptr));
+            PUSH(all_beacons, *it);
 
-            *ptr->data = vecmult(&it->orientation, *ptr->data);
+            it->data = vecmult(&s->orientation, it->data);
         }
 
-        ClearScanner(it);
     }
 
+    for(Scanner *s = scanners.begin; s != scanners.end; ++s)
+        ClearScanner(s);
     CLEAR(scanners);
+    CLEAR(overlaps);
 
     return is_test;
 }
