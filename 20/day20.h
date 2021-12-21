@@ -1,5 +1,5 @@
-#ifndef DAY_18_H
-#define DAY_18_H
+#ifndef DAY_20_H
+#define DAY_20_H
 
 #include <stdlib.h>
 #include <stdio.h>

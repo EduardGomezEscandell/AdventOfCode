@@ -1,5 +1,4 @@
 #include "day20.h"
-#include "03/day3.h"
 #include "common/file_utils.h"
 #include "common/matrix.h"
 
