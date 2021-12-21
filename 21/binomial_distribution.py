@@ -1,5 +1,5 @@
 """
-
+Generates the function BinomalPair
 """
 
 template = """

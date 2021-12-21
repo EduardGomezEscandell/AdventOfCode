@@ -124,6 +124,10 @@ void BinomalPair(size_t i, int * roll, int * weight)
     *weight = weights[i];
 }
 
+/**
+ *  This could be optimized exploiting the symmetry of the game. 
+ *  It would also benefit from multithreading
+ */
 WinRates * NewUniverse(Cache * cache, int player_1, int player_2, int score_1, int score_2)
 {
     bool * is_cached = IsCached(cache, player_1, player_2, score_1, score_2);

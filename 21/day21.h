@@ -18,6 +18,7 @@ typedef struct {
     solution_t player_2;
 } WinRates;
 
+// This could be optimized: the game is symmetrical
 typedef struct {
     WinRates winrates[BOARD_SIZE][BOARD_SIZE][PART_2_WIN_SCORE][PART_2_WIN_SCORE];
     bool     known   [BOARD_SIZE][BOARD_SIZE][PART_2_WIN_SCORE][PART_2_WIN_SCORE];
