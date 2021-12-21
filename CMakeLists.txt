@@ -47,3 +47,4 @@ add_subdirectory(19)
 # Week 3
 add_subdirectory(20)
 add_subdirectory(21)
+add_subdirectory(22)
