@@ -23,7 +23,7 @@ jobs:
   test-fsanitize:
     runs-on: ubuntu-latest
     env:
-      BUILD_TYPE: Debug
+      BUILD_TYPE: RelWithDebInfo
       ADRESS_SANITIZER: 1
 
     steps:

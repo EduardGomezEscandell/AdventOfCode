@@ -5,6 +5,8 @@
 
 export EXIT_CODE=0
 
+export BUILD_TYPE=${BUILD_TYPE:-Debug}
+
 for output in $(ls | egrep '^[0-9]{2}$')
 do
 	export DAY=${output}
@@ -18,7 +20,7 @@ do
 	    export FLAGS="-t -s"
 	fi
 
-	export EXECUTABLE=build/Debug/${DAY}/aoc_2021_${DAY}
+	export EXECUTABLE=build/${BUILD_TYPE}/${DAY}/aoc_2021_${DAY}
 
 	"./${EXECUTABLE}" ${FLAGS}
 
