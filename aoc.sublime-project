@@ -24,10 +24,18 @@
 		    "shell_cmd": "bash scripts/build.sh",
 			"variants" : [
 				{
-					"name" : "Debug",
+					"name" : "Debug + ASAN",
 					"env" : {
 						"BUILD_TYPE" : "Debug",
 						"ADRESS_SANITIZER" : "1"
+					}
+				},
+				{
+					"name" : "Debug + TSAN",
+					"env" : {
+						"BUILD_TYPE" : "Debug",
+						"ADRESS_SANITIZER" : "0",
+						"THREAD_SANITIZER" : "1"
 					}
 				}
 			]
@@ -36,9 +44,12 @@
 			"name" : "Run AoC",
 			"working_dir" : "${project_path}",
 			"shell_cmd" : "export FILEPATH=${file_path}; bash scripts/run.sh \\${FILEPATH##*/}",
+			"env" : {
+				"AOC_NUM_THREADS" : "4"
+			},
 			"variants" : [
 				{
-					"name" : "sanitizer",
+					"name" : "Debug",
 					"shell_cmd" : "export FILEPATH=${file_path}; bash scripts/run.sh \\${FILEPATH##*/} Debug | tee \\$FILEPATH/sanitizer.valgrind",
 					"file_regex": "\/home\/[a-zA-z0-9/]*\/AdventOfCode2021\/([^:]*):([0-9]*)",
 				}

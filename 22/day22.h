@@ -9,7 +9,7 @@
 #include <stdbool.h>
 
 /* Note:
- * Unlike in the problem statement, all ranges use the follwing notation:
+ * Unlike in the problem statement, all ranges use the following notation:
  *
  *                 [start, finish)
  *
@@ -37,6 +37,7 @@ typedef struct {
     int orientation;
 } Cube;
 
+
 typedef coord_t (*Getter)(Cube const * it); // Function type to use same function for X, Y, Z axes
 
 coord_t GetStartX(Cube const * it);
@@ -52,7 +53,27 @@ TEMPLATE_VECTOR(coord_t) CoordinateVector;
 TEMPLATE_VECTOR(Cube) CubesArray;
 TEMPLATE_VECTOR(Cube*) CubePtrArray;
 
+typedef struct {
+    CoordinateVector X, Y, Z;
+} Grid;
+
 DECLARE_QUICKSORT(QuickSort, coord_t);
+
+/**
+ * Necessary for multuthreading
+ */
+typedef struct
+{
+    Grid * grid;
+    CubePtrArray * cubes;
+    size_t begin;
+    size_t end;
+    solution_t * active_voxel_count;
+} ParameterPack;
+
+TEMPLATE_VECTOR(solution_t) SolutionArray;
+TEMPLATE_VECTOR(pthread_t) ThreadArray;
+TEMPLATE_VECTOR(ParameterPack) ParameterPackArray;
 
 CubesArray ReadCubes(bool is_test);
 
@@ -63,11 +84,8 @@ void EnforceLimits(
     coord_t const * limits_low,
     coord_t const * limits_high);
 
-void GenerateGrid(
+Grid GenerateGrid(
     CubesArray const * cubes,
-    CoordinateVector * X,
-    CoordinateVector * Y,
-    CoordinateVector * Z,
     coord_t const * limits_low,
     coord_t const * limits_high);
 
@@ -87,19 +105,22 @@ bool VoxelStatus(
     Getter Finish);
 
 solution_t Volume(
-    CoordinateVector * X,
-    CoordinateVector * Y,
-    CoordinateVector * Z,
+    Grid * grid,
     size_t i,
     size_t j,
     size_t k);
 
+size_t RetriveNumThreads();
+
 // Solving
+
+void * SolveSingleThread(void * parameters);
 
 solution_t Solve(
     const bool is_test,
     coord_t const * limits_low,
-    coord_t const * limits_high);
+    coord_t const * limits_high,
+    const size_t nthreads);
 
 
 solution_t SolvePart1(const bool is_test);

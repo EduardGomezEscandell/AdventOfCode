@@ -11,6 +11,12 @@ if(ADRESS_SANITIZER)
     message("Adress sanitizer enabled")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fsanitize=leak -fsanitize=undefined")
 endif()
+
+if(THREAD_SANITIZER)
+    message("Adress sanitizer enabled")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=thread -fsanitize=undefined")
+endif()
+
 message("-- C compiler flags: ${CMAKE_C_FLAGS}")
 
 if(INCLUDE_SAMPLES)

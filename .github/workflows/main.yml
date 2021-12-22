@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  Tests:
+  test-results:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,7 +20,7 @@ jobs:
       - name: Test
         run: bash scripts/test.sh
 
-  test-fsanitize:
+  test-ASAN:
     runs-on: ubuntu-latest
     env:
       BUILD_TYPE: RelWithDebInfo
@@ -33,4 +33,19 @@ jobs:
         run: bash scripts/build.sh
 
       - name: Test
-        run: bash scripts/test_sanitizer.sh
+        run: bash scripts/test_all.sh
+
+  test-TSAN:
+    runs-on: ubuntu-latest
+    env:
+      BUILD_TYPE: RelWithDebInfo
+      THREAD_SANITIZER: 1
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Build
+        run: bash scripts/build.sh
+
+      - name: Test
+        run: bash scripts/test_all.sh
