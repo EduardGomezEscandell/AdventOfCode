@@ -19,4 +19,4 @@ Some solutions assume that there is a newline at the end of the file, some other
 Just write it always to ensure it works.
 
 # Advent of code
-The website of the challenge can be found at https://adventofcode.com/
+The website of the challenge can be found at https://adventofcode.com/2021
