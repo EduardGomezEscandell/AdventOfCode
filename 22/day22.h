@@ -9,8 +9,7 @@
 #include <stdbool.h>
 
 typedef long long int solution_t; // Just in case we have to switch to long
-
-typedef int coord_t;
+typedef long int coord_t;
 
 typedef struct {
     coord_t x0;
@@ -22,6 +21,16 @@ typedef struct {
     bool active;
 } Instruction;
 
+typedef coord_t (*Getter)(Instruction const * it);
+
+coord_t GetStartX(Instruction const * it);
+coord_t GetFinishX(Instruction const * it);
+
+coord_t GetStartY(Instruction const * it);
+coord_t GetFinishY(Instruction const * it);
+
+coord_t GetStartZ(Instruction const * it);
+coord_t GetFinishZ(Instruction const * it);
 
 TEMPLATE_VECTOR(Instruction) InstructionVector;
 TEMPLATE_VECTOR(Instruction*) InstructionPtrVector;

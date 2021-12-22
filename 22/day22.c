@@ -9,6 +9,15 @@
 #include <string.h>
 #include <limits.h>
 
+coord_t GetStartX(Instruction const * it) { return it->x0;}
+coord_t GetFinishX(Instruction const * it) { return it->x1;}
+
+coord_t GetStartY(Instruction const * it) { return it->y0;}
+coord_t GetFinishY(Instruction const * it) { return it->y1;}
+
+coord_t GetStartZ(Instruction const * it) { return it->z0;}
+coord_t GetFinishZ(Instruction const * it) { return it->z1;}
+
 InstructionVector ReadCubes(bool is_test)
 {
     FILE* file = GetFile(is_test, 22);
@@ -63,7 +72,7 @@ InstructionVector ReadCubes(bool is_test)
 
 void PrintInstruction(Instruction * instr)
 {
-    printf("[%d..%d, %d..%d, %d..%d](%d)\n", instr->x0, instr->x1, instr->y0, instr->y1, instr->z0, instr->z1, instr->active);
+    printf("[%ld..%ld, %ld..%ld, %ld..%ld](%d)\n", instr->x0, instr->x1, instr->y0, instr->y1, instr->z0, instr->z1, instr->active);
 }
 
 InstructionPtrVector CreatePtrVector(InstructionVector reference, coord_t *min_x, coord_t *max_x)
@@ -75,8 +84,8 @@ InstructionPtrVector CreatePtrVector(InstructionVector reference, coord_t *min_x
     const coord_t min_x_0 = *min_x;
     const coord_t max_x_0 = *max_x;
 
-    *min_x =  INT_MAX;
-    *max_x = -INT_MAX;
+    *min_x =  LONG_MAX;
+    *max_x = -LONG_MAX;
 
     for(Instruction * it = reference.begin; it != reference.end; ++it)
     {
@@ -98,83 +107,47 @@ InstructionPtrVector CreatePtrVector(InstructionVector reference, coord_t *min_x
     return out;
 }
 
-void CopyValidX(InstructionPtrVector * out, InstructionPtrVector const * in, coord_t x, coord_t * min_y, coord_t * max_y)
+void CopyValidInstructions(
+    InstructionPtrVector * out,
+    InstructionPtrVector const * in,
+    coord_t coord,
+    coord_t * min_next,
+    coord_t * max_next,
+    Getter Start,
+    Getter Finish,
+    Getter StartNext,
+    Getter FinishNext)
 {
     out->end = out->begin; // Emptying without releasing memory
 
-    const coord_t min_y_0 = *min_y;
-    const coord_t max_y_0 = *max_y;
+    const coord_t min_next_0 = *min_next;
+    const coord_t max_next_0 = *max_next;
 
-    *min_y =  INT_MAX;
-    *max_y = -INT_MAX;
+    *min_next =  LONG_MAX;
+    *max_next = -LONG_MAX;
 
     bool none_write = true;
 
     for(Instruction ** it = in->begin; it != in->end; ++it)
     {
-        if((*it)->x0 > x || x >= (*it)->x1) continue;
+        if(Start(*it) > coord || coord >= Finish(*it)) continue;
 
         PUSH(*out, *it);
 
-        *min_y = MIN(*min_y, (*it)->y0);
-        *max_y = MAX(*max_y, (*it)->y1);
+        *min_next = MIN(*min_next, StartNext(*it));
+        *max_next = MAX(*max_next, FinishNext(*it));
 
         if((*it)->active) none_write = false;
     }
 
-    *min_y = MAX(*min_y, min_y_0);
-    *max_y = MIN(*max_y, max_y_0);
+    *min_next = MAX(*min_next, min_next_0);
+    *max_next = MIN(*max_next, max_next_0);
 
     if(none_write)
     {
-        *min_y = 0;
-        *max_y = 0;
+        *min_next = 0;
+        *max_next = 0;
     }
-}
-
-void CopyValidY(InstructionPtrVector * out, InstructionPtrVector const * in, coord_t y, coord_t * min_z, coord_t * max_z)
-{
-    out->end = out->begin; // Emptying without releasing memory
-
-    const coord_t min_z_0 = *min_z;
-    const coord_t max_z_0 = *max_z;
-
-    *min_z =  INT_MAX;
-    *max_z = -INT_MAX;
-
-    bool none_write = true;
-
-    for(Instruction ** it = in->begin; it != in->end; ++it)
-    {
-        if((*it)->y0 > y || y >= (*it)->y1) continue;
-
-        PUSH(*out, *it);
-
-        *min_z = MIN(*min_z, (*it)->z0);
-        *max_z = MAX(*max_z, (*it)->z1);
-
-        if((*it)->active) none_write = false;
-    }
-
-    *min_z = MAX(*min_z, min_z_0);
-    *max_z = MIN(*max_z, max_z_0);
-
-    if(none_write)
-    {
-        *min_z = 0;
-        *max_z = 0;
-    }
-}
-
-bool GetVoxelStatus(InstructionPtrVector const * vi_xyz, coord_t z)
-{
-    for(Instruction ** it = vi_xyz->end-1; it >= vi_xyz->begin; --it)
-    {
-        if((*it)->z0 <= z && z < (*it)->z1)
-            return (*it)->active;
-    }
-
-    return 0;
 }
 
 solution_t SweepYZ(Instruction * instr)
@@ -232,13 +205,24 @@ void InsertInactiveOverlap(SegmentVector * segments, coord_t start, coord_t fini
             return;
         }
 
+        // Fully covering segment
+        // ------oooo----- initial state
+        // -----xxxxxxxx-- operation
+        // --------------- result
+        // ----------xxx-- remainder
+        if(start <= it->start && finish >= it->finish)
+        {
+            REMOVE(*segments, Segment, it);
+            continue;
+        }
+
         // Right-intersect
         //  ------ooooo------- initial state
         //  ---------xxxxx---- operation
         //
         //  ------ooo--------- result
         //  -----------xxx---- remainder may intersect next segment
-        if(start >= it->start && finish <= it->finish)
+        if(start >= it->start && start <= it->finish)
         {
             coord_t tmp = it->finish;
             it->finish = start;
@@ -258,7 +242,7 @@ void InsertInactiveOverlap(SegmentVector * segments, coord_t start, coord_t fini
         //
         //  ---------oo--------- result
         //  ----xx-------------- Remiander irrelevant
-        if(start <= it->start && finish <= it->finish)
+        if(start <= it->start && finish >= it->start)
         {
             it->start = finish;
 
@@ -289,7 +273,6 @@ void InsertActiveOverlap(SegmentVector * segments, coord_t start, coord_t finish
             return;
         }
 
-
         // Fully within segment
         // ------ooooooooo----- initial state
         //----------oooo------- operation
@@ -299,12 +282,38 @@ void InsertActiveOverlap(SegmentVector * segments, coord_t start, coord_t finish
             return;
         }
 
+        // Fully covering segment
+        // ------oooo----- initial state
+        // -----oooooooo-- operation
+        // --------------- result
+        // -----oooooooo-- remainder
+        if(start <= it->start && finish >= it->finish)
+        {
+            REMOVE(*segments, Segment, it);
+
+            // Repairing possible overlaps:
+            //---------ooooooo---ooo----- it, next
+            // -----ooooooooooooooooo---- operation
+            //------ooooooooooooooooo---- result
+            for(Segment * next = it + 1; next != segments->end; ++next)
+            {
+                if(it->finish < next->start) break; // No intersection
+
+                it->finish = MAX(it->finish, next->finish);
+
+                REMOVE(*segments, Segment, next);
+            }
+
+
+            return;
+        }
+
         // Right-intersect
         //  ---ooooo-------- initial state
         //  ------ooooo----- operation
         //
         //  ----ooooooo----- result may intersect next segment!
-        if(start >= it->start && finish <= it->finish)
+        if(start >= it->start && finish >= it->finish)
         {
             it->finish = finish;
             // Repairing possible overlaps:
@@ -340,23 +349,31 @@ void InsertActiveOverlap(SegmentVector * segments, coord_t start, coord_t finish
     PUSH(*segments, new_segment);
 }
 
-solution_t ComputeOverlap(InstructionPtrVector * instructions)
+SegmentVector ComputeRelevantSegment(
+    InstructionPtrVector * instructions,
+    Getter Start,
+    Getter Finish)
 {
     SegmentVector segments;
     NEW_VECTOR(segments);
 
     for(Instruction ** it = instructions->begin; it != instructions->end; ++it)
     {
-        if((*it)->active) InsertActiveOverlap(&segments, (*it)->z0, (*it)->z1);
-        else            InsertInactiveOverlap(&segments, (*it)->z0, (*it)->z1);
+        if((*it)->active) InsertActiveOverlap(&segments, Start(*it), Finish(*it));
+        else            InsertInactiveOverlap(&segments, Start(*it), Finish(*it));
     }
 
+    return segments;
+}
+
+
+solution_t ComputeTotalLength(SegmentVector * segments)
+{
     solution_t length = 0;
-    for(Segment * it = segments.begin; it != segments.end; ++it)
+    for(Segment * it = segments->begin; it != segments->end; ++it)
     {
         length += it->finish - it->start;
     }
-
     return length;
 }
 
@@ -365,6 +382,19 @@ solution_t ComputeOverlap(InstructionPtrVector * instructions)
 
 solution_t Solve(const bool is_test, coord_t boot_region)
 {
+    if(!is_test) return 0;
+
+    // Trims
+    InstructionVector trims;
+    NEW_VECTOR(trims);
+
+    Instruction left_trim =  {0,0,0,0,-LONG_MAX,     -boot_region, false};
+    Instruction right_trim = {0,0,0,0, boot_region+1,    LONG_MAX,    false};
+
+    PUSH(trims, left_trim);
+    PUSH(trims, right_trim);
+
+    // Instructions
     InstructionVector instructions = ReadCubes(is_test);
     const size_t size = SIZE(instructions);
 
@@ -384,7 +414,7 @@ solution_t Solve(const bool is_test, coord_t boot_region)
     {
         // printf("%d\n", x); fflush(stdout);
         coord_t begin_y = -boot_region, end_y = boot_region+1;
-        CopyValidX(&vi_xy, &vi_x, x, &begin_y, &end_y);
+        CopyValidInstructions(&vi_xy, &vi_x, x, &begin_y, &end_y, GetStartX, GetFinishX, GetStartY, GetFinishY);
 
         if(SIZE(vi_xy) == 1) {
             lit_voxels += SweepYZ(vi_xy.begin[0]);
@@ -393,28 +423,15 @@ solution_t Solve(const bool is_test, coord_t boot_region)
 
         for(coord_t y=begin_y; y < end_y; ++y)
         {
-            // printf("%d %d\n", x, y); fflush(stdout);
-
             coord_t begin_z = -boot_region, end_z = boot_region+1;
-            CopyValidY(&vi_xyz, &vi_xy, y, &begin_z, &end_z);
+            CopyValidInstructions(&vi_xyz, &vi_xy, y, &begin_z, &end_z, GetStartY, GetFinishY, GetStartZ, GetFinishZ);
 
-            if(SIZE(vi_xyz) == 1) {
-                lit_voxels += SweepZ(vi_xyz.begin[0]);
-                continue;
-            }
+            PUSH(vi_xyz, trims.begin);
+            PUSH(vi_xyz, trims.begin+1);
 
-            // const solution_t test = ComputeOverlap(&vi_xyz);
-            solution_t correct = 0;
-
-            for(coord_t z=begin_z; z <= end_z; ++z)
-            {
-                correct += GetVoxelStatus(&vi_xyz, z);
-
-            }
-
-            lit_voxels += correct;
-            // printf("Correct=%lld, Test=%lld, Passed=%d\n", correct, test, correct==test);
-
+            SegmentVector segments_Z = ComputeRelevantSegment(&vi_xyz, GetStartZ, GetFinishZ);
+            lit_voxels += ComputeTotalLength(&segments_Z);
+            CLEAR(segments_Z);
         }
     }
 
@@ -433,10 +450,8 @@ solution_t SolvePart1(const bool is_test)
 
 solution_t SolvePart2(const bool is_test)
 {
-    return Solve(is_test, INT_MAX);
+  return is_test;//Solve(is_test, LONG_MAX-1);
 }
-
-
 
 
 DEFINE_TEST(1, 474140)
