@@ -11,6 +11,8 @@
 typedef long long int solution_t; // Just in case we have to switch to long
 typedef long int coord_t;
 
+#define COORD_MAX (LONG_MAX-1)
+
 typedef struct {
     coord_t x0;
     coord_t y0;

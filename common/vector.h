@@ -69,6 +69,16 @@
     --pos;                                                                    \
 } while(0)
 
+#define EXTEND(CEXT_type, CEXT_v1, CEXT_v2) do {                              \
+    const size_t CEXT_size = (CEXT_v1).end - (CEXT_v1).begin                  \
+                          + ((CEXT_v2).end - (CEXT_v2).begin);                \
+    RESERVE((CEXT_v1), CEXT_size);                                            \
+    for(CEXT_type * it = (CEXT_v2).begin; it != (CEXT_v2).end; ++it) {        \
+        *(CEXT_v1).end = *it;                                                 \
+        ++(CEXT_v1).end;                                                      \
+    }                                                                         \
+} while(0)
+
 #define EMPLACE(CEMPLACE_v, CEMPLACE_ptr) do {                                \
     const size_t PUSH_size = (CEMPLACE_v).end - (CEMPLACE_v).begin;           \
     if(PUSH_size >= (CEMPLACE_v).capacity) {                                  \

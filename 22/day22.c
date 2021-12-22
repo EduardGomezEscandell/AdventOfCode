@@ -4,455 +4,240 @@
 #include "common/vector.h"
 #include "common/math.h"
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <limits.h>
 
-coord_t GetStartX(Instruction const * it) { return it->x0;}
-coord_t GetFinishX(Instruction const * it) { return it->x1;}
+typedef union {
+    coord_t data[3];
+    struct {
+        coord_t x,y,z;
+    } coords;
+} Vector3d;
 
-coord_t GetStartY(Instruction const * it) { return it->y0;}
-coord_t GetFinishY(Instruction const * it) { return it->y1;}
+typedef struct {
+    int axis;    // Axis where it cuts (0,1,2 -> x,y,z)
+    coord_t value; // Coordinate at the cutting axis
+} Plane;
 
-coord_t GetStartZ(Instruction const * it) { return it->z0;}
-coord_t GetFinishZ(Instruction const * it) { return it->z1;}
+typedef struct {
+    Vector3d min;
+    Vector3d max;
+    int orientation;
+} Cube;
 
-InstructionVector ReadCubes(bool is_test)
+TEMPLATE_VECTOR(Cube) CubesArray;
+
+CubesArray ReadCubes(bool is_test)
 {
     FILE* file = GetFile(is_test, 22);
 
     size_t len = 0;
     char * line = NULL;
 
-    InstructionVector instructions;
-    NEW_VECTOR(instructions);
+    CubesArray cubes;
+    NEW_VECTOR(cubes);
 
     while(getline(&line, &len, file) != -1)
     {
-        Instruction instr;
+        Cube cube;
         char * line_ptr = line;
 
         switch (line[1]) {
-        case 'n': instr.active = true;  break;
-        case 'f': instr.active = false; break;
+        case 'n': cube.orientation =  1;  break;
+        case 'f': cube.orientation = -1; break;
         default:
             fprintf(stderr, "Wrong input file format!\n");
             exit(EXIT_FAILURE);
         }
 
         line_ptr = strchr(line_ptr, '=') + 1;
-        instr.x0 = atoi(line_ptr);
+        cube.min.coords.x = atoi(line_ptr);
 
         line_ptr = strchr(line_ptr, '.') + 2;
-        instr.x1 = atoi(line_ptr) + 1; // non-inclusive
+        cube.max.coords.x = atoi(line_ptr) + 1;
 
 
         line_ptr = strchr(line_ptr, '=') + 1;
-        instr.y0 = atoi(line_ptr);
+        cube.min.coords.y = atoi(line_ptr);
 
         line_ptr = strchr(line_ptr, '.') + 2;
-        instr.y1 = atoi(line_ptr) + 1;
+        cube.max.coords.y = atoi(line_ptr) + 1;
 
 
         line_ptr = strchr(line_ptr, '=') + 1;
-        instr.z0 = atoi(line_ptr);
+        cube.min.coords.z = atoi(line_ptr);
 
         line_ptr = strchr(line_ptr, '.') + 2;
-        instr.z1 = atoi(line_ptr) + 1;
+        cube.max.coords.z = atoi(line_ptr) + 1;
 
-        PUSH(instructions, instr);
+        PUSH(cubes, cube);
     }
 
     free(line);
     fclose(file);
 
-    return instructions;
+    return cubes;
 }
 
-void PrintInstruction(Instruction * instr)
+// Takes an array of cubes and splits them wih a specified plane
+void Slice(CubesArray * cubes, Plane plane)
 {
-    printf("[%ld..%ld, %ld..%ld, %ld..%ld](%d)\n", instr->x0, instr->x1, instr->y0, instr->y1, instr->z0, instr->z1, instr->active);
-}
+    CubesArray result;
+    NEW_VECTOR(result);
+    size_t size = SIZE(*cubes) * 2;
+    RESERVE(result, size);
 
-InstructionPtrVector CreatePtrVector(InstructionVector reference, coord_t *min_x, coord_t *max_x)
-{
-    InstructionPtrVector out;
-    NEW_VECTOR(out);
-    RESERVE(out, SIZE(reference));
-
-    const coord_t min_x_0 = *min_x;
-    const coord_t max_x_0 = *max_x;
-
-    *min_x =  LONG_MAX;
-    *max_x = -LONG_MAX;
-
-    for(Instruction * it = reference.begin; it != reference.end; ++it)
+    for(Cube * it = cubes->begin; it != cubes->end; ++it)
     {
-        PUSH(out, it);
-
-        *min_x = MIN(*min_x, it->x0);
-        *max_x = MAX(*max_x, it->x1);
-    }
-
-    *min_x = MAX(*min_x, min_x_0);
-    *max_x = MIN(*max_x, max_x_0);
-
-    if(out.begin == out.end)
-    {
-        *min_x = 0;
-        *max_x = -1;
-    }
-
-    return out;
-}
-
-void CopyValidInstructions(
-    InstructionPtrVector * out,
-    InstructionPtrVector const * in,
-    coord_t coord,
-    coord_t * min_next,
-    coord_t * max_next,
-    Getter Start,
-    Getter Finish,
-    Getter StartNext,
-    Getter FinishNext)
-{
-    out->end = out->begin; // Emptying without releasing memory
-
-    const coord_t min_next_0 = *min_next;
-    const coord_t max_next_0 = *max_next;
-
-    *min_next =  LONG_MAX;
-    *max_next = -LONG_MAX;
-
-    bool none_write = true;
-
-    for(Instruction ** it = in->begin; it != in->end; ++it)
-    {
-        if(Start(*it) > coord || coord >= Finish(*it)) continue;
-
-        PUSH(*out, *it);
-
-        *min_next = MIN(*min_next, StartNext(*it));
-        *max_next = MAX(*max_next, FinishNext(*it));
-
-        if((*it)->active) none_write = false;
-    }
-
-    *min_next = MAX(*min_next, min_next_0);
-    *max_next = MIN(*max_next, max_next_0);
-
-    if(none_write)
-    {
-        *min_next = 0;
-        *max_next = 0;
-    }
-}
-
-solution_t SweepYZ(Instruction * instr)
-{
-    if(!instr->active) return 0;
-
-    solution_t area = ((solution_t)(instr->y1 - instr->y0))
-                    * ((solution_t)(instr->z1 - instr->z0));
-    return area;
-}
-
-solution_t SweepZ(Instruction * instr)
-{
-    if(!instr->active) return 0;
-
-    solution_t length = (instr->z1 - instr->z0);
-    return length;
-}
-
-void InsertInactiveOverlap(SegmentVector * segments, coord_t start, coord_t finish)
-{
-    for(Segment * it = segments->begin; it != segments->end; ++it)
-    {
-        // Fully past segment
-        // ---ooooo------- initial state
-        // ----------xxx-- operation
-        if(start >= it->finish) continue;
-
-        // Fully before segment
-        // --------ooooo--oo-o- initial state
-        // ---xxx------------- operation
-        if(finish <= it->start) return;
-
-        // Fully within segment
-        // ------ooooooooo----- initial state
-        //----------xxxx------- operation
-        //-------ooo----oo----- result
-        if(start >= it->start && finish <= it->finish)
+        if(it->min.data[plane.axis] > plane.value
+           || it->max.data[plane.axis] < plane.value) 
         {
-            Segment new_segment = {finish, it->finish};
-
-            it->finish = start;
-
-            Segment * insert_position = it + 1;
-
-            if(new_segment.start != new_segment.finish)
-            {
-                if(it->start == it->finish) {
-                    *it = new_segment;
-                } else {
-                    INSERT(*segments, Segment, insert_position, new_segment);
-                }
-            }
-
-            return;
-        }
-
-        // Fully covering segment
-        // ------oooo----- initial state
-        // -----xxxxxxxx-- operation
-        // --------------- result
-        // ----------xxx-- remainder
-        if(start <= it->start && finish >= it->finish)
-        {
-            REMOVE(*segments, Segment, it);
+            PUSH(result, *it);
             continue;
         }
 
-        // Right-intersect
-        //  ------ooooo------- initial state
-        //  ---------xxxxx---- operation
-        //
-        //  ------ooo--------- result
-        //  -----------xxx---- remainder may intersect next segment
-        if(start >= it->start && start <= it->finish)
-        {
-            coord_t tmp = it->finish;
-            it->finish = start;
-            start = tmp;
+        Cube lower = *it;
+        Cube upper = *it;
 
-            if(it->start == it->finish) {
-                REMOVE(*segments, Segment, it);
-            }
+        upper.min.data[plane.axis] = plane.value;
+        lower.max.data[plane.axis] = plane.value;
 
-            if(start == finish) return;
-            continue;
-        }
+        PUSH(result, lower);
+        PUSH(result, upper);
+    }
 
-        // Left-intersect
-        //  ------ooooo------- initial state
-        //  ----xxxxx--------- operation
-        //
-        //  ---------oo--------- result
-        //  ----xx-------------- Remiander irrelevant
-        if(start <= it->start && finish >= it->start)
-        {
-            it->start = finish;
+    CLEAR(*cubes);
+    *cubes = result;
+}
 
-            if(it->start == it->finish) {
-                REMOVE(*segments, Segment, it);
-            }
-
-            return;
-        }
+void Decompose(Cube const * A, Plane planes[6])
+{
+    for(size_t i=0; i<6; i+=2) // 6 faces, 2 per axis
+    {
+        planes[i].axis = i;
+        planes[i].value = A->min.data[i];  // lower face
+        
+        planes[i+1].axis = i;
+        planes[i+1].value = A->max.data[i];  // upper face
     }
 }
 
-void InsertActiveOverlap(SegmentVector * segments, coord_t start, coord_t finish)
+
+int CompareVec3(Vector3d const * A, Vector3d const * B)
 {
-    for(Segment * it = segments->begin; it != segments->end; ++it)
+    for(size_t i=0; i<3;  ++i)
     {
-        // Fully past segment
-        // --ooooo------------- initial state
-        // ----------ooooo----- operation
-        if(start >= it->finish) continue;
+        if(A->data[i] > B->data[i]) return  1;
+        if(A->data[i] < B->data[i]) return -1;
+    }
+    return 0;
+}
 
-        // Fully before segment
-        // --------ooooo--oo-o- initial state
-        // ---ooo------------- operation
-        if(finish < it->start) {
-            Segment new_segment = {start, finish};
-            INSERT(*segments, Segment, it, new_segment);
-            return;
-        }
+int CompareCubes(Cube const * A, Cube const * B)
+{
+    return CompareVec3(&A->min, &B->min);
+}
 
-        // Fully within segment
-        // ------ooooooooo----- initial state
-        //----------oooo------- operation
-        //-------ooooooooo----- result
-        if(start >= it->start && finish <= it->finish)
-        {
-            return;
-        }
+DEFINE_QUICKSORT_COMP(SortCubes, Cube, CompareCubes)
+DEFINE_FIND_COMP(FindCube, Cube, CompareCubes)
 
-        // Fully covering segment
-        // ------oooo----- initial state
-        // -----oooooooo-- operation
-        // --------------- result
-        // -----oooooooo-- remainder
-        if(start <= it->start && finish >= it->finish)
-        {
-            REMOVE(*segments, Segment, it);
+bool DoIntersect(Cube const * old, Cube const * new)
+{
+    for(size_t i=0; i<3; ++i)
+    {
+        if(old->min.data[i] > old->max.data[i]) return false;
+        if(old->max.data[i] < old->min.data[i]) return false;
+    }
+    return true;
+}
 
-            // Repairing possible overlaps:
-            //---------ooooooo---ooo----- it, next
-            // -----ooooooooooooooooo---- operation
-            //------ooooooooooooooooo---- result
-            for(Segment * next = it + 1; next != segments->end; ++next)
+
+void Intersect(Cube const * old, Cube const * new, CubesArray * old_result, CubesArray * new_result)
+{
+    if(old->orientation == -1) {
+        return;
+    }
+
+    if(!DoIntersect(old, new))
+    { // No intersection -> cube is simply pushed to list
+        PUSH(*old_result, old);
+        PUSH(*new_result, new);
+        return;
+    }
+
+    Plane old_decomposed[6];
+    Plane new_decomposed[6];
+
+    Decompose(old, old_decomposed);
+    Decompose(new, new_decomposed);
+
+    for(size_t i=0; i<6; ++i)
+    {
+        Slice(old_result, new_decomposed[i]);
+        Slice(new_result, old_decomposed[i]);
+    }
+
+    // Finding intersection
+    SortCubes(new_result->begin, new_result->end);
+
+    for(Cube * it = old_result->begin; it != old_result->end; ++it)
+    {
+        Cube * res = FindCube(new_result->begin, new_result->end, it, true);
+
+        // Overlapping: can be popped from new result
+        if(res) {
+            // If negative: must be popped from old result as well
+            if(res->orientation == -1)
             {
-                if(it->finish < next->start) break; // No intersection
+                SWAP(Cube, it, old_result->end-1);
+                POP(*old_result);
+            } 
 
-                it->finish = MAX(it->finish, next->finish);
-
-                REMOVE(*segments, Segment, next);
-            }
-
-
-            return;
-        }
-
-        // Right-intersect
-        //  ---ooooo-------- initial state
-        //  ------ooooo----- operation
-        //
-        //  ----ooooooo----- result may intersect next segment!
-        if(start >= it->start && finish >= it->finish)
-        {
-            it->finish = finish;
-            // Repairing possible overlaps:
-            // -----ooooooooooooooooo---- it
-            //---------ooooooo---ooo----- next, next+1
-            //------ooooooooooooooooo---- result
-            for(Segment * next = it + 1; next != segments->end; ++next)
-            {
-                if(it->finish < next->start) break; // No intersection
-
-                it->finish = MAX(it->finish, next->finish);
-
-                REMOVE(*segments, Segment, next);
-            }
-
-            return;
-        }
-
-        // Left-intersect
-        //  ------ooooo------- initial state
-        //  ----ooooo--------- operation
-        //
-        //  ----ooooooo--------- result
-        if(start <= it->start && finish <= it->finish)
-        {
-            it->start = start;
-            return;
+            SWAP(Cube, res, new_result->end-1);
+            POP(*new_result);
         }
     }
-
-    // No intersections: append at end
-    Segment new_segment = {start, finish};
-    PUSH(*segments, new_segment);
 }
 
-SegmentVector ComputeRelevantSegment(
-    InstructionPtrVector * instructions,
-    Getter Start,
-    Getter Finish)
+solution_t Volume(Cube const * cube)
 {
-    SegmentVector segments;
-    NEW_VECTOR(segments);
+    solution_t vol = 1;
 
-    for(Instruction ** it = instructions->begin; it != instructions->end; ++it)
-    {
-        if((*it)->active) InsertActiveOverlap(&segments, Start(*it), Finish(*it));
-        else            InsertInactiveOverlap(&segments, Start(*it), Finish(*it));
+    for(size_t i=0; i<3; ++i) {
+        vol *= cube->max.data[i] - cube->min.data[i];
     }
 
-    return segments;
+    return vol;
 }
 
-
-solution_t ComputeTotalLength(SegmentVector * segments)
+void PushCube(CubesArray * cubes, Cube const * new_cube)
 {
-    solution_t length = 0;
-    for(Segment * it = segments->begin; it != segments->end; ++it)
+    for(ssize_t i = SIZE(*cubes)-1; i >= 0; --i)
     {
-        length += it->finish - it->start;
-    }
-    return length;
-}
+        Cube * it = cubes->begin + i;
+        bool intersected = Intersect(it, new_cube, cubes);
 
-
-
-
-solution_t Solve(const bool is_test, coord_t boot_region)
-{
-    if(!is_test) return 0;
-
-    // Trims
-    InstructionVector trims;
-    NEW_VECTOR(trims);
-
-    Instruction left_trim =  {0,0,0,0,-LONG_MAX,     -boot_region, false};
-    Instruction right_trim = {0,0,0,0, boot_region+1,    LONG_MAX,    false};
-
-    PUSH(trims, left_trim);
-    PUSH(trims, right_trim);
-
-    // Instructions
-    InstructionVector instructions = ReadCubes(is_test);
-    const size_t size = SIZE(instructions);
-
-    coord_t begin_x = -boot_region, end_x = boot_region+1;
-    InstructionPtrVector vi_x = CreatePtrVector(instructions, &begin_x, &end_x); // Valid instructions
-
-    InstructionPtrVector vi_xy; // Valid instructions - x & y axes
-    NEW_VECTOR(vi_xy);
-    RESERVE(vi_xy, size);
-
-    InstructionPtrVector vi_xyz; // Valid instructions - y, y & z axis
-    NEW_VECTOR(vi_xyz);
-    RESERVE(vi_xyz, size);
-
-    solution_t lit_voxels = 0;
-    for(coord_t x=begin_x; x < end_x; ++x)
-    {
-        // printf("%d\n", x); fflush(stdout);
-        coord_t begin_y = -boot_region, end_y = boot_region+1;
-        CopyValidInstructions(&vi_xy, &vi_x, x, &begin_y, &end_y, GetStartX, GetFinishX, GetStartY, GetFinishY);
-
-        if(SIZE(vi_xy) == 1) {
-            lit_voxels += SweepYZ(vi_xy.begin[0]);
-            continue;
-        }
-
-        for(coord_t y=begin_y; y < end_y; ++y)
-        {
-            coord_t begin_z = -boot_region, end_z = boot_region+1;
-            CopyValidInstructions(&vi_xyz, &vi_xy, y, &begin_z, &end_z, GetStartY, GetFinishY, GetStartZ, GetFinishZ);
-
-            PUSH(vi_xyz, trims.begin);
-            PUSH(vi_xyz, trims.begin+1);
-
-            SegmentVector segments_Z = ComputeRelevantSegment(&vi_xyz, GetStartZ, GetFinishZ);
-            lit_voxels += ComputeTotalLength(&segments_Z);
-            CLEAR(segments_Z);
-        }
+        if()
     }
 
-    CLEAR(vi_x);
-    CLEAR(vi_xy);
-    CLEAR(vi_xyz);
-    CLEAR(instructions);
-
-    return lit_voxels;
 }
+
 
 solution_t SolvePart1(const bool is_test)
 {
-    return Solve(is_test, 50);
+    CubesArray cubes = ReadCubes(is_test);
+
+    for(Cube * it = cubes.begin; it != cubes.end; ++it)
+    {
+
+    }
+
+    return is_test;
 }
 
 solution_t SolvePart2(const bool is_test)
 {
-  return is_test;//Solve(is_test, LONG_MAX-1);
+    return is_test;
 }
 
-
-DEFINE_TEST(1, 474140)
+DEFINE_TEST(1, 590784)
 DEFINE_TEST(2, 2758514936282235)
