@@ -44,18 +44,43 @@
     ++(CPUSH_v).end;                                                          \
 } while(0)
 
-#define EMPLACE(CEMPLACE_v, CEMPLACE_ptr) do {                                   \
-    const size_t PUSH_size = (CEMPLACE_v).end - (CEMPLACE_v).begin;              \
-    if(PUSH_size >= (CEMPLACE_v).capacity) {                                     \
-        (CEMPLACE_v).capacity += 3;   /* Minimum size */                         \
-        (CEMPLACE_v).capacity *= 1.6; /* Growth factor */                        \
-        (CEMPLACE_v).begin = realloc(                                            \
-            (CEMPLACE_v).begin,                                                  \
-            (CEMPLACE_v).capacity * sizeof(*(CEMPLACE_v).begin));                \
-        (CEMPLACE_v).end = (CEMPLACE_v).begin + PUSH_size;                       \
-    }                                                                            \
-    CEMPLACE_ptr = (CEMPLACE_v).end;                                             \
-    ++(CEMPLACE_v).end;                                                          \
+#define INSERT(v, type, pos, data) do {                                       \
+    const size_t CINSERT_size = (v).end - (v).begin;                          \
+    if(CINSERT_size >= (v).capacity) {                                        \
+        (v).capacity += 1;   /* Minimum size */                               \
+        (v).capacity *= 1.6; /* Growth factor */                              \
+        (v).begin = realloc(                                                  \
+            (v).begin,                                                        \
+            (v).capacity * sizeof(*(v).begin));                               \
+        (v).end = (v).begin + CINSERT_size;                                   \
+    }                                                                         \
+    for(type * CPUSH_it = (v).end; CPUSH_it != (pos); --CPUSH_it) {           \
+        *CPUSH_it = *(CPUSH_it-1);                                            \
+    }                                                                         \
+    ++(v).end;                                                                \
+    *(pos) = data;                                                            \
+} while(0)
+
+#define REMOVE(v, type, pos) do {                                             \
+    --(v).end;                                                                \
+    for(type * CREM_it = (pos); CREM_it != (v).end; ++CREM_it) {              \
+        *CREM_it = *(CREM_it+1);                                              \
+    }                                                                         \
+    --pos;                                                                    \
+} while(0)
+
+#define EMPLACE(CEMPLACE_v, CEMPLACE_ptr) do {                                \
+    const size_t PUSH_size = (CEMPLACE_v).end - (CEMPLACE_v).begin;           \
+    if(PUSH_size >= (CEMPLACE_v).capacity) {                                  \
+        (CEMPLACE_v).capacity += 3;   /* Minimum size */                      \
+        (CEMPLACE_v).capacity *= 1.6; /* Growth factor */                     \
+        (CEMPLACE_v).begin = realloc(                                         \
+            (CEMPLACE_v).begin,                                               \
+            (CEMPLACE_v).capacity * sizeof(*(CEMPLACE_v).begin));             \
+        (CEMPLACE_v).end = (CEMPLACE_v).begin + PUSH_size;                    \
+    }                                                                         \
+    CEMPLACE_ptr = (CEMPLACE_v).end;                                          \
+    ++(CEMPLACE_v).end;                                                       \
 } while(0)
 
 #define POP(CPOP_v) do { --(CPOP_v).end; } while(0)
@@ -67,7 +92,7 @@
     (CCLEAR_v).capacity = 0;                                                  \
 } while(0)
 
-#define SIZE(CSIZE_v) ((CSIZE_v).end - (CSIZE_v).begin)
+#define SIZE(CSIZE_v) (size_t) ((CSIZE_v).end - (CSIZE_v).begin)
 
 #define PRINT(CPRINT_v, CPRINT_type, CPRINT_format) do {                      \
     CPRINT_type* CPRINT_it=(CPRINT_v).begin;                                  \

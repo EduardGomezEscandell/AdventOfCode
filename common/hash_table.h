@@ -294,7 +294,7 @@ HT_val_t * HT_name##FindOrAllocate(                                           \
         return &loc.pair->value;                                              \
     }                                                                         \
                                                                               \
-    const ptrdiff_t old_size = SIZE(ht->buckets);                             \
+    const size_t old_size = SIZE(ht->buckets);                                \
     HT_name##Pair * back = HT_name##_Private_Expand(ht);                      \
                                                                               \
     if(old_size != SIZE(ht->buckets)) { /* Rehashing has happended */         \
