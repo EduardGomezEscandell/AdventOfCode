@@ -79,8 +79,10 @@ CubesArray ReadCubes(bool is_test)
 }
 
 // Takes an array of cubes and splits them wih a specified plane
-void Slice(CubesArray * cubes, Plane plane)
+bool Slice(CubesArray * cubes, Plane plane)
 {
+    bool sliced = false;
+
     CubesArray result;
     NEW_VECTOR(result);
     size_t size = SIZE(*cubes) * 2;
@@ -103,10 +105,13 @@ void Slice(CubesArray * cubes, Plane plane)
 
         PUSH(result, lower);
         PUSH(result, upper);
+
+        sliced = true;
     }
 
     CLEAR(*cubes);
     *cubes = result;
+    return sliced;
 }
 
 void Decompose(Cube const * A, Plane planes[6])
@@ -150,18 +155,20 @@ bool DoIntersect(Cube const * old, Cube const * new)
     return true;
 }
 
+typedef struct {
+    bool operand;
+    bool operator;
+} SplitReport;
 
-void Intersect(Cube const * old, Cube const * new, CubesArray * old_result, CubesArray * new_result)
+
+SplitReport Intersect(Cube const * old, Cube const * new, CubesArray * old_result, CubesArray * new_result)
 {
-    if(old->orientation == -1) {
-        return;
-    }
-
     if(!DoIntersect(old, new))
     { // No intersection -> cube is simply pushed to list
         PUSH(*old_result, *old);
         PUSH(*new_result, *new);
-        return;
+        SplitReport report = {false, false};
+        return report;
     }
 
     Plane old_decomposed[6];
@@ -170,11 +177,14 @@ void Intersect(Cube const * old, Cube const * new, CubesArray * old_result, Cube
     Decompose(old, old_decomposed);
     Decompose(new, new_decomposed);
 
+    SplitReport report = { false, false };
+
     for(size_t i=0; i<6; ++i)
     {
-        Slice(old_result, new_decomposed[i]);
-        Slice(new_result, old_decomposed[i]);
+        report.operand  = report.operand  || Slice(old_result, new_decomposed[i]);
+        report.operator = report.operator  || Slice(new_result, old_decomposed[i]);
     }
+
 
     // Finding intersection
     SortCubes(new_result->begin, new_result->end);
@@ -184,7 +194,8 @@ void Intersect(Cube const * old, Cube const * new, CubesArray * old_result, Cube
         Cube * res = FindCube(new_result->begin, new_result->end, it, true);
 
         // Overlapping: can be popped from new result
-        if(res) {
+        if(res)
+        {
             // If negative: must be popped from old result as well
             if(res->orientation == -1)
             {
@@ -194,8 +205,11 @@ void Intersect(Cube const * old, Cube const * new, CubesArray * old_result, Cube
 
             SWAP(Cube, res, new_result->end-1);
             POP(*new_result);
+
+            break; //There will be only one overlap
         }
     }
+    return report;
 }
 
 solution_t Volume(Cube const * cube)
@@ -206,19 +220,47 @@ solution_t Volume(Cube const * cube)
         vol *= cube->max.data[i] - cube->min.data[i];
     }
 
-    return vol;
+    return vol * cube->orientation;
 }
 
-void PushCube(CubesArray * cubes/*, Cube const * new_cube*/)
+void PushCube(CubesArray * operands, Cube const * operator)
 {
-    for(ssize_t i = SIZE(*cubes)-1; i >= 0; --i)
-    {
-        // TODO
-        // Cube * it = cubes->begin + i;
-        // Intersect(it, new_cube, cubes);
+    CubesArray operators;
+    NEW_VECTOR(operators);
+    PUSH(operators, *operator);
 
+    // Operate on every operand, form end to begin
+    for(ssize_t i = SIZE(*operands)-1; i >= 0; --i)
+    {
+        Cube * it = operands->begin + i;
+        
+        // Perform every operation, from end to begin
+        for(ssize_t j = SIZE(operators)-1; j >= 0; --j)
+        {
+            Cube * op = operators.begin + j;
+
+            SplitReport report = Intersect(it, op, operands, &operators);
+
+            if(report.operand)
+            { // Removing pre-splitting copy
+                SWAP(Cube, it, operands->end-1);
+                --operands->end;
+            }
+
+            if(report.operator)
+            { // Removing pre-splitting copy
+                SWAP(Cube, it, operators.end-1);
+                --operators.end;
+            }
+        }
     }
 
+    if(operator->orientation == 1)
+    {// Final addition of non-intersecting positive-oriented cubes
+        EXTEND(Cube, *operands, operators);
+    }
+
+    CLEAR(operators);
 }
 
 
@@ -226,10 +268,24 @@ solution_t SolvePart1(const bool is_test)
 {
     CubesArray cubes = ReadCubes(is_test);
 
+    CubesArray result;
+    NEW_VECTOR(result);
+    RESERVE(result, SIZE(cubes));
+
     for(Cube * it = cubes.begin; it != cubes.end; ++it)
     {
-
+        PushCube(&result, it);
     }
+
+    
+    solution_t vol = 0;
+    for(Cube *it = result.begin; it != cubes.end; ++it)
+    {
+        vol += Volume(it);
+    }
+
+    CLEAR(result);
+    CLEAR(cubes);
 
     return is_test;
 }
