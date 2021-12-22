@@ -111,13 +111,13 @@ void Slice(CubesArray * cubes, Plane plane)
 
 void Decompose(Cube const * A, Plane planes[6])
 {
-    for(size_t i=0; i<6; i+=2) // 6 faces, 2 per axis
+    for(size_t i=0; i<3; ++i) // 6 faces, 2 per axis
     {
-        planes[i].axis = i;
-        planes[i].value = A->min.data[i];  // lower face
+        planes[2*i].axis = i;
+        planes[2*i].value = A->min.data[i];  // lower face
         
-        planes[i+1].axis = i;
-        planes[i+1].value = A->max.data[i];  // upper face
+        planes[2*i+1].axis = i;
+        planes[2*i+1].value = A->max.data[i];  // upper face
     }
 }
 
@@ -144,8 +144,8 @@ bool DoIntersect(Cube const * old, Cube const * new)
 {
     for(size_t i=0; i<3; ++i)
     {
-        if(old->min.data[i] > old->max.data[i]) return false;
-        if(old->max.data[i] < old->min.data[i]) return false;
+        if(old->min.data[i] > new->max.data[i]) return false;
+        if(old->max.data[i] < new->min.data[i]) return false;
     }
     return true;
 }
@@ -159,8 +159,8 @@ void Intersect(Cube const * old, Cube const * new, CubesArray * old_result, Cube
 
     if(!DoIntersect(old, new))
     { // No intersection -> cube is simply pushed to list
-        PUSH(*old_result, old);
-        PUSH(*new_result, new);
+        PUSH(*old_result, *old);
+        PUSH(*new_result, *new);
         return;
     }
 
@@ -209,14 +209,14 @@ solution_t Volume(Cube const * cube)
     return vol;
 }
 
-void PushCube(CubesArray * cubes, Cube const * new_cube)
+void PushCube(CubesArray * cubes/*, Cube const * new_cube*/)
 {
     for(ssize_t i = SIZE(*cubes)-1; i >= 0; --i)
     {
-        Cube * it = cubes->begin + i;
-        bool intersected = Intersect(it, new_cube, cubes);
+        // TODO
+        // Cube * it = cubes->begin + i;
+        // Intersect(it, new_cube, cubes);
 
-        if()
     }
 
 }
