@@ -108,6 +108,8 @@ void CopyValidX(InstructionPtrVector * out, InstructionPtrVector const * in, coo
     *min_y =  INT_MAX;
     *max_y = -INT_MAX;
 
+    bool none_write = true;
+
     for(Instruction ** it = in->begin; it != in->end; ++it)
     {
         if((*it)->x0 > x || x >= (*it)->x1) continue;
@@ -116,15 +118,17 @@ void CopyValidX(InstructionPtrVector * out, InstructionPtrVector const * in, coo
 
         *min_y = MIN(*min_y, (*it)->y0);
         *max_y = MAX(*max_y, (*it)->y1);
+
+        if((*it)->active) none_write = false;
     }
 
     *min_y = MAX(*min_y, min_y_0);
     *max_y = MIN(*max_y, max_y_0);
 
-    if(out->begin == out->end)
+    if(none_write)
     {
         *min_y = 0;
-        *max_y = -1;
+        *max_y = 0;
     }
 }
 
@@ -138,6 +142,8 @@ void CopyValidY(InstructionPtrVector * out, InstructionPtrVector const * in, coo
     *min_z =  INT_MAX;
     *max_z = -INT_MAX;
 
+    bool none_write = true;
+
     for(Instruction ** it = in->begin; it != in->end; ++it)
     {
         if((*it)->y0 > y || y >= (*it)->y1) continue;
@@ -146,15 +152,17 @@ void CopyValidY(InstructionPtrVector * out, InstructionPtrVector const * in, coo
 
         *min_z = MIN(*min_z, (*it)->z0);
         *max_z = MAX(*max_z, (*it)->z1);
+
+        if((*it)->active) none_write = false;
     }
 
     *min_z = MAX(*min_z, min_z_0);
     *max_z = MIN(*max_z, max_z_0);
 
-    if(out->begin == out->end)
+    if(none_write)
     {
         *min_z = 0;
-        *max_z = -1;
+        *max_z = 0;
     }
 }
 
