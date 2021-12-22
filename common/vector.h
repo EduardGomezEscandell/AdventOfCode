@@ -66,7 +66,6 @@
     for(type * CREM_it = (pos); CREM_it != (v).end; ++CREM_it) {              \
         *CREM_it = *(CREM_it+1);                                              \
     }                                                                         \
-    --pos;                                                                    \
 } while(0)
 
 #define EXTEND(CEXT_type, CEXT_v1, CEXT_v2) do {                              \

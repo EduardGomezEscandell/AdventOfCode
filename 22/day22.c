@@ -4,27 +4,20 @@
 #include "common/vector.h"
 #include "common/math.h"
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-typedef union {
-    coord_t data[3];
-    struct {
-        coord_t x,y,z;
-    } coords;
-} Vector3d;
+coord_t GetStartX(Cube const * it) { return it->min.coords.x;}
+coord_t GetFinishX(Cube const * it) { return it->max.coords.x;}
 
-typedef struct {
-    int axis;    // Axis where it cuts (0,1,2 -> x,y,z)
-    coord_t value; // Coordinate at the cutting axis
-} Plane;
+coord_t GetStartY(Cube const * it) { return it->min.coords.y;}
+coord_t GetFinishY(Cube const * it) { return it->max.coords.y;}
 
-typedef struct {
-    Vector3d min;
-    Vector3d max;
-    int orientation;
-} Cube;
+coord_t GetStartZ(Cube const * it) { return it->min.coords.z;}
+coord_t GetFinishZ(Cube const * it) { return it->max.coords.z;}
 
-TEMPLATE_VECTOR(Cube) CubesArray;
+DEFINE_QUICKSORT(QuickSort, coord_t)
 
 CubesArray ReadCubes(bool is_test)
 {
@@ -78,222 +71,218 @@ CubesArray ReadCubes(bool is_test)
     return cubes;
 }
 
-// Takes an array of cubes and splits them wih a specified plane
-bool Slice(CubesArray * cubes, Plane plane)
+void SortAndRemoveDuplicates(CoordinateVector * vec)
 {
-    bool sliced = false;
+    QuickSort(vec->begin, vec->end);
 
-    CubesArray result;
-    NEW_VECTOR(result);
-    size_t size = SIZE(*cubes) * 2;
-    RESERVE(result, size);
+    for(coord_t *it = vec->end-1; it != vec->begin; --it)
+    {
+        coord_t *next = it-1;
+
+        if(*it == *next)
+        {
+            REMOVE(*vec, coord_t, it);
+        }
+    }
+}
+
+void EnforceLimits(
+    CoordinateVector * vec,
+    coord_t const * limits_low,
+    coord_t const * limits_high)
+{
+    if(!limits_low && !limits_low) return;
+
+    for(coord_t *it = vec->end-1; it >= vec->begin; --it)
+    {
+        if((limits_low && (*it < *limits_low)) || (limits_high && (*it > *limits_high)))
+        {
+            REMOVE(*vec, coord_t, it);
+        }
+    }
+}
+
+
+void GenerateGrid(
+    CubesArray const * cubes,
+    CoordinateVector * X,
+    CoordinateVector * Y,
+    CoordinateVector * Z,
+    coord_t const * limits_low,
+    coord_t const * limits_high)
+{
+    size_t n_cubes = SIZE(*cubes);
+
+    NEW_VECTOR(*X); RESERVE(*X, n_cubes);
+    NEW_VECTOR(*Y); RESERVE(*Y, n_cubes);
+    NEW_VECTOR(*Z); RESERVE(*Z, n_cubes);
 
     for(Cube * it = cubes->begin; it != cubes->end; ++it)
     {
-        if(it->min.data[plane.axis] > plane.value
-           || it->max.data[plane.axis] < plane.value) 
+        PUSH(*X, it->min.coords.x);  PUSH(*X, it->max.coords.x);
+        PUSH(*Y, it->min.coords.y);  PUSH(*Y, it->max.coords.y);
+        PUSH(*Z, it->min.coords.z);  PUSH(*Z, it->max.coords.z);
+    }
+
+    if(limits_low)
+    {
+        PUSH(*X, *limits_low);
+        PUSH(*Y, *limits_low);
+        PUSH(*Z, *limits_low);
+    }
+
+    if(limits_high)
+    {
+        PUSH(*X, *limits_high);
+        PUSH(*Y, *limits_high);
+        PUSH(*Z, *limits_high);
+    }
+
+    SortAndRemoveDuplicates(X);
+    SortAndRemoveDuplicates(Y);
+    SortAndRemoveDuplicates(Z);
+
+    EnforceLimits(X, limits_low, limits_high);
+    EnforceLimits(Y, limits_low, limits_high);
+    EnforceLimits(Z, limits_low, limits_high);
+}
+
+CubePtrArray CreatePtrVector(CubesArray * cubes)
+{
+    CubePtrArray out;
+    NEW_VECTOR(out);
+    RESERVE(out, SIZE(*cubes));
+
+    for(Cube * it = cubes->begin; it != cubes->end; ++it)
+    {
+        PUSH(out, it);
+    }
+
+    return out;
+}
+
+bool CopyCubesWithCoordinate(
+    CubePtrArray * out,
+    CubePtrArray const * in,
+    coord_t coord,
+    Getter Start,
+    Getter Finish)
+{
+    out->end = out->begin; // Emptying without releasing memory
+
+    bool any_write = false;
+
+    for(Cube ** it = in->begin; it != in->end; ++it)
+    {
+        if(Start(*it) > coord || coord >= Finish(*it)) continue;
+
+        PUSH(*out, *it);
+
+        if((*it)->orientation == 1) any_write = true;
+    }
+
+    return any_write;
+}
+
+bool VoxelStatus(
+    CubePtrArray const * cubes,
+    coord_t coord,
+    Getter Start,
+    Getter Finish)
+{
+    for(Cube * const * it = cubes->end-1; it >= cubes->begin; --it)
+    {
+        if(Start(*it) <= coord && coord < Finish(*it))
+            return (*it)->orientation == 1;
+    }
+
+    return false;
+}
+
+solution_t Volume(
+    CoordinateVector * X,
+    CoordinateVector * Y,
+    CoordinateVector * Z,
+    size_t i,
+    size_t j,
+    size_t k)
+{
+    return (X->begin[i+1] - X->begin[i]) * (Y->begin[j+1] - Y->begin[j]) * (Z->begin[k+1] - Z->begin[k]);
+}
+
+solution_t Solve(
+    const bool is_test,
+    coord_t const * limits_low,
+    coord_t const * limits_high)
+{
+    CubesArray cubes = ReadCubes(is_test);
+
+    CoordinateVector X, Y, Z;
+    GenerateGrid(&cubes, &X, &Y, &Z, limits_low, limits_high);
+
+    // Vector of pointers to the cubes (should be const but then I can't free it :S)
+    CubePtrArray unfiltered = CreatePtrVector(&cubes);
+
+    // Vector of pointers to cubes that contain a certain x (updated during loop)
+    CubePtrArray filtered_x;
+    NEW_VECTOR(filtered_x);
+    RESERVE(filtered_x, SIZE(cubes));
+
+    // Vector of pointers to cubes that intersect a certain xy plane (updated during loop)
+    CubePtrArray filtered_xy;
+    NEW_VECTOR(filtered_xy);
+    RESERVE(filtered_xy, SIZE(cubes));
+
+    solution_t active_voxel_count = 0; // Result
+
+    for(size_t i=0; i<SIZE(X); ++i)
+    {
+        coord_t x = X.begin[i];
+        solution_t delta_x = X.begin[i+1] - X.begin[i];
+        CopyCubesWithCoordinate(&filtered_x, &unfiltered, x, GetStartX, GetFinishX);
+
+        if(SIZE(filtered_x) == 0) continue; // No active cubes for this x
+
+        for(size_t j=0; j<SIZE(Y); ++j)
         {
-            PUSH(result, *it);
-            continue;
-        }
+            coord_t y = Y.begin[j];
+            solution_t area = delta_x * (Y.begin[j+1] - Y.begin[j]);
 
-        Cube lower = *it;
-        Cube upper = *it;
+            CopyCubesWithCoordinate(&filtered_xy, &filtered_x, y, GetStartY, GetFinishY);
 
-        upper.min.data[plane.axis] = plane.value;
-        lower.max.data[plane.axis] = plane.value;
+            if(SIZE(filtered_xy) == 0) continue; // No active cubes for this xy plane
 
-        PUSH(result, lower);
-        PUSH(result, upper);
-
-        sliced = true;
-    }
-
-    CLEAR(*cubes);
-    *cubes = result;
-    return sliced;
-}
-
-void Decompose(Cube const * A, Plane planes[6])
-{
-    for(size_t i=0; i<3; ++i) // 6 faces, 2 per axis
-    {
-        planes[2*i].axis = i;
-        planes[2*i].value = A->min.data[i];  // lower face
-        
-        planes[2*i+1].axis = i;
-        planes[2*i+1].value = A->max.data[i];  // upper face
-    }
-}
-
-
-int CompareVec3(Vector3d const * A, Vector3d const * B)
-{
-    for(size_t i=0; i<3;  ++i)
-    {
-        if(A->data[i] > B->data[i]) return  1;
-        if(A->data[i] < B->data[i]) return -1;
-    }
-    return 0;
-}
-
-int CompareCubes(Cube const * A, Cube const * B)
-{
-    return CompareVec3(&A->min, &B->min);
-}
-
-DEFINE_QUICKSORT_COMP(SortCubes, Cube, CompareCubes)
-DEFINE_FIND_COMP(FindCube, Cube, CompareCubes)
-
-bool DoIntersect(Cube const * old, Cube const * new)
-{
-    for(size_t i=0; i<3; ++i)
-    {
-        if(old->min.data[i] > new->max.data[i]) return false;
-        if(old->max.data[i] < new->min.data[i]) return false;
-    }
-    return true;
-}
-
-typedef struct {
-    bool operand;
-    bool operator;
-} SplitReport;
-
-
-SplitReport Intersect(Cube const * old, Cube const * new, CubesArray * old_result, CubesArray * new_result)
-{
-    if(!DoIntersect(old, new))
-    { // No intersection -> cube is simply pushed to list
-        PUSH(*old_result, *old);
-        PUSH(*new_result, *new);
-        SplitReport report = {false, false};
-        return report;
-    }
-
-    Plane old_decomposed[6];
-    Plane new_decomposed[6];
-
-    Decompose(old, old_decomposed);
-    Decompose(new, new_decomposed);
-
-    SplitReport report = { false, false };
-
-    for(size_t i=0; i<6; ++i)
-    {
-        report.operand  = report.operand  || Slice(old_result, new_decomposed[i]);
-        report.operator = report.operator  || Slice(new_result, old_decomposed[i]);
-    }
-
-
-    // Finding intersection
-    SortCubes(new_result->begin, new_result->end);
-
-    for(Cube * it = old_result->begin; it != old_result->end; ++it)
-    {
-        Cube * res = FindCube(new_result->begin, new_result->end, it, true);
-
-        // Overlapping: can be popped from new result
-        if(res)
-        {
-            // If negative: must be popped from old result as well
-            if(res->orientation == -1)
+            for(size_t k=0; k<SIZE(Z); ++k)
             {
-                SWAP(Cube, it, old_result->end-1);
-                POP(*old_result);
-            } 
+                coord_t z = Z.begin[k];
+                solution_t volume = area * (Z.begin[k+1] - Z.begin[k]);
 
-            SWAP(Cube, res, new_result->end-1);
-            POP(*new_result);
-
-            break; //There will be only one overlap
-        }
-    }
-    return report;
-}
-
-solution_t Volume(Cube const * cube)
-{
-    solution_t vol = 1;
-
-    for(size_t i=0; i<3; ++i) {
-        vol *= cube->max.data[i] - cube->min.data[i];
-    }
-
-    return vol * cube->orientation;
-}
-
-void PushCube(CubesArray * operands, Cube const * operator)
-{
-    CubesArray operators;
-    NEW_VECTOR(operators);
-    PUSH(operators, *operator);
-
-    // Operate on every operand, form end to begin
-    for(ssize_t i = SIZE(*operands)-1; i >= 0; --i)
-    {
-        Cube * it = operands->begin + i;
-        
-        // Perform every operation, from end to begin
-        for(ssize_t j = SIZE(operators)-1; j >= 0; --j)
-        {
-            Cube * op = operators.begin + j;
-
-            SplitReport report = Intersect(it, op, operands, &operators);
-
-            if(report.operand)
-            { // Removing pre-splitting copy
-                SWAP(Cube, it, operands->end-1);
-                --operands->end;
-            }
-
-            if(report.operator)
-            { // Removing pre-splitting copy
-                SWAP(Cube, it, operators.end-1);
-                --operators.end;
+                solution_t status = volume * VoxelStatus(&filtered_xy, z, GetStartZ, GetFinishZ);
+                active_voxel_count += status;
             }
         }
     }
 
-    if(operator->orientation == 1)
-    {// Final addition of non-intersecting positive-oriented cubes
-        EXTEND(Cube, *operands, operators);
-    }
+    CLEAR(cubes);
+    CLEAR(X);          CLEAR(Y);          CLEAR(Z);
+    CLEAR(unfiltered); CLEAR(filtered_x); CLEAR(filtered_xy);
 
-    CLEAR(operators);
+    return active_voxel_count;
 }
 
 
 solution_t SolvePart1(const bool is_test)
 {
-    CubesArray cubes = ReadCubes(is_test);
-
-    CubesArray result;
-    NEW_VECTOR(result);
-    RESERVE(result, SIZE(cubes));
-
-    for(Cube * it = cubes.begin; it != cubes.end; ++it)
-    {
-        PushCube(&result, it);
-    }
-
-    
-    solution_t vol = 0;
-    for(Cube *it = result.begin; it != cubes.end; ++it)
-    {
-        vol += Volume(it);
-    }
-
-    CLEAR(result);
-    CLEAR(cubes);
-
-    return is_test;
+    coord_t limits_lo = -50;
+    coord_t limits_hi =  51;
+    return Solve(is_test, &limits_lo, &limits_hi);
 }
+
 
 solution_t SolvePart2(const bool is_test)
 {
-    return is_test;
+    return Solve(is_test, NULL, NULL);
 }
 
-DEFINE_TEST(1, 590784)
+DEFINE_TEST(1, 474140)
 DEFINE_TEST(2, 2758514936282235)
