@@ -8,9 +8,9 @@
 #include <stdio.h>
 
 /* Gamestate:
- *
- *  000000000000000000000000 AAAAaaaaBBBBbbbbCCCCccccDDDDdddd AaBbCcDd
- *  ^ignored bits            ^Locations (4 bits each)        ^ Has moved flag (1 bit each)
+ *  FEDC BA98 7654 3210 FEDC BA98 7654 3210 FEDC BA98 7654 3210 FEDC BA98 76543210
+ *  0000 0000 0000 0000 0000 0000 AAAA aaaa BBBB bbbb CCCC cccc DDDD dddd AaBb CcDd
+ *  ^ignored bits            ^Locations (4 bits each)                      ^~~~~~~~~ Has moved flag (1 bit each)
  */
 typedef uint_least64_t gamestate_t;
 typedef uint_least8_t player_t;
