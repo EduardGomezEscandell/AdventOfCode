@@ -45,7 +45,7 @@
 			"working_dir" : "${project_path}",
 			"shell_cmd" : "export FILEPATH=${file_path}; bash scripts/run.sh \\${FILEPATH##*/}",
 			"env" : {
-				"AOC_NUM_THREADS" : "4"
+				"AOC_NUM_THREADS" : "8"
 			},
 			"variants" : [
 				{
