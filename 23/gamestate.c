@@ -1,5 +1,6 @@
 #include "gamestate.h"
-#include "routing.h"
+#include "23/routing.h"
+
 
 void GetLine(char ** line, FILE * file)
 {
@@ -24,43 +25,43 @@ gamestate_t ReadGamestate(FILE * file)
     GetLine(&line, file); // Skipping line 2
     GetLine(&line, file);
 
-    short type = line[3] - 'A';
+    player_t type = (player_t) (line[3] - 'A');
     locations[type*2 + counts[type]] = 0x4;
     ++counts[type];
 
-    type = line[5] - 'A';
+    type = (player_t) (line[5] - 'A');
     locations[type*2 + counts[type]] = 0x5;
     ++counts[type];
 
-    type = line[7] - 'A';
+    type = (player_t) (line[7] - 'A');
     locations[type*2 + counts[type]] = 0x6;
     ++counts[type];
 
-    type = line[9] - 'A';
+    type = (player_t) (line[9] - 'A');
     locations[type*2 + counts[type]] = 0x7;
     ++counts[type];
 
     GetLine(&line, file);
-    type = line[3] - 'A';
+    type = (player_t) (line[3] - 'A');
     locations[type*2 + counts[type]] = 0x0;
     ++counts[type];
 
-    type = line[5] - 'A';
+    type = (player_t) (line[5] - 'A');
     locations[type*2 + counts[type]] = 0x1;
     ++counts[type];
 
-    type = line[7] - 'A';
+    type = (player_t) (line[7] - 'A');
     locations[type*2 + counts[type]] = 0x2;
     ++counts[type];
 
-    type = line[9] - 'A';
+    type = (player_t) (line[9] - 'A');
     locations[type*2 + counts[type]] = 0x3;
     ++counts[type];
 
     free(line);
 
     gamestate_t gamestate = 0;
-    for(size_t i=0; i<8; ++i)
+    for(player_t i=0; i<8; ++i)
     {
         gamestate = gamestate << 4;
         gamestate |= locations[i];
@@ -71,7 +72,7 @@ gamestate_t ReadGamestate(FILE * file)
 }
 
 
-int GetLocation(gamestate_t gs, size_t player)
+location_t GetLocation(gamestate_t gs, player_t player)
 {
     return (gs >> (36 - 4*player)) & 0xF;
 }

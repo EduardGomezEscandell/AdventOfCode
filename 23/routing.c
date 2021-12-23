@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-/** IDs of nodes ()
+/** IDs of nodes (in hex)
  * 
  * 8---9---+---A---+---B---+---C---+---D---E
  *         |       |       |       |
@@ -10,10 +10,14 @@
  *         |       |       |       |
  *         0       1       2       3
  * 
- * F used as a no-connection
+ * F used as a no-location marker
  */
-#define NOL 0xF /* No location*/
-#define NLOCS 0xF /* 15 nodes */
+
+/* No location. Used a a sentinel in arrays. */
+#define NOL 0xF
+
+/* 15 nodes */
+#define NLOCS 0xF
 
 void GetConnectivity(location_t const ** row_connectivity, cost_t const ** row_costs, location_t position)
 {
@@ -39,22 +43,22 @@ void GetConnectivity(location_t const ** row_connectivity, cost_t const ** row_c
     const cost_t one = 1;
     const cost_t TWO = 2;
 
-    static const cost_t costs[NLOCS][5] = {
-    /*0*/ {one,   0,   0,   0,   0},
-    /*1*/ {one,   0,   0,   0,   0},
-    /*2*/ {one,   0,   0,   0,   0},
-    /*3*/ {one,   0,   0,   0,   0},
-    /*4*/ {one, TWO, TWO,   0,   0},
-    /*5*/ {one, TWO, TWO,   0,   0},
-    /*6*/ {one, TWO, TWO,   0,   0},
-    /*7*/ {one, TWO, TWO,   0,   0},
-    /*8*/ {one,   0,   0,   0,   0},
-    /*9*/ {TWO, one, one,   0,   0},
-    /*A*/ {TWO, TWO, one, one,   0},
-    /*B*/ {TWO, TWO, one, one,   0},
-    /*C*/ {TWO, TWO, one, one,   0},
-    /*D*/ {TWO, one, one,   0,   0},
-    /*E*/ {one,   0,   0,   0,   0}
+    static const cost_t costs[NLOCS][4] = {
+    /*0*/ {one,   0,   0,   0},
+    /*1*/ {one,   0,   0,   0},
+    /*2*/ {one,   0,   0,   0},
+    /*3*/ {one,   0,   0,   0},
+    /*4*/ {one, TWO, TWO,   0},
+    /*5*/ {one, TWO, TWO,   0},
+    /*6*/ {one, TWO, TWO,   0},
+    /*7*/ {one, TWO, TWO,   0},
+    /*8*/ {one,   0,   0,   0},
+    /*9*/ {TWO, one, one,   0},
+    /*A*/ {TWO, TWO, one, one},
+    /*B*/ {TWO, TWO, one, one},
+    /*C*/ {TWO, TWO, one, one},
+    /*D*/ {TWO, one, one,   0},
+    /*E*/ {one,   0,   0,   0}
     };
 
     *row_connectivity = connectivity[position];
@@ -73,7 +77,7 @@ inline void ReplaceRoute(
     PUSH(*reciever, destination);
 }
 
-void FloodFill(LocationArray routes[NLOCS], cost_t costs[NLOCS], short origin)
+void FloodFill(LocationArray routes[NLOCS], cost_t costs[NLOCS], location_t origin)
 {
     location_t const * connectivity;
     cost_t const * connection_costs;
@@ -83,8 +87,7 @@ void FloodFill(LocationArray routes[NLOCS], cost_t costs[NLOCS], short origin)
 
     for(size_t i=0; connectivity[i] != NOL; ++i)
     {
-        short destination = connectivity[i];
-
+        location_t destination = connectivity[i];
         cost_t cost = accumulated_cost + connection_costs[i];
 
         if(cost > costs[destination]) continue;

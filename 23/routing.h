@@ -35,7 +35,7 @@ typedef struct {
 
 void GetConnectivity(location_t const ** row_connectivity, cost_t const ** row_costs, location_t position);
 
-void FloodFill(LocationArray routes[NLOCS], cost_t costs[NLOCS], short origin);
+void FloodFill(LocationArray routes[NLOCS], cost_t costs[NLOCS], location_t origin);
 
 RoutingTable BuildRoutingTable();
 void PrintRoutingTable(RoutingTable * t);
