@@ -21,6 +21,7 @@ typedef uint_least8_t player_t;
 TEMPLATE_VECTOR(gamestate_t) GamestateArray;
 
 #define NPLAYERS 8
+#define NO_PLAYER 8
 
 typedef struct
 {
@@ -45,5 +46,34 @@ void ComputePossibleContinuations(
     GamestateArray * continuation,
     CostArray * costs);
 
-#endif
+void PrettyPrintGamestate(UnpackedGamestate * ugs);
 
+bool WiningGamestate(gamestate_t gs);
+
+void ComputePossibleContinuations(
+    gamestate_t gs,
+    RoutingTable const * routing_table,
+    GamestateArray * continuations,
+    CostArray * costs);
+
+void ComputePlayerPossibleContinuations(
+    player_t player_id,
+    UnpackedGamestate * ugs,
+    RoutingTable const * routing_table,
+    GamestateArray * continuations,
+    CostArray * costs);
+
+bool ValidateCohabitation(
+    player_t player_id,
+    location_t destination,
+    UnpackedGamestate * ugs);
+
+bool ValidatePath(
+    UnpackedGamestate * ugs,
+    RoutingTable const * routing_table,
+    location_t source,
+    location_t destination);
+
+int MovementCost(short player_id);
+
+#endif

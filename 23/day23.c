@@ -11,93 +11,65 @@
 
 
 
-
-int MovementCost(short player_id)
+void Dijkstra(Node * begin, Node * end, Node * start, Node * target)
 {
-    switch (player_id / 2)
+    Queue Q;
+    NEW_VECTOR(Q);
+    const size_t sz = end-begin;
+    RESERVE(Q, sz);
+
+    for(Node * it = begin; it != end; ++it)
     {
-        case 0: return 1;
-        case 1: return 10;
-        case 2: return 100;
-        case 3: return 1000;
-        default:
-            fprintf(stderr, "Error: invalid player id: %d (%s:%d)\n", player_id, __FILE__, __LINE__);
-            exit(EXIT_FAILURE);
+        it->distance = -1;  // Purposefully under-flowing
+        // it->prev = NULL;
+        it->visited = false;
+
+        PUSH(Q, it);
     }
-}
+    start->distance = 0;
 
+    Node ** visited_end = Q.begin;
 
-/*
- *  Rules:
- *   - Due to geometry:
- *     IMPL:
- *      1 There is no node in front of rooms
- *      2 It never makes sense to move around the same room
- *      3 Not moving is not a move
- *
- *   - Amphipods will never move from the hallway into a room unless that room is their destination room 
- *     IMPL: 
- *      4 You can never leave a room if you have moved already
- *
- *   - Once an amphipod stops moving in the hallway, it will stay in that spot until it can move into a room.
- *     IMPL:
- *      5 Implemented in routing table
- * 
- *
- */
-void ComputePlayerPossibleContinuations(
-    player_t player_id,
-    UnpackedGamestate * ugs,
-    RoutingTable const * routing_table,
-    GamestateArray * continuations,
-    CostArray * costs)
-{
-    location_t location = ugs->locations[player_id];
-    bool moveflag = ugs->moveflags[player_id];
-
-    if(RoomId(location)!=HALLWAY_ID && moveflag) return; // Cannot move again! (IMPL 4)
-
-    for(location_t destination = 0; destination < NLOCS; ++destination)
+    while(visited_end != Q.end)
     {
-        if(routing_table->costs[location][destination] == -1) continue; // Invalid path (IMPL 2, 3, 5)
-
-        if(RoomId(destination)==HALLWAY_ID && moveflag) continue; // Cannot move around the halway->must get into room
-
-        LocationArray const * route = &routing_table->routes[location][destination];
-
-        // Traversing route, checking for blockades
-        for(location_t const * it = route->begin; it != route->end; ++it)
+        Node ** it = MinEntry(visited_end, Q.end);
+        
+        /*Popping it from queue*/
         {
-            if(ugs->blockades[*it]) continue;
+            Node *tmp = *it;
+            *it = *visited_end;
+            *visited_end = tmp;
+            it = visited_end;
+            ++visited_end;
         }
 
-        // Adding new gamestate and cost to continuations
-        UnpackedGamestate cont_packed = CopyLocationsAndFlags(ugs);
-        gamestate_t cont = PackGamestate(&cont_packed);
-        PUSH(*continuations, cont);
+        Node * u = *it;
+        u->visited = true;
 
-        cost_t cost = MovementCost(player_id) * routing_table->costs[location][destination];
-        PUSH(*costs, cost);
+        if(u->id == target->id) {
+            CLEAR(Q);
+            return;
+        }
+
+        for(size_t i=0; i<4; ++i)
+        {
+            Node * neigh = u->neighbours[i];
+            if(!neigh || neigh->visited) continue;
+
+            long long int alt = u->distance + Distance(u, neigh);
+
+            if(alt < neigh->distance)
+            {
+                neigh->distance = alt;
+                // neigh->prev = u;
+            }
+        }
     }
 
-}
+    CLEAR(Q);
 
+    printf("DIJKSTRA: Failed to find a shortest path\n");
 
-void ComputePossibleContinuations(
-    gamestate_t gs,
-    RoutingTable const * routing_table,
-    GamestateArray * continuations,
-    CostArray * costs)
-{
-    continuations->end = continuations->begin; // Emptying without releasing memory
-    costs->end = costs->begin; // Emptying without releasing memory
-
-    UnpackedGamestate ugs = UnpackGamestate(gs);
-
-    for(player_t i = 0; i<NPLAYERS; ++i)
-    {
-        ComputePlayerPossibleContinuations(i, &ugs, routing_table, continuations, costs);
-    }   
 }
 
 
@@ -120,10 +92,20 @@ solution_t SolvePart1(const bool is_test)
     NEW_VECTOR(costs);
 
     ComputePossibleContinuations(gs, &routing, &continuations, &costs);
-    ClearRoutingTable(&routing);
 
+    for(size_t i=0; i<SIZE(continuations); ++i)
+    {
+        UnpackedGamestate ugs = UnpackGamestate(continuations.begin[i]);
+        printf("Move with cost %d:\n", costs.begin[i]);
+        PrettyPrintGamestate(&ugs);
+    }
+
+
+    ClearRoutingTable(&routing);
     CLEAR(continuations);
     CLEAR(costs);
+
+    fflush(stdout);
 
     return is_test;
 }
