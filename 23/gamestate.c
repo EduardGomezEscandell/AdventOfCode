@@ -1,5 +1,5 @@
 #include "gamestate.h"
-#include "23/routing.h"
+#include "routing.h"
 
 
 void GetLine(char ** line, FILE * file)
@@ -72,7 +72,69 @@ gamestate_t ReadGamestate(FILE * file)
 }
 
 
-location_t GetLocation(gamestate_t gs, player_t player)
+UnpackedGamestate UnpackGamestate(gamestate_t gs)
 {
-    return (gs >> (36 - 4*player)) & 0xF;
+    UnpackedGamestate ugs;
+
+    // Reading flags
+    for(player_t i=NPLAYERS; i > 0; --i)
+    {
+        ugs.moveflags[i-1] = gs & 1;
+        gs = gs >> 1;
+    }
+
+    // Reading locations
+    for(player_t i=NPLAYERS; i > 0; --i)
+    {
+        ugs.locations[i-1] = gs & 0xF;
+        gs = gs >> 4; // Four bits per player
+    }
+
+    // Initializing blockades
+    for(location_t i=0; i<NLOCS; ++i) {
+        ugs.blockades[i] = 0;
+    }
+
+    // Filling blockades
+    for(player_t i=0; i<NPLAYERS; ++i) {
+        ugs.blockades[ugs.locations[i]] = true;
+    }
+
+    return ugs;
 }
+
+gamestate_t PackGamestate(UnpackedGamestate * ugs)
+{
+    gamestate_t gs = 0;
+
+    for(player_t i=0; i < NPLAYERS; --i)
+    {
+        gs += ugs->locations[i];
+        gs = gs << 4; // Four bits per player
+    }
+
+    for(player_t i=0; i < NPLAYERS; --i)
+    {
+        gs |= ugs->moveflags[i];
+        gs = gs << 1;
+    }
+
+    return gs;
+}
+
+UnpackedGamestate CopyLocationsAndFlags(UnpackedGamestate const * source)
+{
+    UnpackedGamestate out;
+
+    for(player_t i=0; i < NPLAYERS; ++i)
+    {
+        out.locations[i] = source->locations[i];
+        out.moveflags[i] = source->moveflags[i];
+    }
+
+    return out;
+}
+
+
+
+

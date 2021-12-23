@@ -1,4 +1,5 @@
 #include "routing.h"
+#include "common/vector.h"
 
 #include <stdio.h>
 
@@ -12,12 +13,6 @@
  * 
  * F used as a no-location marker
  */
-
-/* No location. Used a a sentinel in arrays. */
-#define NOL 0xF
-
-/* 15 nodes */
-#define NLOCS 0xF
 
 void GetConnectivity(location_t const ** row_connectivity, cost_t const ** row_costs, location_t position)
 {
@@ -39,26 +34,22 @@ void GetConnectivity(location_t const ** row_connectivity, cost_t const ** row_c
     /*E*/ {0xD, NOL, NOL, NOL, NOL}
     };
 
-    // For readability reasons
-    const cost_t one = 1;
-    const cost_t TWO = 2;
-
     static const cost_t costs[NLOCS][4] = {
-    /*0*/ {one,   0,   0,   0},
-    /*1*/ {one,   0,   0,   0},
-    /*2*/ {one,   0,   0,   0},
-    /*3*/ {one,   0,   0,   0},
-    /*4*/ {one, TWO, TWO,   0},
-    /*5*/ {one, TWO, TWO,   0},
-    /*6*/ {one, TWO, TWO,   0},
-    /*7*/ {one, TWO, TWO,   0},
-    /*8*/ {one,   0,   0,   0},
-    /*9*/ {TWO, one, one,   0},
-    /*A*/ {TWO, TWO, one, one},
-    /*B*/ {TWO, TWO, one, one},
-    /*C*/ {TWO, TWO, one, one},
-    /*D*/ {TWO, one, one,   0},
-    /*E*/ {one,   0,   0,   0}
+    /*0*/ {    1, INF_COST, INF_COST, INF_COST},
+    /*1*/ {    1, INF_COST, INF_COST, INF_COST},
+    /*2*/ {    1, INF_COST, INF_COST, INF_COST},
+    /*3*/ {    1, INF_COST, INF_COST, INF_COST},
+    /*4*/ {    1,        2,        2, INF_COST},
+    /*5*/ {    1,        2,        2, INF_COST},
+    /*6*/ {    1,        2,        2, INF_COST},
+    /*7*/ {    1,        2,        2, INF_COST},
+    /*8*/ {    1, INF_COST, INF_COST, INF_COST},
+    /*9*/ {    2,        1,        1, INF_COST},
+    /*A*/ {    2,        2,        1,        1},
+    /*B*/ {    2,        2,        1,        1},
+    /*C*/ {    2,        2,        1,        1},
+    /*D*/ {    2,        1,        1, INF_COST},
+    /*E*/ {    1, INF_COST, INF_COST, INF_COST}
     };
 
     *row_connectivity = connectivity[position];
@@ -66,12 +57,13 @@ void GetConnectivity(location_t const ** row_connectivity, cost_t const ** row_c
 }
 
 
-inline void ReplaceRoute(
+void ReplaceRoute(
     LocationArray * reciever,
     LocationArray const * copied,
     location_t destination)
 {
     reciever->end = reciever->begin; // Emptying without releasing memory
+    CLEAR(*reciever);
     NEW_VECTOR(*reciever);
     CONCATENATE(*reciever, *copied, location_t);
     PUSH(*reciever, destination);
@@ -117,6 +109,24 @@ RoutingTable BuildRoutingTable()
         FloodFill(routing.routes[i], routing.costs[i], i);
     }
 
+    // Disabling paths forbidden by rules or by optimization
+    for(location_t src = 0; src<NLOCS; ++src)
+    {
+        for(location_t dst=0; dst<NLOCS; ++dst)
+        {
+            if(src == dst || RoomId(src) == RoomId(dst))
+            {
+                // OPTIMIZATION: Disables paths between same room
+                CLEAR(routing.routes[src][dst]);
+                routing.costs[src][dst] = INF_COST;
+                continue;
+            }
+
+        }
+
+        
+    }
+
     return routing;
 }
 
@@ -126,6 +136,8 @@ void PrintRoutingTable(RoutingTable * t)
     {
         for(location_t j=0; j<NLOCS; ++j)
         {
+            if(t->costs[i][j] == INF_COST) continue;
+
             printf("Trip %X -> %X (Cost=%d): ", i,j, t->costs[i][j]);
 
             for(location_t * it=t->routes[i][j].begin; it != t->routes[i][j].end; ++it)
@@ -135,5 +147,16 @@ void PrintRoutingTable(RoutingTable * t)
             printf("\n");
         }
         printf("\n");
+    }
+}
+
+void ClearRoutingTable(RoutingTable * t)
+{
+    for(location_t i=0; i<NLOCS; ++i)
+    {
+        for(location_t j=0; j<NLOCS; ++j)
+        {
+            CLEAR(t->routes[i][j]);
+        }
     }
 }
