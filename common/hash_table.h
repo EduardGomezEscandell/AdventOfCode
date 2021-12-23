@@ -94,7 +94,7 @@ int HT_name##DefaultCompare(                                                  \
     const HT_key_t * keyA,                                                    \
     const HT_key_t * keyB)                                                    \
 {                                                                             \
-    return *keyA == *keyB ? 0 : 1;                                            \
+    return (*keyA == *keyB) ? 0 : 1;                                          \
 }
 
 #define HT_DEFINE_SET_COMPARISON(HT_hash_t, HT_key_t, HT_val_t, HT_name)      \

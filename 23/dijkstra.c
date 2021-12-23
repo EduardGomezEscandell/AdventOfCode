@@ -13,9 +13,9 @@ HT_DEFINE_FIND_OR_EMPLACE(gamestate_t, gamestate_t, cost_t, GsDict)
 HT_DEFINE_REMOVE         (gamestate_t, gamestate_t, cost_t, GsDict)
 
 
-gamestate_t GamestateDictHashIntegers(gamestate_t const * key, size_t n_buckets)
+gamestate_t GsDictHashIntegers(gamestate_t const * key, size_t n_buckets)
 {
-    return *key % n_buckets;
+    return (*key >> 8) + (*key << 32) % n_buckets;
 }
 
 GsDictPair * FindMinimum(GsDict * dict)
@@ -39,8 +39,8 @@ GsDictPair * FindMinimum(GsDict * dict)
 
 cost_t Dijkstra(gamestate_t initial_gamestate, RoutingTable * routing)
 {
-    GsDict queue = NewGsDict(GamestateDictHashIntegers);
-    GsDict visited = NewGsDict(GamestateDictHashIntegers);
+    GsDict queue = NewGsDict(GsDictHashIntegers);
+    GsDict visited = NewGsDict(GsDictHashIntegers);
 
     *GsDictFindOrAllocate(&queue, initial_gamestate) = 0;
 
@@ -74,9 +74,9 @@ cost_t Dijkstra(gamestate_t initial_gamestate, RoutingTable * routing)
                 return accumulated_cost + cont_costs.begin[i];                
             }
 
-            cost_t * cont_cost = GsDictFindOrEmplace(&queue, continuations.begin[i], 0);
             cost_t new_cont_cost = accumulated_cost + cont_costs.begin[i];
-            *cont_cost = MAX(*cont_cost, new_cont_cost);
+            cost_t * cont_cost = GsDictFindOrEmplace(&queue, continuations.begin[i], new_cont_cost);
+            *cont_cost = MIN(*cont_cost, new_cont_cost);
         }
     }
 
