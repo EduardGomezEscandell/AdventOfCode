@@ -14,6 +14,7 @@
  *
  *  0000 0000 0000 0000 0000 0000 AAAA aaaa BBBB bbbb CCCC cccc DDDD dddd AaBb CcDd
  *  ^~~~~~~~ignored bits~~~~~~~~^ ^~~~player locations (4 bits each)~~~~^ ^~~~~~~~^ Has moved flag (1 bit each)
+ *                              
  */
 typedef uint_least64_t gamestate_t;
 typedef uint_least8_t player_t;
@@ -27,7 +28,7 @@ typedef struct
 {
     location_t locations[NPLAYERS];
     bool moveflags[NPLAYERS];
-    bool blockades[NLOCS];
+    route_t blockades;
 } UnpackedGamestate;
 
 UnpackedGamestate UnpackGamestate(gamestate_t gs);

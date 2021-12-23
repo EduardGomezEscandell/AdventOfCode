@@ -44,11 +44,11 @@ void GetConnectivity(location_t const ** row_connectivity, cost_t const ** row_c
     /*6*/ {    1,        2,        2, INF_COST},
     /*7*/ {    1,        2,        2, INF_COST},
     /*8*/ {    1, INF_COST, INF_COST, INF_COST},
-    /*9*/ {    2,        1,        1, INF_COST},
-    /*A*/ {    2,        2,        1,        1},
-    /*B*/ {    2,        2,        1,        1},
-    /*C*/ {    2,        2,        1,        1},
-    /*D*/ {    2,        1,        1, INF_COST},
+    /*9*/ {    2,        1,        2, INF_COST},
+    /*A*/ {    2,        2,        2,        2},
+    /*B*/ {    2,        2,        2,        2},
+    /*C*/ {    2,        2,        2,        2},
+    /*D*/ {    2,        2,        1, INF_COST},
     /*E*/ {    1, INF_COST, INF_COST, INF_COST}
     };
 
@@ -69,7 +69,7 @@ void ReplaceRoute(
     PUSH(*reciever, destination);
 }
 
-void FloodFill(LocationArray routes[NLOCS], cost_t costs[NLOCS], location_t origin)
+void FloodFill(route_t routes[NLOCS], cost_t costs[NLOCS], location_t origin)
 {
     location_t const * connectivity;
     cost_t const * connection_costs;
@@ -85,7 +85,7 @@ void FloodFill(LocationArray routes[NLOCS], cost_t costs[NLOCS], location_t orig
         if(cost > costs[destination]) continue;
 
         costs[destination] = cost;
-        ReplaceRoute(&routes[destination], &routes[origin], destination);
+        routes[destination] = (route_t) (routes[origin] | (1 << destination));
 
         FloodFill(routes, costs, destination);
     }
@@ -99,12 +99,12 @@ RoutingTable BuildRoutingTable()
     {
         for(location_t j=0; j<NLOCS; ++j)
         {
-            NEW_VECTOR(routing.routes[i][j]);
+            routing.routes[i][j] = 0;
             routing.costs[i][j] = UINT8_MAX; // Maximum real cost is 8
         }
 
         routing.costs[i][i] = 0;
-        PUSH(routing.routes[i][i], i);
+        routing.routes[i][i] = 0;
 
         FloodFill(routing.routes[i], routing.costs[i], i);
     }
@@ -117,14 +117,12 @@ RoutingTable BuildRoutingTable()
             if(src == dst || RoomId(src) == RoomId(dst))
             {
                 // OPTIMIZATION: Disables paths between same room
-                CLEAR(routing.routes[src][dst]);
+                routing.routes[src][dst] = 0;
                 routing.costs[src][dst] = INF_COST;
                 continue;
             }
 
-        }
-
-        
+        }   
     }
 
     return routing;
@@ -138,11 +136,14 @@ void PrintRoutingTable(RoutingTable * t)
         {
             if(t->costs[i][j] == INF_COST) continue;
 
-            printf("Trip %X -> %X (Cost=%d): ", i,j, t->costs[i][j]);
+            printf("Trip %X -> %X (Cost=%2d): ", i,j, t->costs[i][j]);
 
-            for(location_t * it=t->routes[i][j].begin; it != t->routes[i][j].end; ++it)
+            route_t route = t->routes[i][j];
+            for(location_t i=0; route != 0; ++i)
             {
-                printf(" %X", *it);
+                if(route & 1)
+                    printf(" %X", i);
+                route = (route_t) (route >> 1);
             }
             printf("\n");
         }
@@ -150,13 +151,3 @@ void PrintRoutingTable(RoutingTable * t)
     }
 }
 
-void ClearRoutingTable(RoutingTable * t)
-{
-    for(location_t i=0; i<NLOCS; ++i)
-    {
-        for(location_t j=0; j<NLOCS; ++j)
-        {
-            CLEAR(t->routes[i][j]);
-        }
-    }
-}

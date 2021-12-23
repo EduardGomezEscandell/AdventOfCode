@@ -94,13 +94,12 @@ UnpackedGamestate UnpackGamestate(gamestate_t gs)
     }
 
     // Initializing blockades
-    for(location_t i=0; i<NLOCS; ++i) {
-        ugs.blockades[i] = 0;
-    }
+    ugs.blockades = 0;
 
     // Filling blockades
-    for(player_t i=0; i<NPLAYERS; ++i) {
-        ugs.blockades[ugs.locations[i]] = true;
+    for(player_t i=0; i<NPLAYERS; ++i)
+    {
+        ugs.blockades |= (route_t) (1 << ugs.locations[i]);
     }
 
     return ugs;
@@ -235,13 +234,7 @@ bool ValidatePath(
     location_t source,
     location_t destination)
 {
-    LocationArray const * route = &routing_table->routes[source][destination];
-
-    for(location_t const * it = route->begin + 1; it < route->end; ++it)
-    {
-        if(ugs->blockades[*it]) return false;
-    }
-    return true;
+    return (routing_table->routes[source][destination] & ugs->blockades) == 0;
 }
 
 bool ValidateCohabitation(

@@ -272,7 +272,7 @@ HT_name##SearchResult HT_name##Find(HT_name * ht, const HT_key_t * key)       \
 HT_name##Pair * HT_name##_Private_Expand(HT_name * ht)                        \
 {                                                                             \
     const size_t size = SIZE(ht->data);                                       \
-    if(size >= 0.7 * ht->data.capacity)                                       \
+    if(size >= 0.7 * ((double) ht->data.capacity))                            \
     {                                                                         \
         const size_t new_size = 2*size;                                       \
         RESERVE(ht->data, new_size);                                          \
