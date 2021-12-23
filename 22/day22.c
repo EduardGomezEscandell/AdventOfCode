@@ -342,6 +342,9 @@ solution_t Solve(
     }
 
     ClearGrid(&grid);
+    CLEAR(thread_ids);
+    CLEAR(voxel_counts);
+    CLEAR(parameters);
     CLEAR(cubes);
     CLEAR(cubes_ptr);
 
