@@ -31,10 +31,10 @@
 } while(0)
 
 #define PUSH(CPUSH_v, CPUSH_data) do {                                        \
-    const size_t PUSH_size = (CPUSH_v).end - (CPUSH_v).begin;                 \
+    const size_t PUSH_size = (size_t) ((CPUSH_v).end - (CPUSH_v).begin);      \
     if(PUSH_size >= (CPUSH_v).capacity) {                                     \
         (CPUSH_v).capacity += 1;   /* Minimum size */                         \
-        (CPUSH_v).capacity *= 1.6; /* Growth factor */                        \
+        (CPUSH_v).capacity *= 2;   /* Growth factor */                        \
         (CPUSH_v).begin = realloc(                                            \
             (CPUSH_v).begin,                                                  \
             (CPUSH_v).capacity * sizeof(*(CPUSH_v).begin));                   \
