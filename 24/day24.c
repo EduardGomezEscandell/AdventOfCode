@@ -1,105 +1,150 @@
 #include "day24.h"
-#include "24/virtual_machine.h"
+#include "common/vector.h"
+
+#include "simulate.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define MONAD_DIGITS 14
-#define MAX_MONAD (1e14-1)
 
-
-solution_t Test1()
+Node NewNode(size_t id)
 {
-    VirtualMachine vm = ReadVirtualMachine(true);
-    
-    const value_t input1 = 13;
-    vm.data[IO_SEGMENT_BEGIN] = input1; // Program converts this to binary (numbers up to 16)
-    
-    RunVM(&vm);
-
-    // Reconstructing
-    solution_t solution1 = 0;
-    for(address_t i=REGISTER_SEGMENT_BEGIN; i<NREGISTERS; ++i) {
-        solution1 = solution1 << 1;
-        solution1 += 1 & (vm.data[i]);
-    }
-
-    // printf("Registers at HALT:\n");
-    // for(address_t i=REGISTER_SEGMENT_BEGIN; i<NREGISTERS; ++i) {
-    //     printf(" %15ld", vm->data[i]);
-    // }
-    // printf("\n");
-
-    RebootVirtualMachine(&vm);
-
-    const value_t input2 = 13;
-    vm.data[IO_SEGMENT_BEGIN] = input2; // Program converts this to binary (numbers up to 16)
-    
-    RunVM(&vm);
-
-    // Reconstructing
-    solution_t solution2 = 0;
-    for(address_t i=REGISTER_SEGMENT_BEGIN; i<NREGISTERS; ++i) {
-        solution2 = solution2 << 1;
-        solution2 += 1 & (vm.data[i]);
-    }
-
-    return (input1 == solution1) && (input2 == solution2);
-
+    Node node;
+    node.id = id;    
+    return node;
 }
 
-bool ConvertToArray(solution_t num, solution_t digits[MONAD_DIGITS])
+Tree NewTree()
 {
-    for(size_t i=0; i < MONAD_DIGITS; ++i)
+    Tree t;
+
+    for(size_t i=0; i < MONAD_DIGITS+1; ++i)
     {
-        digits[i] = num % 10;
-        if(digits[i] == 0) return true;
-        num /= 10;
+        NEW_VECTOR(t.levels[i]);
     }
-    return 0;
+
+    PUSH(t.levels[0], NewNode(0)); // Root node
+    t.levels[0].begin[0].z = 0;
+
+    return t;
 }
 
-void LoadOntoMemory(VirtualMachine * vm, solution_t data[MONAD_DIGITS])
+void ClearTree(Tree * t)
 {
-    for(size_t i=0; i<MONAD_DIGITS; ++i)
+    for(size_t i=0; i < MONAD_DIGITS+1; ++i)
     {
-        vm->data[IO_SEGMENT_BEGIN + i] = data[i];
+        CLEAR(t->levels[i]);
     }
 }
+
+int CompareNodes(Node const * A, Node const * B)
+{
+    return A->id != B->id;
+}
+
+
+Node * FindNode(NodeVector * tree_level, Int z)
+{
+    for(Node * it = tree_level->begin; it != tree_level->end; ++it)
+    {
+        if(it->z == z) return it;
+    }
+    return NULL;
+}
+
+size_t GenerateID(Tree const * tree, size_t lvl)
+{
+    /* Id encoding
+     *      101110101
+     *      ~~~~~^^^^ Last 4 bits are the level
+     *      ^ Leading bits are the position in the array
+     */
+    size_t pos = SIZE(tree->levels[lvl]);
+    return lvl + (pos << 4);
+}
+
+size_t GetPositionFromId(size_t id)
+{
+    return id >> 4;
+}
+
+size_t GetLvlFromId(size_t id)
+{
+    return id & 0xF;
+}
+
+void ExploreNode(Tree * tree, ChunkData const chunkdata[MONAD_DIGITS], Node * node)
+{
+    size_t lvl = GetLvlFromId(node->id);
+
+    for(size_t next_digit = 1; next_digit < 10; ++next_digit)
+    {
+        Int next_z = chunkdata[lvl].eval(node->z, next_digit);
+
+        Node * it = FindNode(&tree->levels[lvl+1], next_z);
+
+        if(it) // Collision. YAY!
+        {
+            node->children_id[next_digit-1] = it->id;
+        }
+        else // New path :(
+        {
+            PUSH(tree->levels[lvl+1], NewNode(GenerateID(tree, lvl+1)));
+            tree->levels[lvl+1].end[-1].z = next_z;
+        }
+    }
+}
+
+
+void PrintLevel(Tree * tree, size_t lvl)
+{
+    printf("Level %ld:", lvl);
+    for(Node * it = tree->levels[lvl].begin; it != tree->levels[lvl].end; ++it)
+    {
+        printf(" %ld", it->z);
+    }
+    printf("\n");
+}
+
+
+void ExploreTree(Tree * tree, ChunkData const chunkdata[MONAD_DIGITS])
+{
+    for(size_t lvl=0; lvl < MONAD_DIGITS; ++lvl)
+    {
+        for(Node * it = tree->levels[lvl].begin; it != tree->levels[lvl].end; ++it)
+        {
+            ExploreNode(tree, chunkdata, it);
+        }
+
+        printf("Level %ld has %ld paths\n", lvl, SIZE(tree->levels[lvl]));
+    }
+    printf("Level %d has %ld paths\n", MONAD_DIGITS, SIZE(tree->levels[MONAD_DIGITS]));
+}
+
 
 solution_t SolvePart1(const bool is_test)
 {
-    if(is_test) return Test1();
+    if(is_test) return 1;
 
-    VirtualMachine vm = ReadVirtualMachine(false);
+    ChunkData chunkdata[MONAD_DIGITS];
+    FillChunkData(chunkdata);
+    Tree tree = NewTree();
 
-    for(solution_t i = MAX_MONAD; i > 0; --i)
-    {
-        solution_t digits[MONAD_DIGITS] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-        bool has_zeroes = ConvertToArray(i, digits);
+    ExploreTree(&tree, chunkdata);
 
-        if(has_zeroes)
-        {
-            continue;
-        }
+    printf("\n");
+    PrintLevel(&tree, 0);
+    PrintLevel(&tree, 1);
+    PrintLevel(&tree, 2);
+    printf("...\n");
+    PrintLevel(&tree, 12);
+    PrintLevel(&tree, 13);
+    PrintLevel(&tree, 14);
+    printf("\n");
 
-        fflush(stdout);
-
-        RebootVirtualMachine(&vm);
-        LoadOntoMemory(&vm, digits);
-
-        RunVM(&vm);
-
-        solution_t output = vm.data[GetRegisterAddress('w')];
-
-        if(output == 0)
-        {
-            ClearVirtualMachine(&vm);
-            return i;
-        }
-    }
-
+    ClearTree(&tree);
     return 0;
 }
 
