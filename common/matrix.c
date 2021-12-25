@@ -34,6 +34,17 @@ Matrix EmptyMatrix(size_t rows, size_t cols)
     return mat;
 }
 
+void FillMatrix(Matrix * mat, long value)
+{
+    for(size_t i=0; i<mat->nrows; ++i)
+    {
+        for(size_t j=0; j<mat->ncols; ++j)
+        {
+            mat->data[i][j] = value;
+        }
+    }
+}
+
 void AddRow(Matrix * mat)
 {
     if(mat->nrows >= mat->crows)
