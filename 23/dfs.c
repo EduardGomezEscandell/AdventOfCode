@@ -9,6 +9,8 @@ int CompareCosts(Continuation const * A, Continuation const * B)
     return A_is_larger ? 1 : -1;
 }
 
+DEFINE_QUICKSORT_COMP(SortByCost, Continuation, CompareCosts)
+
 cost_t DFS(
     GameState const * gamestate,
     RoutingTable const * routing,
@@ -20,10 +22,6 @@ cost_t DFS(
     
     return best_cost;
 }
-
-
-DEFINE_QUICKSORT_COMP(SortByCost, Continuation, CompareCosts)
-
 
 void DFS_impl(
     GameState const * gamestate,
@@ -42,19 +40,16 @@ void DFS_impl(
     for(Continuation * it = continuations.begin; it != continuations.end; ++it)
     {
         cost_t total_cost = acc_cost + it->cost;
-
         
         if(MinCost(total_cost, *curr_best) == *curr_best)
         {
             break; // Prunning
-            printf("<<< PRUNNING <<<\n");
         }
 
-        if(WiningGamestate(&it->state, pdata))
+        if(WinningGamestate(&it->state, pdata))
         {
             *curr_best = total_cost;
             printf("Found a winning gamestate with cost %d\n", *curr_best);
-            PrettyPrintGamestate(&it->state, pdata);
             fflush(stdout);
         }
         else

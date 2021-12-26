@@ -1,4 +1,5 @@
 #include "gamestate.h"
+#include "common/file_utils.h"
 
 #include "routing.h"
 #include <string.h>
@@ -31,7 +32,7 @@ void ReadLine(char const * line, size_t row, GameState * gs, short counts[4])
     }
 }
 
-GameState ReadGamestate(FILE * file, ProblemData const * pdata)
+GameState ReadGamestate(ProblemData const * pdata)
 {
     char * line = NULL;
 
@@ -39,6 +40,7 @@ GameState ReadGamestate(FILE * file, ProblemData const * pdata)
 
     GameState gs;
 
+    FILE * file = GetFile(pdata->is_test, 23);
     GetLine(&line, file); // Skipping line 1
     GetLine(&line, file); // Skipping line 2
     
@@ -47,15 +49,24 @@ GameState ReadGamestate(FILE * file, ProblemData const * pdata)
     ReadLine(line, row++, &gs, counts);
 
     if(pdata->part == 2)
-    {  
-        ReadLine("  #D#C#B#A#", row++, &gs, counts);
-        ReadLine("  #D#B#A#C#", row++, &gs, counts);        
+    {
+        if(pdata->is_test)
+        {
+            ReadLine("  #B#A#C#D#", row++, &gs, counts);
+            ReadLine("  #A#B#C#D#", row++, &gs, counts);
+        }
+        else
+        {
+            ReadLine("  #D#C#B#A#", row++, &gs, counts);
+            ReadLine("  #D#B#A#C#", row++, &gs, counts);
+        }
     }
 
     GetLine(&line, file);
     ReadLine(line, row, &gs, counts);
     
     free(line);
+    fclose(file);
 
     for(size_t i=0; i<MAX_PLAYERS; ++i)
     {

@@ -14,7 +14,7 @@
  *         7       8       9       10
  *         |       |       |       |
  *         11      12      13      14
- *         |       |       |       |
+ *         |       |       |       |      ]
  *         15      16      17      18     ]  These nodes disabled
  *         |       |       |       |      ]  for problem part 1
  *         19      20      21      22     ]
@@ -112,7 +112,7 @@ RoutingTable BuildRoutingTable(ProblemData const * pdata)
         for(location_t j=0; j<MAXLOCS; ++j)
         {
             routing.routes[i][j] = 0;
-            routing.costs[i][j] = INF_COST; // Maximum real cost is 8
+            routing.costs[i][j] = INF_COST;
         }
 
         routing.costs[i][i] = 0;
@@ -132,10 +132,10 @@ RoutingTable BuildRoutingTable(ProblemData const * pdata)
                 routing.routes[src][dst] = 0;
                 routing.costs[src][dst] = INF_COST;
             }
-        }   
+        }
     }
 
-    // Sidabling paths forbidden by part 1
+    // Disabling paths forbidden by part 1
     for(location_t src = pdata->n_locations; src != MAXLOCS; ++src)
     {
         for(location_t dst = pdata->n_locations; dst != MAXLOCS; ++dst)
@@ -148,7 +148,7 @@ RoutingTable BuildRoutingTable(ProblemData const * pdata)
     return routing;
 }
 
-void PrintRoutingTable(RoutingTable * t, struct problem_data_ const * data)
+void PrintRoutingTable(RoutingTable * t, ProblemData const * data)
 {
     for(location_t i=0; i<data->n_locations; ++i)
     {
@@ -184,17 +184,4 @@ route_t GetRoomMembers(location_t room_id)
 
     fprintf(stderr, "Invalid room id: %d (%s, %d)", room_id, __FILE__, __LINE__);
     exit(EXIT_FAILURE);
-}
-
-cost_t MinCost(cost_t A, cost_t B)
-{
-    if(A == INF_COST) return B;
-    if(B == INF_COST) return A;
-    return MIN(A, B);
-}
-
-cost_t AddCosts(cost_t A, cost_t B)
-{
-    if(A == INF_COST || B==INF_COST) return INF_COST;
-    return A+B;
 }

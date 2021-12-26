@@ -3,28 +3,17 @@
 
 #include "common/vector.h"
 #include "routing.h"
+#include "problem_data.h"
 
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
 
 
-typedef int_least32_t player_t;
-
-#define MAX_PLAYERS 16
-#define NO_PLAYER 0XFF
-
-typedef struct problem_data_ {
-    player_t n_players;
-    location_t n_locations;
-    int part;
-} ProblemData;
-
 typedef struct
 {
     location_t locations[MAX_PLAYERS];
     bool moveflags[MAX_PLAYERS];
-    route_t blockades;
 } GameState;
 
 typedef struct 
@@ -36,13 +25,13 @@ typedef struct
 TEMPLATE_VECTOR(Continuation) ContinuationArray;
 
 void GetLine(char ** line, FILE * file);
-GameState ReadGamestate(FILE * file, ProblemData const * pdata);
+GameState ReadGamestate(ProblemData const * pdata);
 
 location_t GetLocation(GameState const * gs, player_t player);
 
 void PrettyPrintGamestate(GameState const * gs, ProblemData const * pd);
 
-bool WiningGamestate(GameState const * gs, ProblemData const * pd);
+bool WinningGamestate(GameState const * gs, ProblemData const * pd);
 
 void ComputePossibleContinuations(
     GameState const * gs,

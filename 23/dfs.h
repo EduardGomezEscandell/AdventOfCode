@@ -7,6 +7,9 @@
 #include "common/vector.h"
 #include "common/hash_table.h"
 
+int CompareCosts(Continuation const * A, Continuation const * B);
+
+DECLARE_QUICKSORT_COMP(SortByCost, Continuation);
 
 cost_t DFS(
     GameState const * gamestate,
