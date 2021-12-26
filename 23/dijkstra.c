@@ -15,7 +15,7 @@ HT_DEFINE_REMOVE         (gamestate_t, gamestate_t, cost_t, GsDict)
 
 gamestate_t GsDictHashIntegers(gamestate_t const * key, size_t n_buckets)
 {
-    return (*key >> 8) + (*key << 32) % n_buckets;
+    return ((*key >> 8) + (*key << 32)) % n_buckets;
 }
 
 GsDictPair * FindMinimum(GsDict * dict)
