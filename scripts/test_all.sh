@@ -13,7 +13,7 @@ do
 
 	echo "------------------------------Testing day ${DAY}------------------------------"
 
-	if [ "$DAY" = "15" ]; then
+	if [ "$DAY" = "15" ] || [ "$DAY" = "23" ]; then
 		# We skip day 15 solution because it takes very long. We only check the tests.
 	    export FLAGS="-t"
 	else

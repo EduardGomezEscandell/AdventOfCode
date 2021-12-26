@@ -27,6 +27,7 @@
 					"name" : "Debug + ASAN",
 					"env" : {
 						"BUILD_TYPE" : "Debug",
+						"LSAN_OPTIONS": "verbosity=1:log_threads=1",
 						"ADRESS_SANITIZER" : "1"
 					}
 				},
