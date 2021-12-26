@@ -47,16 +47,22 @@ void ComputePlayerPossibleContinuations(
     ProblemData const * problem_data,
     ContinuationArray * continuations);
 
-bool ValidateCohabitation(
-    player_t player_id,
-    location_t destination,
-    GameState * ugs);
-
-bool ValidatePath(
-    GameState * ugs,
+bool ValidateNoObstruction(
+    route_t obstructions,
     RoutingTable const * routing_table,
     location_t source,
     location_t destination);
+
+bool ValidateDestinationRoom(
+    player_t player_id,
+    location_t destination,
+    GameState const * ugs,
+    ProblemData const * pd);
+
+bool ValidateNoPointlessBlockage(
+    location_t destination,
+    route_t obstructions,
+    ProblemData const * pdata);
 
 cost_t MovementCost(player_t player_id);
 

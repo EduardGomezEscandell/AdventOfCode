@@ -114,7 +114,7 @@ void PrettyPrintGamestate(GameState const * gs, ProblemData const * pd)
     free(map);
 }
 
-bool WiningGamestate(GameState const * gs, ProblemData const * pd)
+bool WinningGamestate(GameState const * gs, ProblemData const * pd)
 {
     for(player_t player_id=0; player_id != pd->n_players; ++player_id)
     {
