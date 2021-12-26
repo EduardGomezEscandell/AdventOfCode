@@ -1,5 +1,4 @@
 #include "dfs.h"
-#include "23/gamestate.h"
 #include "common/vector.h"
 
 int CompareCosts(Continuation const * A, Continuation const * B)
@@ -43,10 +42,12 @@ void DFS_impl(
     for(Continuation * it = continuations.begin; it != continuations.end; ++it)
     {
         cost_t total_cost = acc_cost + it->cost;
+
         
         if(MinCost(total_cost, *curr_best) == *curr_best)
         {
             break; // Prunning
+            printf("<<< PRUNNING <<<\n");
         }
 
         if(WiningGamestate(&it->state, pdata))

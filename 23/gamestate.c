@@ -67,7 +67,7 @@ GameState ReadGamestate(FILE * file, ProblemData const * pdata)
 
 char PlayerLetter(player_t id)
 {
-    int correct_room = CorrectRoom(id) - 1;
+    int correct_room = Colour(id) - 1;
 
     return (char) ('A' + correct_room);
 }
@@ -93,8 +93,8 @@ void PrettyPrintGamestate(GameState const * gs, ProblemData const * pd)
 
     if(pd->part == 2)
     {
-        printf("###%c#%c#%c#%c###\n",          map[15], map[16], map[17], map[18]);
-        printf("  #%c#%c#%c#%c#\n",            map[19], map[20], map[21], map[12]);
+        printf("  #%c#%c#%c#%c###\n",          map[15], map[16], map[17], map[18]);
+        printf("  #%c#%c#%c#%c#\n",            map[19], map[20], map[21], map[22]);
     }
 
     printf("  #########\n\n");
@@ -108,7 +108,7 @@ bool WiningGamestate(GameState const * gs, ProblemData const * pd)
     for(player_t player_id=0; player_id != pd->n_players; ++player_id)
     {
         location_t room_id   = RoomId(gs->locations[player_id]);
-        player_t target_room = CorrectRoom(player_id);
+        player_t target_room = Colour(player_id);
 
         if(room_id != target_room) return false;
     }
@@ -118,12 +118,12 @@ bool WiningGamestate(GameState const * gs, ProblemData const * pd)
 
 cost_t MovementCost(player_t player_id)
 {
-    switch (player_id / 2)
+    switch (Colour(player_id))
     {
-        case 0: return 1;
-        case 1: return 10;
-        case 2: return 100;
-        case 3: return 1000;
+        case 1: return 1;
+        case 2: return 10;
+        case 3: return 100;
+        case 4: return 1000;
         default:
             fprintf(stderr, "Error: invalid player id: %d (%s:%d)\n", player_id, __FILE__, __LINE__);
             exit(EXIT_FAILURE);
@@ -150,13 +150,13 @@ bool ValidateDestinationRoom(
 
     if(destination_room == HALLWAY_ID) return true;
 
-    player_t correct_room = CorrectRoom(player_id);
+    player_t correct_room = Colour(player_id);
 
     if(correct_room != destination_room) return false;  // Wrong destination (IMPL 2)
 
     for(player_t other=0; other<pd->n_players; ++other)
     {
-        if(CorrectRoom(other) == correct_room) continue;
+        if(Colour(other) == correct_room) continue;
 
         if(RoomId(ugs->locations[other]) == destination_room) return false; // Mixed cohabitation (IMPL 3)
     }
@@ -173,15 +173,31 @@ bool ValidateDestinationRoom(
  *    # #d#c#a#
  *    #########
  *
- * where A is blocking Room 1
+ * where A is blocking Room 1.
  */
 bool ValidateNoPointlessBlockage(
     location_t destination,
-    GameState const * ugs)
+    route_t obstructions,
+    ProblemData const * pdata)
 {
-    // TODO
-    if(ugs && destination) return true;
-    return true;
+    location_t room = RoomId(destination);
+
+    if(room == HALLWAY_ID) return true;
+
+    route_t available_spaces = GetRoomMembers(room) &(~obstructions);
+
+    location_t deepest_loc = NOL;
+
+    location_t curr_loc = 0;
+    for(; available_spaces != 0; available_spaces >>= 1)
+    {
+        if(available_spaces & 1) deepest_loc = curr_loc;
+        ++curr_loc;
+
+        if(curr_loc >= pdata->n_locations) break;
+    }
+    
+    return (destination == deepest_loc);
 }
 
 
@@ -242,7 +258,7 @@ void ComputePlayerPossibleContinuations(
         
         if(!ValidateDestinationRoom(player_id, destination, gs, problem_data)) continue;  // IMPL 2,3
 
-        if(!ValidateNoPointlessBlockage(destination, gs)) continue; // IMPL 9
+        if(!ValidateNoPointlessBlockage(destination, obstructions, problem_data)) continue; // IMPL 9
 
         // Adding to continuations
         Continuation c;

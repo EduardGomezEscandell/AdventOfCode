@@ -175,11 +175,11 @@ route_t GetRoomMembers(location_t room_id)
 {
     switch (room_id) {
         case HALLWAY_ID:
-                return 0x00003F;  // 0000 0000 0000 0000 0111 1111 in binary (locs 0 through 6)
+                return 0x00003F;  // 0000 0000 0000 0000 0111 1111 in binary (locs 0,1,2,3,4,5,6)
         case 1: return 0x088880;  // 0000 1000 1000 1000 1000 0000 in binary (locs  7,11,15,19)
         case 2: return 0x111100;  // 0001 0001 0001 0001 0000 0000 in binary (locs  8,12,16,20)
         case 3: return 0x222200;  // 0010 0010 0010 0010 0000 0000 in binary (locs  9,13,17,21)
-        case 4: return 0x333300;  // 0100 0100 0100 0100 0000 0000 in binary (locs 10,14,18,22)
+        case 4: return 0x444400;  // 0100 0100 0100 0100 0000 0000 in binary (locs 10,14,18,22)
     }
 
     fprintf(stderr, "Invalid room id: %d (%s, %d)", room_id, __FILE__, __LINE__);

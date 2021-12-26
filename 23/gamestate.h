@@ -71,7 +71,7 @@ bool ValidatePath(
 
 cost_t MovementCost(player_t player_id);
 
-static inline player_t CorrectRoom(player_t player_id)
+static inline player_t Colour(player_t player_id)
 {
     return (player_t) (1 + (player_id % 4));
 }
