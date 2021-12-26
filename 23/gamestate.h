@@ -9,76 +9,71 @@
 #include <stdbool.h>
 
 
-/* Gamestate:
- *  64 bit number encoding info:
- *
- *  0000 0000 0000 0000 0000 0000 AAAA aaaa BBBB bbbb CCCC cccc DDDD dddd AaBb CcDd
- *  ^~~~~~~~ignored bits~~~~~~~~^ ^~~~player locations (4 bits each)~~~~^ ^~~~~~~~^ Has moved flag (1 bit each)
- *                              
- */
-typedef uint_least64_t gamestate_t;
-typedef int_least16_t player_t;
+typedef int_least32_t player_t;
 
-TEMPLATE_VECTOR(gamestate_t) GamestateArray;
+#define MAX_PLAYERS 16
+#define NO_PLAYER 0XFF
 
-#define NPLAYERS 8
-#define NO_PLAYER 8
+typedef struct problem_data_ {
+    player_t n_players;
+    location_t n_locations;
+    int part;
+} ProblemData;
 
 typedef struct
 {
-    location_t locations[NPLAYERS];
-    bool moveflags[NPLAYERS];
+    location_t locations[MAX_PLAYERS];
+    bool moveflags[MAX_PLAYERS];
     route_t blockades;
-} UnpackedGamestate;
-
-UnpackedGamestate UnpackGamestate(gamestate_t gs);
-gamestate_t PackGamestate(UnpackedGamestate * ugs);
-UnpackedGamestate CopyLocationsAndFlags(UnpackedGamestate const * source);
+} GameState;
 
 typedef struct 
 {
     cost_t cost;
-    gamestate_t state;
+    GameState state;
 } Continuation;
 
 TEMPLATE_VECTOR(Continuation) ContinuationArray;
 
 void GetLine(char ** line, FILE * file);
-gamestate_t ReadGamestate(FILE * file);
+GameState ReadGamestate(FILE * file, ProblemData const * pdata);
 
-location_t GetLocation(gamestate_t gs, player_t player);
+location_t GetLocation(GameState const * gs, player_t player);
 
-void PrettyPrintGamestate(UnpackedGamestate * ugs);
+void PrettyPrintGamestate(GameState const * gs, ProblemData const * pd);
 
-bool WiningGamestate(gamestate_t gs);
+bool WiningGamestate(GameState const * gs, ProblemData const * pd);
 
 void ComputePossibleContinuations(
-    gamestate_t gs,
+    GameState const * gs,
     RoutingTable const * routing_table,
+    ProblemData const * problem_data,
     ContinuationArray * continuations);
 
 void ComputePlayerPossibleContinuations(
     player_t player_id,
-    UnpackedGamestate * ugs,
+    GameState const * gs,
+    route_t obstructions,
     RoutingTable const * routing_table,
+    ProblemData const * problem_data,
     ContinuationArray * continuations);
 
 bool ValidateCohabitation(
     player_t player_id,
     location_t destination,
-    UnpackedGamestate * ugs);
+    GameState * ugs);
 
 bool ValidatePath(
-    UnpackedGamestate * ugs,
+    GameState * ugs,
     RoutingTable const * routing_table,
     location_t source,
     location_t destination);
 
-int MovementCost(short player_id);
+cost_t MovementCost(player_t player_id);
 
 static inline player_t CorrectRoom(player_t player_id)
 {
-    return (player_t) (1 + (player_id / 2));
+    return (player_t) (1 + (player_id % 4));
 }
 
 #endif

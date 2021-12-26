@@ -15,181 +15,99 @@ void GetLine(char ** line, FILE * file)
 }
 
 
-gamestate_t ReadGamestate(FILE * file)
+void ReadLine(char const * line, size_t row, GameState * gs, short counts[4])
+{
+    location_t loc = (location_t) (7 + 4*row);
+    for(size_t col=0; col<4; ++col)
+    {
+        char letter = line[3 + 2*col];
+        
+        player_t colour    = (player_t)   (letter - 'A');
+        player_t player_id = (location_t) (colour + 4*counts[colour]);
+
+        gs->locations[player_id] = loc++;
+
+        ++counts[colour];
+    }
+}
+
+GameState ReadGamestate(FILE * file, ProblemData const * pdata)
 {
     char * line = NULL;
 
     short counts[4] = {0,0,0,0}; // Number of read As, Bs, Cs and Ds
 
-    UnpackedGamestate gs;
+    GameState gs;
 
     GetLine(&line, file); // Skipping line 1
     GetLine(&line, file); // Skipping line 2
+    
+    size_t row = 0;
     GetLine(&line, file);
+    ReadLine(line, row++, &gs, counts);
 
-    player_t type = (player_t) (line[3] - 'A');
-    gs.locations[type*2 + counts[type]] = 0x4;
-    ++counts[type];
-
-    type = (player_t) (line[5] - 'A');
-    gs.locations[type*2 + counts[type]] = 0x5;
-    ++counts[type];
-
-    type = (player_t) (line[7] - 'A');
-    gs.locations[type*2 + counts[type]] = 0x6;
-    ++counts[type];
-
-    type = (player_t) (line[9] - 'A');
-    gs.locations[type*2 + counts[type]] = 0x7;
-    ++counts[type];
+    if(pdata->part == 2)
+    {  
+        ReadLine("  #D#C#B#A#", row++, &gs, counts);
+        ReadLine("  #D#B#A#C#", row++, &gs, counts);        
+    }
 
     GetLine(&line, file);
-    type = (player_t) (line[3] - 'A');
-    gs.locations[type*2 + counts[type]] = 0x0;
-    ++counts[type];
-
-    type = (player_t) (line[5] - 'A');
-    gs.locations[type*2 + counts[type]] = 0x1;
-    ++counts[type];
-
-    type = (player_t) (line[7] - 'A');
-    gs.locations[type*2 + counts[type]] = 0x2;
-    ++counts[type];
-
-    type = (player_t) (line[9] - 'A');
-    gs.locations[type*2 + counts[type]] = 0x3;
-    ++counts[type];
-
+    ReadLine(line, row, &gs, counts);
+    
     free(line);
 
-    for(size_t i=0; i<NPLAYERS; ++i)
+    for(size_t i=0; i<MAX_PLAYERS; ++i)
+    {
         gs.moveflags[i] = false;
-
-    return PackGamestate(&gs);
-}
-
-
-UnpackedGamestate UnpackGamestate(gamestate_t gs)
-{
-    UnpackedGamestate ugs;
-
-    // Reading flags
-    for(player_t i=NPLAYERS; i > 0; --i)
-    {
-        ugs.moveflags[i-1] = gs & 1;
-        gs = gs >> 1;
-    }
-
-    // Reading locations
-    for(player_t i=NPLAYERS; i > 0; --i)
-    {
-        ugs.locations[i-1] = gs & 0xF;
-        gs = gs >> 4; // Four bits per player
-    }
-
-    // Initializing blockades
-    ugs.blockades = 0;
-
-    // Filling blockades
-    for(player_t i=0; i<NPLAYERS; ++i)
-    {
-        ugs.blockades |= (route_t) (1 << ugs.locations[i]);
-    }
-
-    return ugs;
-}
-
-gamestate_t PackGamestate(UnpackedGamestate * ugs)
-{
-    gamestate_t gs = 0;
-
-    for(player_t i=0; i < NPLAYERS; ++i)
-    {
-        gs = gs << 4; // Four bits per player
-        gs += ugs->locations[i];
-    }
-
-    for(player_t i=0; i < NPLAYERS; ++i)
-    {
-        gs = gs << 1;
-        gs |= ugs->moveflags[i];
     }
 
     return gs;
-}
-
-UnpackedGamestate CopyLocationsAndFlags(UnpackedGamestate const * source)
-{
-    UnpackedGamestate out;
-
-    for(player_t i=0; i < NPLAYERS; ++i)
-    {
-        out.locations[i] = source->locations[i];
-        out.moveflags[i] = source->moveflags[i];
-    }
-
-    return out;
-}
-
-
-char HexChar(location_t num)
-{
-    if(num <= 9)
-    {
-        return (char) ('0' + num);
-    }
-    if(num > 9 && num <= 0xE)
-    {
-        return (char) ('A' + num);
-    }
-    return ' ';
 }
 
 char PlayerLetter(player_t id)
 {
     int correct_room = CorrectRoom(id) - 1;
 
-    switch(id % 2)
-    {
-        case 0: return (char) ('A' + correct_room);
-        case 1: return (char) ('a' + correct_room);
-    }
-    
-    fprintf(stderr, "Unreachable code (%s:%d)\n", __FILE__, __LINE__);
-    exit(EXIT_FAILURE);
+    return (char) ('A' + correct_room);
 }
 
-void PrettyPrintGamestate(UnpackedGamestate * ugs)
-{
-    char map[NLOCS];
-    for(size_t i=0; i!=NLOCS; ++i)
-        map[i] = ' ';
+void PrettyPrintGamestate(GameState const * gs, ProblemData const * pd)
+{    
+    char * map = malloc(pd->n_locations * sizeof(*map));
 
-    for(player_t i=0; i<NPLAYERS; ++i)
+    for(size_t i=0; i!=pd->n_locations; ++i)
     {
-        map[ugs->locations[i]] = PlayerLetter(i);
+        map[i] = ' ';
     }
 
+    for(player_t i=0; i<pd->n_players; ++i)
+    {
+        map[gs->locations[i]] = PlayerLetter(i);
+    }
 
     printf("#############\n");
-    printf("#%c%c %c %c %c %c%c#\n", map[8],map[9],map[0xA],map[0xB],map[0xC],map[0xD],map[0xE]);
-    printf("###%c#%c#%c#%c###\n",               map[4],  map[5],  map[6],  map[7]);
-    printf("  #%c#%c#%c#%c#\n",                 map[0],  map[1],  map[2],  map[3]);
+    printf("#%c%c %c %c %c %c%c#\n", map[0],map[1],map[2],map[3],map[4],map[5],map[6]);
+    printf("###%c#%c#%c#%c###\n",              map[7],  map[8],  map[9],  map[10]);
+    printf("  #%c#%c#%c#%c#\n",               map[11], map[12], map[13], map[14]);
+
+    if(pd->part == 2)
+    {
+        printf("###%c#%c#%c#%c###\n",          map[15], map[16], map[17], map[18]);
+        printf("  #%c#%c#%c#%c#\n",            map[19], map[20], map[21], map[12]);
+    }
+
     printf("  #########\n\n");
 
+
+    free(map);
 }
 
-bool WiningGamestate(gamestate_t gs)
+bool WiningGamestate(GameState const * gs, ProblemData const * pd)
 {
-    // Ignoring flags
-    gs = gs >> 8;
-
-    for(player_t player_id=NPLAYERS-1; player_id >= 0; --player_id)
+    for(player_t player_id=0; player_id != pd->n_players; ++player_id)
     {
-        location_t loc = gs & 0xF;
-        gs = gs >> 4; // Four bits per player
-
-        location_t room_id   = RoomId(loc);
+        location_t room_id   = RoomId(gs->locations[player_id]);
         player_t target_room = CorrectRoom(player_id);
 
         if(room_id != target_room) return false;
@@ -198,7 +116,7 @@ bool WiningGamestate(gamestate_t gs)
     return true;
 }
 
-int MovementCost(short player_id)
+cost_t MovementCost(player_t player_id)
 {
     switch (player_id / 2)
     {
@@ -214,18 +132,19 @@ int MovementCost(short player_id)
 
 
 bool ValidateNoObstruction(
-    UnpackedGamestate * ugs,
+    route_t obstructions,
     RoutingTable const * routing_table,
     location_t source,
     location_t destination)
 {
-    return (routing_table->routes[source][destination] & ugs->blockades) == 0;
+    return (routing_table->routes[source][destination] & obstructions) == 0;
 }
 
 bool ValidateDestinationRoom(
     player_t player_id,
     location_t destination,
-    UnpackedGamestate * ugs)
+    GameState const * ugs,
+    ProblemData const * pd)
 {
     location_t destination_room = RoomId(destination);
 
@@ -235,7 +154,7 @@ bool ValidateDestinationRoom(
 
     if(correct_room != destination_room) return false;  // Wrong destination (IMPL 2)
 
-    for(player_t other=0; other<NPLAYERS; ++other)
+    for(player_t other=0; other<pd->n_players; ++other)
     {
         if(CorrectRoom(other) == correct_room) continue;
 
@@ -258,18 +177,10 @@ bool ValidateDestinationRoom(
  */
 bool ValidateNoPointlessBlockage(
     location_t destination,
-    UnpackedGamestate * ugs)
+    GameState const * ugs)
 {
-    if(destination < 4 || destination > 7) return true;
-
-    route_t room = GetRoomMembers(RoomId(destination));
-
-    if((room & ugs->blockades) == 0)
-    {
-        // Room is empty: should have gone to the bottom of the room
-        return false;
-    }
-
+    // TODO
+    if(ugs && destination) return true;
     return true;
 }
 
@@ -312,49 +223,61 @@ bool ValidateNoPointlessBlockage(
  */
 void ComputePlayerPossibleContinuations(
     player_t player_id,
-    UnpackedGamestate * ugs,
+    GameState const * gs,
+    route_t obstructions,
     RoutingTable const * routing_table,
+    ProblemData const * problem_data,
     ContinuationArray * continuations)
 {
-    location_t source = ugs->locations[player_id];
-    bool moveflag = ugs->moveflags[player_id];
+    location_t source = gs->locations[player_id];
+    bool moveflag = gs->moveflags[player_id];
 
     if(RoomId(source)!=HALLWAY_ID && moveflag) return; // Cannot move again! (IMPL 8)
 
-    for(location_t destination = 0; destination < NLOCS; ++destination)
+    for(location_t destination=0; destination < problem_data->n_locations; ++destination)
     {
         if(routing_table->costs[source][destination] == INF_COST) continue; // IMPL 4,6,7
 
-        if(!ValidateNoObstruction(ugs, routing_table, source, destination)) continue; // IMPL 5
+        if(!ValidateNoObstruction(obstructions, routing_table, source, destination)) continue; // IMPL 5
         
-        if(!ValidateDestinationRoom(player_id, destination, ugs)) continue;  // IMPL 2,3
+        if(!ValidateDestinationRoom(player_id, destination, gs, problem_data)) continue;  // IMPL 2,3
 
-        if(!ValidateNoPointlessBlockage(destination, ugs)) continue; // IMPL 9
+        if(!ValidateNoPointlessBlockage(destination, gs)) continue; // IMPL 9
 
         // Adding to continuations
-        UnpackedGamestate ucont = CopyLocationsAndFlags(ugs);
-        ucont.locations[player_id] = destination;
-        ucont.moveflags[player_id] = true;
-
         Continuation c;
-        c.state = PackGamestate(&ucont);
-        c.cost  = MovementCost(player_id) * routing_table->costs[source][destination];
+        
+        c.state = *gs;
+        c.state.locations[player_id] = destination;
+        c.state.moveflags[player_id] = true;
+
+        c.cost = MovementCost(player_id) * routing_table->costs[source][destination];
+        
         PUSH(*continuations, c);
     }
 }
 
+route_t ComputeObstructions(GameState const * gs, ProblemData const * pdata)
+{
+    route_t obstructions = 0;
+    for(location_t const * it = gs->locations; it != gs->locations + pdata->n_players; ++it)
+    {
+        obstructions |= (1u << *it);
+    }
+    return obstructions;
+}
+
 
 void ComputePossibleContinuations(
-    gamestate_t gs,
+    GameState const * gs,
     RoutingTable const * routing_table,
+    ProblemData const * problem_data,
     ContinuationArray * continuations)
 {
-    continuations->end = continuations->begin; // Emptying without releasing memory
+    route_t obstructions = ComputeObstructions(gs, problem_data);
 
-    UnpackedGamestate ugs = UnpackGamestate(gs);
-
-    for(player_t i = 0; i<NPLAYERS; ++i)
+    for(player_t i = 0; i<problem_data->n_players; ++i)
     {
-        ComputePlayerPossibleContinuations(i, &ugs, routing_table, continuations);
+        ComputePlayerPossibleContinuations(i, gs, obstructions, routing_table, problem_data, continuations);
     }
 }

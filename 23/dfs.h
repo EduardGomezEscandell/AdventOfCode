@@ -8,7 +8,16 @@
 #include "common/hash_table.h"
 
 
-cost_t DFS(gamestate_t gamestate, RoutingTable * routing);
-void DFS_impl(gamestate_t gamestate, RoutingTable * routing, cost_t  acc_cost, cost_t * current_best);
+cost_t DFS(
+    GameState const * gamestate,
+    RoutingTable const * routing,
+    ProblemData const * pdata);
+
+void DFS_impl(
+    GameState const * gamestate,
+    RoutingTable const * routing,
+    ProblemData const * pdata,
+    cost_t acc_cost,
+    cost_t * curr_best);
 
 #endif

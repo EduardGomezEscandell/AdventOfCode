@@ -1,76 +1,87 @@
 #include "routing.h"
+#include "gamestate.h"
+
 #include "common/vector.h"
+#include "common/math.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
-/** IDs of nodes (in hex)
+/** IDs of nodes
  * 
- * 8---9---+---A---+---B---+---C---+---D---E
+ * 0---1---+---2---+---3---+---4---+---5---6
  *         |       |       |       |
- *         4       5       6       7
+ *         7       8       9       10
  *         |       |       |       |
- *         0       1       2       3
+ *         11      12      13      14
+ *         |       |       |       |
+ *         15      16      17      18     ]  These nodes disabled
+ *         |       |       |       |      ]  for problem part 1
+ *         19      20      21      22     ]
  * 
- * F used as a no-location marker
+ * 31 used as a no-location marker
  */
 
 void GetConnectivity(location_t const ** row_connectivity, cost_t const ** row_costs, location_t position)
 {
-    static const location_t connectivity[NLOCS][5] = {
-    /*0*/ {0x4, NOL, NOL, NOL, NOL},
-    /*1*/ {0x5, NOL, NOL, NOL, NOL},
-    /*2*/ {0x6, NOL, NOL, NOL, NOL},
-    /*3*/ {0x7, NOL, NOL, NOL, NOL},
-    /*4*/ {0x0, 0x9, 0xA, NOL, NOL},
-    /*5*/ {0x1, 0xA, 0xB, NOL, NOL},
-    /*6*/ {0x2, 0xB, 0xC, NOL, NOL},
-    /*7*/ {0x3, 0xC, 0xD, NOL, NOL},
-    /*8*/ {0x9, NOL, NOL, NOL, NOL},
-    /*9*/ {0x4, 0x8, 0xA, NOL, NOL},
-    /*A*/ {0x4, 0x5, 0x9, 0xB, NOL},
-    /*B*/ {0x5, 0x6, 0xA, 0xC, NOL},
-    /*C*/ {0x6, 0x7, 0xB, 0xD, NOL},
-    /*D*/ {0x7, 0xC, 0xE, NOL, NOL},
-    /*E*/ {0xD, NOL, NOL, NOL, NOL}
+    static const location_t connectivity[MAXLOCS][5] = {
+    /* 0*/ {  1, NOL, NOL, NOL, NOL},
+    /* 1*/ {  0,   2,   7, NOL, NOL},
+    /* 2*/ {  1,   3,   7,   8, NOL},
+    /* 3*/ {  2,   4,   8,   9, NOL},
+    /* 4*/ {  3,   5,   9,  10, NOL},
+    /* 5*/ {  4,   6,  10, NOL, NOL},
+    /* 6*/ {  5, NOL, NOL, NOL, NOL},
+    /* 7*/ {  1,   2,  11, NOL, NOL},
+    /* 8*/ {  2,   3,  12, NOL, NOL},
+    /* 9*/ {  3,   4,  13, NOL, NOL},
+    /*10*/ {  4,   5,  14, NOL, NOL},
+    /*11*/ {  7,  15, NOL, NOL, NOL},
+    /*12*/ {  8,  16, NOL, NOL, NOL},
+    /*13*/ {  9,  17, NOL, NOL, NOL},
+    /*14*/ { 10,  18, NOL, NOL, NOL},
+    /*15*/ { 11,  19, NOL, NOL, NOL},
+    /*16*/ { 12,  20, NOL, NOL, NOL},
+    /*17*/ { 13,  21, NOL, NOL, NOL},
+    /*18*/ { 14,  22, NOL, NOL, NOL},
+    /*19*/ { 15, NOL, NOL, NOL, NOL},
+    /*20*/ { 16, NOL, NOL, NOL, NOL},
+    /*21*/ { 17, NOL, NOL, NOL, NOL},
+    /*22*/ { 18, NOL, NOL, NOL, NOL},
     };
 
-    static const cost_t costs[NLOCS][4] = {
-    /*0*/ {    1, INF_COST, INF_COST, INF_COST},
-    /*1*/ {    1, INF_COST, INF_COST, INF_COST},
-    /*2*/ {    1, INF_COST, INF_COST, INF_COST},
-    /*3*/ {    1, INF_COST, INF_COST, INF_COST},
-    /*4*/ {    1,        2,        2, INF_COST},
-    /*5*/ {    1,        2,        2, INF_COST},
-    /*6*/ {    1,        2,        2, INF_COST},
-    /*7*/ {    1,        2,        2, INF_COST},
-    /*8*/ {    1, INF_COST, INF_COST, INF_COST},
-    /*9*/ {    2,        1,        2, INF_COST},
-    /*A*/ {    2,        2,        2,        2},
-    /*B*/ {    2,        2,        2,        2},
-    /*C*/ {    2,        2,        2,        2},
-    /*D*/ {    2,        2,        1, INF_COST},
-    /*E*/ {    1, INF_COST, INF_COST, INF_COST}
+    static const cost_t inf = INF_COST;
+    static const cost_t costs[MAXLOCS][4] = {
+    /* 0*/ {  1, inf, inf, inf},
+    /* 1*/ {  1,   2,   2, inf},
+    /* 2*/ {  2,   2,   2,   2},
+    /* 3*/ {  2,   2,   2,   2},
+    /* 4*/ {  2,   2,   2,   2},
+    /* 5*/ {  2,   1,   2, inf},
+    /* 6*/ {  1, inf, inf, inf},
+    /* 7*/ {  2,   2,   1, inf},
+    /* 8*/ {  2,   2,   1, inf},
+    /* 9*/ {  2,   2,   1, inf},
+    /*10*/ {  2,   2,   1, inf},
+    /*11*/ {  1,   1, inf, inf},
+    /*12*/ {  1,   1, inf, inf},
+    /*13*/ {  1,   1, inf, inf},
+    /*14*/ {  1,   1, inf, inf},
+    /*15*/ {  1,   1, inf, inf},
+    /*16*/ {  1,   1, inf, inf},
+    /*17*/ {  1,   1, inf, inf},
+    /*18*/ {  1,   1, inf, inf},
+    /*19*/ {  1, inf, inf, inf},
+    /*20*/ {  1, inf, inf, inf},
+    /*21*/ {  1, inf, inf, inf},
+    /*22*/ {  1, inf, inf, inf},
     };
 
     *row_connectivity = connectivity[position];
     *row_costs = costs[position];
 }
 
-
-void ReplaceRoute(
-    LocationArray * reciever,
-    LocationArray const * copied,
-    location_t destination)
-{
-    reciever->end = reciever->begin; // Emptying without releasing memory
-    CLEAR(*reciever);
-    NEW_VECTOR(*reciever);
-    CONCATENATE(*reciever, *copied, location_t);
-    PUSH(*reciever, destination);
-}
-
-void FloodFill(route_t routes[NLOCS], cost_t costs[NLOCS], location_t origin)
+void FloodFill(route_t routes[MAXLOCS], cost_t costs[MAXLOCS], location_t origin)
 {
     location_t const * connectivity;
     cost_t const * connection_costs;
@@ -83,25 +94,25 @@ void FloodFill(route_t routes[NLOCS], cost_t costs[NLOCS], location_t origin)
         location_t destination = connectivity[i];
         cost_t cost = accumulated_cost + connection_costs[i];
 
-        if(cost > costs[destination]) continue;
+        if(MinCost(cost, costs[destination]) == costs[destination]) continue;
 
         costs[destination] = cost;
-        routes[destination] = (route_t) (routes[origin] | (1 << destination));
+        routes[destination] = (route_t) (routes[origin] | (1u << destination));
 
         FloodFill(routes, costs, destination);
     }
 }
 
-RoutingTable BuildRoutingTable()
+RoutingTable BuildRoutingTable(ProblemData const * pdata)
 {
     RoutingTable routing;
     
-    for(location_t i = 0; i<NLOCS; ++i)
+    for(location_t i = 0; i<MAXLOCS; ++i)
     {
-        for(location_t j=0; j<NLOCS; ++j)
+        for(location_t j=0; j<MAXLOCS; ++j)
         {
             routing.routes[i][j] = 0;
-            routing.costs[i][j] = UINT8_MAX; // Maximum real cost is 8
+            routing.costs[i][j] = INF_COST; // Maximum real cost is 8
         }
 
         routing.costs[i][i] = 0;
@@ -111,32 +122,41 @@ RoutingTable BuildRoutingTable()
     }
 
     // Disabling paths forbidden by rules or by optimization
-    for(location_t src = 0; src<NLOCS; ++src)
+    for(location_t src = 0; src != pdata->n_locations; ++src)
     {
-        for(location_t dst=0; dst<NLOCS; ++dst)
+        for(location_t dst=0; dst != pdata->n_locations; ++dst)
         {
             if(RoomId(src) == RoomId(dst))
             {
                 // OPTIMIZATION: Disables paths between same room
                 routing.routes[src][dst] = 0;
                 routing.costs[src][dst] = INF_COST;
-                continue;
             }
         }   
+    }
+
+    // Sidabling paths forbidden by part 1
+    for(location_t src = pdata->n_locations; src != MAXLOCS; ++src)
+    {
+        for(location_t dst = pdata->n_locations; dst != MAXLOCS; ++dst)
+        {
+            routing.routes[src][dst] = 0;
+            routing.costs[src][dst] = INF_COST;
+        }
     }
 
     return routing;
 }
 
-void PrintRoutingTable(RoutingTable * t)
+void PrintRoutingTable(RoutingTable * t, struct problem_data_ const * data)
 {
-    for(location_t i=0; i<NLOCS; ++i)
+    for(location_t i=0; i<data->n_locations; ++i)
     {
-        for(location_t j=0; j<NLOCS; ++j)
+        for(location_t j=0; j<data->n_locations; ++j)
         {
             if(t->costs[i][j] == INF_COST) continue;
 
-            printf("Trip %X -> %X (Cost=%2d): ", i,j, t->costs[i][j]);
+            printf("Trip %2d -> %2d (Cost=%2d): ", i,j, t->costs[i][j]);
 
             route_t route = t->routes[i][j];
             for(location_t i=0; route != 0; ++i)
@@ -154,13 +174,27 @@ void PrintRoutingTable(RoutingTable * t)
 route_t GetRoomMembers(location_t room_id)
 {
     switch (room_id) {
-        case 0: return 0x7F00;  // 0111 1111 0000 0000 in binary (rooms 8 through E)
-        case 1: return 0x0011;  // 0000 0000 0001 0001 in binary (rooms 0 and 4)
-        case 2: return 0x0022;  // 0000 0000 0010 0010 in binary (rooms 1 and 5)
-        case 3: return 0x0044;  // 0000 0000 0100 0100 in binary (rooms 2 and 6)
-        case 4: return 0x0088;  // 0000 0000 1000 1000 in binary (rooms 3 and 7)
+        case HALLWAY_ID:
+                return 0x00003F;  // 0000 0000 0000 0000 0111 1111 in binary (locs 0 through 6)
+        case 1: return 0x088880;  // 0000 1000 1000 1000 1000 0000 in binary (locs  7,11,15,19)
+        case 2: return 0x111100;  // 0001 0001 0001 0001 0000 0000 in binary (locs  8,12,16,20)
+        case 3: return 0x222200;  // 0010 0010 0010 0010 0000 0000 in binary (locs  9,13,17,21)
+        case 4: return 0x333300;  // 0100 0100 0100 0100 0000 0000 in binary (locs 10,14,18,22)
     }
 
     fprintf(stderr, "Invalid room id: %d (%s, %d)", room_id, __FILE__, __LINE__);
     exit(EXIT_FAILURE);
+}
+
+cost_t MinCost(cost_t A, cost_t B)
+{
+    if(A == INF_COST) return B;
+    if(B == INF_COST) return A;
+    return MIN(A, B);
+}
+
+cost_t AddCosts(cost_t A, cost_t B)
+{
+    if(A == INF_COST || B==INF_COST) return INF_COST;
+    return A+B;
 }
