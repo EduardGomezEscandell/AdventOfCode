@@ -1,5 +1,5 @@
-#ifndef DAY_21_H
-#define DAY_21_H
+#ifndef DAY_22_H
+#define DAY_22_H
 
 #include "common/testing.h"
 #include "common/vector.h"
