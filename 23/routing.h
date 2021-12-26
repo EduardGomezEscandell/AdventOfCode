@@ -9,7 +9,17 @@
 #include "common/math.h"
 
 
-/** IDs of nodes
+/** 
+ * This header and its accompanying source file are tasked with dealing
+ * with the problems geometry. To accelerate the game's graph exporation,
+ * all route costs are pre-computed and stored in a RoutingTable.
+ * 
+ * Invalid or sub-optimal moves are purged to prune the exploration tree.
+ * 
+ * GEOMETRY
+ * ____________________________________________________________________________
+ *
+ * IDs of nodes
  * 
  * 0---1---+---2---+---3---+---4---+---5---6
  *         |       |       |       |
@@ -22,15 +32,30 @@
  *         19      20      21      22     ]
  * 
  * 31 used as invalid location marker
+ * 
+ * 
+ * ROUTING
+ * ____________________________________________________________________________
  *
- * Since order doesn't matter, routes are stored bitwise. This allows for instant
- * checks for blockages without having to iterate a container
+ * Since order doesn't matter, routes are stored bitwise. This allows for
+ * instant checks for blockages without having to iterate a container
  *  
- *             222 1111 1111 11
- *             210 9876 5432 1098 7654 3210 < Location each bit refers to
- *  0000 0000 0001 0001 0000 0010 0001 0001
- *  ~~~~~~~~~~~       ^    ^      ^^ This route passes through 0>1>7>11
- *  ^ First few bits unused: always 0
+ * Each bit refers to a position. The rightmost bit is position 0 and increases
+ * the left.
+ *
+ *  0000 0000 0001 0001 0000 1000 1000 0011
+ *  ~~~~~~~~~~~              ^    ^      ^^  : This route passes through 0>1>7>11
+ *            ^
+ *            First few bits unused: always 0
+ *
+ *
+ * To see if two routes have any nodes in common, one can use:
+ *
+ *    route1 & route2 == 0   --> true if no nodes in common
+ *
+ * This is particularly useful when comparing a route to a set of interesting
+ * nodes, such as for checking obstructions in the route or checking if a room
+ * is empty.
  *
  */
 
@@ -48,7 +73,6 @@ void FloodFill(route_t routes[MAXLOCS], cost_t costs[MAXLOCS], location_t origin
 RoutingTable BuildRoutingTable(ProblemData const * pdata);
 
 void PrintRoutingTable(RoutingTable * t, ProblemData const * data);
-void ClearRoutingTable(RoutingTable * t);
 
 route_t GetRoomMembers(location_t room_id);
 

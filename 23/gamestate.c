@@ -15,7 +15,6 @@ void GetLine(char ** line, FILE * file)
     }
 }
 
-
 void ReadLine(char const * line, size_t row, GameState * gs, short counts[4])
 {
     location_t loc = (location_t) (7 + 4*row);
@@ -141,7 +140,6 @@ cost_t MovementCost(player_t player_id)
     }
 }
 
-
 bool ValidateNoObstruction(
     route_t obstructions,
     RoutingTable const * routing_table,
@@ -173,7 +171,6 @@ bool ValidateDestinationRoom(
     }
     return true;
 }
-
 
 /*
  * Prevents situations like this:
@@ -210,7 +207,6 @@ bool ValidateNoPointlessBlockage(
     
     return (destination == deepest_loc);
 }
-
 
 /*
  *  Rules:

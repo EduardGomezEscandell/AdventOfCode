@@ -9,6 +9,13 @@ int CompareCosts(Continuation const * A, Continuation const * B)
     return A_is_larger ? 1 : -1;
 }
 
+/**
+ * Definition of quicksort macro-templated function
+ *
+ * void SortByCost(Continuation *begin, Continuation *end) { ... }
+ * 
+ * Uses a custom function to perform comparisons
+ */
 DEFINE_QUICKSORT_COMP(SortByCost, Continuation, CompareCosts)
 
 cost_t DFS(
