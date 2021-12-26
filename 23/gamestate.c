@@ -1,7 +1,6 @@
 #include "gamestate.h"
-#include "23/day23.h"
-#include "routing.h"
 
+#include "routing.h"
 #include <string.h>
 
 void GetLine(char ** line, FILE * file)
@@ -22,56 +21,51 @@ gamestate_t ReadGamestate(FILE * file)
 
     short counts[4] = {0,0,0,0}; // Number of read As, Bs, Cs and Ds
 
-    location_t locations[8] = {NOL, NOL, NOL, NOL, NOL, NOL, NOL, NOL};
+    UnpackedGamestate gs;
 
     GetLine(&line, file); // Skipping line 1
     GetLine(&line, file); // Skipping line 2
     GetLine(&line, file);
 
     player_t type = (player_t) (line[3] - 'A');
-    locations[type*2 + counts[type]] = 0x4;
+    gs.locations[type*2 + counts[type]] = 0x4;
     ++counts[type];
 
     type = (player_t) (line[5] - 'A');
-    locations[type*2 + counts[type]] = 0x5;
+    gs.locations[type*2 + counts[type]] = 0x5;
     ++counts[type];
 
     type = (player_t) (line[7] - 'A');
-    locations[type*2 + counts[type]] = 0x6;
+    gs.locations[type*2 + counts[type]] = 0x6;
     ++counts[type];
 
     type = (player_t) (line[9] - 'A');
-    locations[type*2 + counts[type]] = 0x7;
+    gs.locations[type*2 + counts[type]] = 0x7;
     ++counts[type];
 
     GetLine(&line, file);
     type = (player_t) (line[3] - 'A');
-    locations[type*2 + counts[type]] = 0x0;
+    gs.locations[type*2 + counts[type]] = 0x0;
     ++counts[type];
 
     type = (player_t) (line[5] - 'A');
-    locations[type*2 + counts[type]] = 0x1;
+    gs.locations[type*2 + counts[type]] = 0x1;
     ++counts[type];
 
     type = (player_t) (line[7] - 'A');
-    locations[type*2 + counts[type]] = 0x2;
+    gs.locations[type*2 + counts[type]] = 0x2;
     ++counts[type];
 
     type = (player_t) (line[9] - 'A');
-    locations[type*2 + counts[type]] = 0x3;
+    gs.locations[type*2 + counts[type]] = 0x3;
     ++counts[type];
 
     free(line);
 
-    gamestate_t gamestate = 0;
-    for(player_t i=0; i<8; ++i)
-    {
-        gamestate = gamestate << 4;
-        gamestate |= locations[i];
-    }
-    gamestate = gamestate << 8; // Moved flags: none have moved
+    for(size_t i=0; i<NPLAYERS; ++i)
+        gs.moveflags[i] = false;
 
-    return gamestate;
+    return PackGamestate(&gs);
 }
 
 
@@ -153,12 +147,12 @@ char HexChar(location_t num)
 
 char PlayerLetter(player_t id)
 {
-    player_t type = id / 2;
+    int correct_room = CorrectRoom(id) - 1;
 
     switch(id % 2)
     {
-        case 0: return (char) ('A' + type);
-        case 1: return (char) ('a' + type);
+        case 0: return (char) ('A' + correct_room);
+        case 1: return (char) ('a' + correct_room);
     }
     
     fprintf(stderr, "Unreachable code (%s:%d)\n", __FILE__, __LINE__);
@@ -167,7 +161,9 @@ char PlayerLetter(player_t id)
 
 void PrettyPrintGamestate(UnpackedGamestate * ugs)
 {
-    char map[NLOCS] = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '};
+    char map[NLOCS];
+    for(size_t i=0; i!=NLOCS; ++i)
+        map[i] = ' ';
 
     for(player_t i=0; i<NPLAYERS; ++i)
     {
@@ -188,26 +184,15 @@ bool WiningGamestate(gamestate_t gs)
     // Ignoring flags
     gs = gs >> 8;
 
-    // Reading locations
-    player_t rooms[4] = {NO_PLAYER, NO_PLAYER, NO_PLAYER, NO_PLAYER};
-
-    for(player_t i=NPLAYERS; i > 0; --i)
+    for(player_t player_id=NPLAYERS-1; player_id >= 0; --player_id)
     {
-        player_t colour = (player_t) ((i - 1) / 2);
         location_t loc = gs & 0xF;
         gs = gs >> 4; // Four bits per player
 
-        location_t room_id = RoomId(loc);
+        location_t room_id   = RoomId(loc);
+        player_t target_room = CorrectRoom(player_id);
 
-        if(room_id == HALLWAY_ID) return false;  // Player in halway
-
-        if(rooms[room_id] == NO_PLAYER)
-        {
-            rooms[room_id] = colour;
-            continue;
-        }
-        
-        if(rooms[room_id] != colour) return false; // Diferent color cohabitation
+        if(room_id != target_room) return false;
     }
 
     return true;
@@ -228,7 +213,7 @@ int MovementCost(short player_id)
 }
 
 
-bool ValidatePath(
+bool ValidateNoObstruction(
     UnpackedGamestate * ugs,
     RoutingTable const * routing_table,
     location_t source,
@@ -237,96 +222,139 @@ bool ValidatePath(
     return (routing_table->routes[source][destination] & ugs->blockades) == 0;
 }
 
-bool ValidateCohabitation(
+bool ValidateDestinationRoom(
     player_t player_id,
     location_t destination,
     UnpackedGamestate * ugs)
 {
-    location_t room = RoomId(destination);
-    if(room == HALLWAY_ID) return true;
+    location_t destination_room = RoomId(destination);
 
-    player_t colour = (player_id / 2);
+    if(destination_room == HALLWAY_ID) return true;
 
-    for(player_t i=0; i<NPLAYERS; ++i)
+    player_t correct_room = CorrectRoom(player_id);
+
+    if(correct_room != destination_room) return false;  // Wrong destination (IMPL 2)
+
+    for(player_t other=0; other<NPLAYERS; ++other)
     {
-        if(colour == i/2) continue;
+        if(CorrectRoom(other) == correct_room) continue;
 
-        if(RoomId(ugs->locations[i]) == room) return false;
+        if(RoomId(ugs->locations[other]) == destination_room) return false; // Mixed cohabitation (IMPL 3)
     }
     return true;
 }
 
+
+/*
+ * Prevents situations like this:
+ *
+ *  #############
+ *  # B         #
+ *  ###A#C#b#D###
+ *    # #d#c#a#
+ *    #########
+ *
+ * where A is blocking Room 1
+ */
+bool ValidateNoPointlessBlockage(
+    location_t destination,
+    UnpackedGamestate * ugs)
+{
+    if(destination < 4 || destination > 7) return true;
+
+    route_t room = GetRoomMembers(RoomId(destination));
+
+    if((room & ugs->blockades) == 0)
+    {
+        // Room is empty: should have gone to the bottom of the room
+        return false;
+    }
+
+    return true;
+}
+
+
 /*
  *  Rules:
- *   - Due to geometry:
+ *   - Amphipods will never stop on the space immediately outside any room
  *     IMPL:
- *      1 There is no node in front of rooms
- *      2 It never makes sense to move around the same room: infinite cost in routing table
- *      3 Not moving is not a move: infinite cost in routing table
+ *      1 Implemented in routing table: There is no node in front of rooms
  *
- *   - Amphipods will never move from the hallway into a room unless that room is their destination room 
+ *   - Amphipods will never move from the hallway into a room unless that room is their destination room
+ *     and that room contains no amphipods which do not also have that room as their own destination.
  *     IMPL: 
- *      4 You can never leave a room if you have moved already
+ *      2 You can never move into the wrong room
+ *      3 No mixed cohabitation
  *
- *   - Once an amphipod stops moving in the hallway, it will stay in that spot until it can move into a room...
+ *   - Once an amphipod stops moving in the hallway, it will stay in that spot until it can move into a room.
  *     IMPL:
- *      5 Implemented in routing table: halway->halway have infinite cost
+ *      4 Implemented in routing table: hallway->hallway has infinite cost
  *
- *   - ...and that room contains no amphipods which do not also have that room as their own destination.
- *     IMPL:
- *      6 Cannot enter a room with diferent-colored player
+ *   - Amphipods can move up, down, left, or right so long as they are moving into an unoccupied open space.
+ *      5 No moveing through blocked spaces
  *
+ *   ==Optimizations==
+ *
+ *   -  It never makes sense to move around the same room
+ *      IMPL:
+ *       6 Implemented in routing table: infinite cost in inter-room movements
+ *
+ *   -  Not moving is not a move
+ *      IMPL:
+ *       7 (Automatically true with IMPL 4 and 6)
+ * 
+ *   -  Once an amphipod has moved into a room, it never makes sense to move again
+ *      IMPL:
+ *       8 No moving outside second room
+ *
+ *   - It never makes sense to not move to the bottom of the room
+ *       9 Disalled moving to the front of an empty room
  */
 void ComputePlayerPossibleContinuations(
     player_t player_id,
     UnpackedGamestate * ugs,
     RoutingTable const * routing_table,
-    GamestateArray * continuations,
-    CostArray * costs)
+    ContinuationArray * continuations)
 {
     location_t source = ugs->locations[player_id];
     bool moveflag = ugs->moveflags[player_id];
 
-    if(RoomId(source)!=HALLWAY_ID && moveflag) return; // Cannot move again! (IMPL 4)
+    if(RoomId(source)!=HALLWAY_ID && moveflag) return; // Cannot move again! (IMPL 8)
 
     for(location_t destination = 0; destination < NLOCS; ++destination)
     {
-        if(routing_table->costs[source][destination] == INF_COST) continue; // Invalid path (IMPL 2, 3, 5)
+        if(routing_table->costs[source][destination] == INF_COST) continue; // IMPL 4,6,7
 
-        if(RoomId(destination)==HALLWAY_ID && moveflag) continue; // Cannot move around the halway->must get into room
-
-        // Traversing route, checking for blockades
-        bool valid = ValidatePath(ugs, routing_table, source, destination);
-        if(!valid) continue;
+        if(!ValidateNoObstruction(ugs, routing_table, source, destination)) continue; // IMPL 5
         
+        if(!ValidateDestinationRoom(player_id, destination, ugs)) continue;  // IMPL 2,3
 
-        // Adding new gamestate and cost to continuations
+        if(!ValidateNoPointlessBlockage(destination, ugs)) continue; // IMPL 9
+
+        // Adding to continuations
         UnpackedGamestate ucont = CopyLocationsAndFlags(ugs);
         ucont.locations[player_id] = destination;
         ucont.moveflags[player_id] = true;
-        gamestate_t cont = PackGamestate(&ucont);
-        PUSH(*continuations, cont);
 
-        cost_t cost = MovementCost(player_id) * routing_table->costs[source][destination];
-        PUSH(*costs, cost);
+        Continuation c;
+        c.state = PackGamestate(&ucont);
+        c.cost  = MovementCost(player_id) * routing_table->costs[source][destination];
+        PUSH(*continuations, c);
     }
-
 }
 
 
 void ComputePossibleContinuations(
     gamestate_t gs,
     RoutingTable const * routing_table,
-    GamestateArray * continuations,
-    CostArray * costs)
+    ContinuationArray * continuations)
 {
     continuations->end = continuations->begin; // Emptying without releasing memory
-    costs->end = costs->begin; // Emptying without releasing memory
 
     UnpackedGamestate ugs = UnpackGamestate(gs);
 
     for(player_t i = 0; i<NPLAYERS; ++i)
     {
-        ComputePlayerPossibleContinuations(i, &ugs, routing_table, continuations, costs);
+        ComputePlayerPossibleContinuations(i, &ugs, routing_table, continuations);
     }
 }

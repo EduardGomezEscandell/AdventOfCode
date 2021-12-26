@@ -2,6 +2,7 @@
 #include "common/vector.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 /** IDs of nodes (in hex)
  * 
@@ -114,14 +115,13 @@ RoutingTable BuildRoutingTable()
     {
         for(location_t dst=0; dst<NLOCS; ++dst)
         {
-            if(src == dst || RoomId(src) == RoomId(dst))
+            if(RoomId(src) == RoomId(dst))
             {
                 // OPTIMIZATION: Disables paths between same room
                 routing.routes[src][dst] = 0;
                 routing.costs[src][dst] = INF_COST;
                 continue;
             }
-
         }   
     }
 
@@ -151,3 +151,16 @@ void PrintRoutingTable(RoutingTable * t)
     }
 }
 
+route_t GetRoomMembers(location_t room_id)
+{
+    switch (room_id) {
+        case 0: return 0x7F00;  // 0111 1111 0000 0000 in binary (rooms 8 through E)
+        case 1: return 0x0011;  // 0000 0000 0001 0001 in binary (rooms 0 and 4)
+        case 2: return 0x0022;  // 0000 0000 0010 0010 in binary (rooms 1 and 5)
+        case 3: return 0x0044;  // 0000 0000 0100 0100 in binary (rooms 2 and 6)
+        case 4: return 0x0088;  // 0000 0000 1000 1000 in binary (rooms 3 and 7)
+    }
+
+    fprintf(stderr, "Invalid room id: %d (%s, %d)", room_id, __FILE__, __LINE__);
+    exit(EXIT_FAILURE);
+}

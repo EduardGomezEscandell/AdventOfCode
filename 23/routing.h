@@ -66,9 +66,10 @@ void ClearRoutingTable(RoutingTable * t);
 static inline location_t RoomId(location_t location)
 {
     if(location > 7) return HALLWAY_ID;
-    return (location_t) (location % 4);
+    return (location_t) (1 + location%4);
 }
 
+route_t GetRoomMembers(location_t room_id);
+
+
 #endif
-
-

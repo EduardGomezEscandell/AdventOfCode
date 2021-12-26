@@ -1,8 +1,10 @@
 #include "dijkstra.h"
+#include "gamestate.h"
+
 #include "common/hash_table.h"
 #include "common/vector.h"
 #include "routing.h"
-#include "gamestate.h"
+
 #include <stdlib.h>
 
 // Hash table template specialization
@@ -10,7 +12,45 @@ HT_DEFINE_DEFAULT_COMPARE(gamestate_t, gamestate_t, cost_t, GsDict)
 HT_DEFINE_NEW_AND_CLEAR  (gamestate_t, gamestate_t, cost_t, GsDict)
 HT_DEFINE_FIND           (gamestate_t, gamestate_t, cost_t, GsDict)
 HT_DEFINE_FIND_OR_EMPLACE(gamestate_t, gamestate_t, cost_t, GsDict)
-HT_DEFINE_REMOVE         (gamestate_t, gamestate_t, cost_t, GsDict)
+
+
+GsDictPair ** FindBucketReference(GsDict *hs, GsDictBucket * bucket, gamestate_t const * key)
+{
+    for(GsDictPair ** it = bucket->begin; it != bucket->end; ++it)
+    {
+        if(hs->Compare(&(*it)->key, key) == 0) return it;
+    }
+    return NULL;
+}
+
+bool DictRemove(GsDict * hs, GsDictPair * it)
+{
+    // Finding bucket ptr
+    GsDictSearchResult r_it = GsDictFind(hs, &it->key);
+    if(r_it.pair == NULL) return false;
+    GsDictPair ** it_bucket_ptr = FindBucketReference(hs, r_it.bucket, &it->key);
+
+    // Finding bucket ptr for last element
+    GsDictPair * last = &hs->data.end[-1];
+    GsDictSearchResult r_last = GsDictFind(hs, &last->key);
+    if(r_last.pair == NULL) return false;
+    GsDictPair ** last_bucket_ptr = FindBucketReference(hs, r_last.bucket, &last->key);
+
+    // Overwritting contents of `it` with last element's
+    *it = *last;
+    
+    // Updating bucket ptr for last element
+    *last_bucket_ptr = it;
+
+    // Shrinking data container
+    --hs->data.end;
+
+    // Removing `it`'s bucket ptr
+    *it_bucket_ptr = r_it.bucket->end[-1];
+    r_it.bucket->end--;
+
+    return true;
+}
 
 
 gamestate_t GsDictHashIntegers(gamestate_t const * key, size_t n_buckets)
@@ -44,39 +84,54 @@ cost_t Dijkstra(gamestate_t initial_gamestate, RoutingTable * routing)
 
     *GsDictFindOrAllocate(&queue, initial_gamestate) = 0;
 
-    GamestateArray continuations;
-    CostArray cont_costs;
+    ContinuationArray continuations;
 
     NEW_VECTOR(continuations);
-    NEW_VECTOR(cont_costs);
 
     while(SIZE(queue.data) > 0)
     {
         GsDictPair * it = FindMinimum(&queue);
         
         gamestate_t state = it->key;
-        cost_t accumulated_cost = it->value;
+        cost_t cost       = it->value;
+
+        printf("Current cost: %d\n", it->value);
+        printf("Queue size: %ld\n", SIZE(queue.data));
+        printf("Vsted size: %ld\n", SIZE(visited.data));
+        printf("\n");
         
         // Moving from queue to retirement
-        GsDictRemove(&queue, state);
-        *GsDictFindOrAllocate(&visited, state) = accumulated_cost;
+        if(DictRemove(&queue, it) == false)
+        {
+            fprintf(stderr, "Failed to remove gamestate %lx (%s:%d)", state, __FILE__, __LINE__);
+            fflush(stderr);
+            exit(EXIT_FAILURE);
+        }
+
+        *GsDictFindOrAllocate(&visited, state) = cost;
 
         // Adding continuations to queue
-        ComputePossibleContinuations(state, routing, &continuations, &cont_costs);
-        for(size_t i=0; i < SIZE(continuations); ++i)
+        ComputePossibleContinuations(state, routing, &continuations);
+        
+        for(Continuation * it = continuations.begin; it != continuations.end; ++it)
         {
-            if(GsDictFind(&visited, &state).pair != NULL) continue; // Already visited
+            if(GsDictFind(&visited, &it->state).pair != NULL) continue; // Already visited
 
-            if(WiningGamestate(continuations.begin[i]))
+            cost_t total_cost = cost + it->cost;
+            
+            if(WiningGamestate(it->state))
             {
+                printf("COMPLETED!\n");
+                
                 ClearGsDict(&queue);
                 ClearGsDict(&visited);
-                return accumulated_cost + cont_costs.begin[i];                
+                CLEAR(continuations);
+
+                return total_cost;
             }
 
-            cost_t new_cont_cost = accumulated_cost + cont_costs.begin[i];
-            cost_t * cont_cost = GsDictFindOrEmplace(&queue, continuations.begin[i], new_cont_cost);
-            *cont_cost = MIN(*cont_cost, new_cont_cost);
+            cost_t * cont_cost = GsDictFindOrEmplace(&queue, it->state, total_cost);
+            *cont_cost = MIN(*cont_cost, total_cost);
         }
     }
 
