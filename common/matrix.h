@@ -26,6 +26,8 @@ Matrix ReadMatrix(FILE * file);
 void AddRow(Matrix * mat);
 void AddCol(Matrix * mat);
 
+void FillMatrix(Matrix * mat, long value);
+
 void PrintMatrix(const Matrix * const mat);
 void ClearMatrix(Matrix * mat);
 
