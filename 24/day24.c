@@ -1,4 +1,5 @@
 #include "day24.h"
+#include "common/hash_table.h"
 #include "common/vector.h"
 
 #include "simulate.h"
@@ -9,10 +10,17 @@
 
 #define MONAD_DIGITS 14
 
-Node NewNode(size_t id)
+HT_DEFINE_DEFAULT_COMPARE    (size_t, Int, Node, Set)
+HT_DEFINE_NEW_AND_CLEAR      (size_t, Int, Node, Set)
+HT_DEFINE_FIND               (size_t, Int, Node, Set)
+HT_DEFINE_FIND_OR_EMPLACE    (size_t, Int, Node, Set)
+HT_DEFINE_HASH_INTEGERS      (size_t, Int, Node, Set)
+HT_DEFINE_RESERVE            (size_t, Int, Node, Set)
+
+Node NewNode(Int z)
 {
     Node node;
-    node.id = id;    
+    node.z = z;
     return node;
 }
 
@@ -22,11 +30,10 @@ Tree NewTree()
 
     for(size_t i=0; i < MONAD_DIGITS+1; ++i)
     {
-        NEW_VECTOR(t.levels[i]);
+        t.levels[i] = NewSet(SetHashIntegers);
     }
 
-    PUSH(t.levels[0], NewNode(0)); // Root node
-    t.levels[0].begin[0].z = 0;
+    *SetFindOrAllocate(&t.levels[0], 0) = NewNode(0); // Root node
 
     return t;
 }
@@ -35,65 +42,24 @@ void ClearTree(Tree * t)
 {
     for(size_t i=0; i < MONAD_DIGITS+1; ++i)
     {
-        CLEAR(t->levels[i]);
+        ClearSet(&t->levels[i]);
     }
 }
 
-int CompareNodes(Node const * A, Node const * B)
+
+void ExploreNode(Tree * tree, ChunkData const chunkdata[MONAD_DIGITS], Node * node, size_t lvl)
 {
-    return A->id != B->id;
-}
-
-
-Node * FindNode(NodeVector * tree_level, Int z)
-{
-    for(Node * it = tree_level->begin; it != tree_level->end; ++it)
-    {
-        if(it->z == z) return it;
-    }
-    return NULL;
-}
-
-size_t GenerateID(Tree const * tree, size_t lvl)
-{
-    /* Id encoding
-     *      101110101
-     *      ~~~~~^^^^ Last 4 bits are the level
-     *      ^ Leading bits are the position in the array
-     */
-    size_t pos = SIZE(tree->levels[lvl]);
-    return lvl + (pos << 4);
-}
-
-size_t GetPositionFromId(size_t id)
-{
-    return id >> 4;
-}
-
-size_t GetLvlFromId(size_t id)
-{
-    return id & 0xF;
-}
-
-void ExploreNode(Tree * tree, ChunkData const chunkdata[MONAD_DIGITS], Node * node)
-{
-    size_t lvl = GetLvlFromId(node->id);
-
     for(size_t next_digit = 1; next_digit < 10; ++next_digit)
     {
-        Int next_z = chunkdata[lvl].eval(node->z, next_digit);
+        Int next_z = chunkdata[lvl].eval(next_digit, node->z);
+        node->children[next_digit-1] = next_z;
 
-        Node * it = FindNode(&tree->levels[lvl+1], next_z);
+        SetSearchResult it = SetFind(&tree->levels[lvl+1], &next_z);
 
-        if(it) // Collision. YAY!
-        {
-            node->children_id[next_digit-1] = it->id;
-        }
-        else // New path :(
-        {
-            PUSH(tree->levels[lvl+1], NewNode(GenerateID(tree, lvl+1)));
-            tree->levels[lvl+1].end[-1].z = next_z;
-        }
+        if(it.pair) continue; // Collision. YAY!
+        
+        // New path :(
+        *SetFindOrAllocate(&tree->levels[lvl+1], next_z) = NewNode(next_z);        
     }
 }
 
@@ -101,9 +67,9 @@ void ExploreNode(Tree * tree, ChunkData const chunkdata[MONAD_DIGITS], Node * no
 void PrintLevel(Tree * tree, size_t lvl)
 {
     printf("Level %ld:", lvl);
-    for(Node * it = tree->levels[lvl].begin; it != tree->levels[lvl].end; ++it)
+    for(SetPair * it = tree->levels[lvl].data.begin; it != tree->levels[lvl].data.end; ++it)
     {
-        printf(" %ld", it->z);
+        printf(" %ld", it->key);
     }
     printf("\n");
 }
@@ -113,14 +79,17 @@ void ExploreTree(Tree * tree, ChunkData const chunkdata[MONAD_DIGITS])
 {
     for(size_t lvl=0; lvl < MONAD_DIGITS; ++lvl)
     {
-        for(Node * it = tree->levels[lvl].begin; it != tree->levels[lvl].end; ++it)
+        SetReserve(&tree->levels[lvl+1], 9 * SIZE(tree->levels[lvl].data));
+
+        for(SetPair * it = tree->levels[lvl].data.begin; it != tree->levels[lvl].data.end; ++it)
         {
-            ExploreNode(tree, chunkdata, it);
+            ExploreNode(tree, chunkdata, &it->value, lvl);
         }
 
-        printf("Level %ld has %ld paths\n", lvl, SIZE(tree->levels[lvl]));
+        printf("Level %ld has %ld paths\n", lvl, SIZE(tree->levels[lvl].data));
+        fflush(stdout);
     }
-    printf("Level %d has %ld paths\n", MONAD_DIGITS, SIZE(tree->levels[MONAD_DIGITS]));
+    printf("Level %d has %ld paths\n", MONAD_DIGITS, SIZE(tree->levels[MONAD_DIGITS].data));
 }
 
 
