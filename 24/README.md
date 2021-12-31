@@ -51,7 +51,6 @@ w = read()
 x = (z % 26 + some_value == some_other_value)
 y = f(x,w)
 z = f(x,y,z)
-(some operations)
 ```
 The only exception is the first block, which can be further simplified due to the fact that we know the value of `z` to be zero at the start of the program.
 
