@@ -1,127 +1,73 @@
 #include "day24.h"
-#include "common/hash_table.h"
-#include "common/vector.h"
-
-#include "simulate.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define MONAD_DIGITS 14
+/**
+ *  From input we know:
+ *
+ *   Digit #       MIN     MAX     EXACT VALUE
+ *      0           4       9
+ *      1           1       6
+ *      2           8       9
+ *      3           -       -       d2-7
+ *      4           1       9
+ *      5           7       9
+ *      6           6       9
+ *      7           -       -       d6-5
+ *      8           1       2
+ *      9           -       -       d8+7
+ *     10           -       -       d5-6
+ *     11           -       -       d4
+ *     12           -       -       d1+3
+ *     13           -       -       d0-3
+ * 
+ * These values will be diferent for each input.
+ */
 
-HT_DEFINE_DEFAULT_COMPARE    (size_t, Int, Node, Set)
-HT_DEFINE_NEW_AND_CLEAR      (size_t, Int, Node, Set)
-HT_DEFINE_FIND               (size_t, Int, Node, Set)
-HT_DEFINE_FIND_OR_EMPLACE    (size_t, Int, Node, Set)
-HT_DEFINE_HASH_INTEGERS      (size_t, Int, Node, Set)
-HT_DEFINE_RESERVE            (size_t, Int, Node, Set)
-
-Node NewNode(Int z)
+solution_t AssembleNumber(enum Target target)
 {
-    Node node;
-    node.z = z;
-    return node;
-}
 
-Tree NewTree()
-{
-    Tree t;
+    int min_values[MONAD_DIGITS] = {4,1,8,0,1,7,6,0,1,0,0,0,0,0};
+    int max_values[MONAD_DIGITS] = {9,6,9,0,9,9,9,0,2,0,0,0,0,0};
 
-    for(size_t i=0; i < MONAD_DIGITS+1; ++i)
+    int * digits = (target == MAX) ? max_values : min_values;
+    
+    solution_t d = 0;
+    for(size_t i=0; i<MONAD_DIGITS; ++i)
     {
-        t.levels[i] = NewSet(SetHashIntegers);
-    }
-
-    *SetFindOrAllocate(&t.levels[0], 0) = NewNode(0); // Root node
-
-    return t;
-}
-
-void ClearTree(Tree * t)
-{
-    for(size_t i=0; i < MONAD_DIGITS+1; ++i)
-    {
-        ClearSet(&t->levels[i]);
-    }
-}
-
-
-void ExploreNode(Tree * tree, ChunkData const chunkdata[MONAD_DIGITS], Node * node, size_t lvl)
-{
-    for(size_t next_digit = 1; next_digit < 10; ++next_digit)
-    {
-        Int next_z = chunkdata[lvl].eval(next_digit, node->z);
-        node->children[next_digit-1] = next_z;
-
-        SetSearchResult it = SetFind(&tree->levels[lvl+1], &next_z);
-
-        if(it.pair) continue; // Collision. YAY!
-        
-        // New path :(
-        *SetFindOrAllocate(&tree->levels[lvl+1], next_z) = NewNode(next_z);        
-    }
-}
-
-
-void PrintLevel(Tree * tree, size_t lvl)
-{
-    printf("Level %ld:", lvl);
-    for(SetPair * it = tree->levels[lvl].data.begin; it != tree->levels[lvl].data.end; ++it)
-    {
-        printf(" %ld", it->key);
-    }
-    printf("\n");
-}
-
-
-void ExploreTree(Tree * tree, ChunkData const chunkdata[MONAD_DIGITS])
-{
-    for(size_t lvl=0; lvl < MONAD_DIGITS; ++lvl)
-    {
-        SetReserve(&tree->levels[lvl+1], 9 * SIZE(tree->levels[lvl].data));
-
-        for(SetPair * it = tree->levels[lvl].data.begin; it != tree->levels[lvl].data.end; ++it)
-        {
-            ExploreNode(tree, chunkdata, &it->value, lvl);
+        d*=10;
+        switch (i) {
+            case  3: d += digits[2] - 7; break;
+            case  7: d += digits[6] - 5; break;
+            case  9: d += digits[8] + 7; break;
+            case 10: d += digits[5] - 6; break;
+            case 11: d += digits[4] + 0; break;
+            case 12: d += digits[1] + 3; break;
+            case 13: d += digits[0] - 3; break;
+            default: d += digits[i];
         }
-
-        printf("Level %ld has %ld paths\n", lvl, SIZE(tree->levels[lvl].data));
-        fflush(stdout);
     }
-    printf("Level %d has %ld paths\n", MONAD_DIGITS, SIZE(tree->levels[MONAD_DIGITS].data));
+
+    return d;
 }
 
 
 solution_t SolvePart1(const bool is_test)
 {
-    if(is_test) return 1;
-
-    ChunkData chunkdata[MONAD_DIGITS];
-    FillChunkData(chunkdata);
-    Tree tree = NewTree();
-
-    ExploreTree(&tree, chunkdata);
-
-    printf("\n");
-    PrintLevel(&tree, 0);
-    PrintLevel(&tree, 1);
-    PrintLevel(&tree, 2);
-    printf("...\n");
-    PrintLevel(&tree, 12);
-    PrintLevel(&tree, 13);
-    PrintLevel(&tree, 14);
-    printf("\n");
-
-    ClearTree(&tree);
-    return 0;
+    if(is_test) return AssembleNumber(MAX); // Here to suppress warning
+    
+    return AssembleNumber(MAX);
 }
 
 
 solution_t SolvePart2(const bool is_test)
 {
-    return is_test;
+    if(is_test) return AssembleNumber(MIN); // Here to suppress warning
+
+    return AssembleNumber(MIN);
 }
 
-DEFINE_TEST(1, 1)
-DEFINE_TEST(2, 1)
+DEFINE_TEST(1, 96929994293996)
+DEFINE_TEST(2, 41811761181141)

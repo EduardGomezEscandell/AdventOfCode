@@ -1,33 +1,19 @@
 #ifndef DAY_24_H
 #define DAY_24_H
 
-#include "common/hash_table.h"
-#include "simulate.h"
-
 #include "common/testing.h"
-#include "common/vector.h"
-
 
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
 
-typedef long int Int;
-typedef Int solution_t; // Just in case we have to switch to long
+#define MONAD_DIGITS 14
 
-typedef struct node_
-{
-    Int z;
-    size_t children[9];
-} Node;
+typedef uint_least64_t solution_t; // We need log2(1e14) = 47 bits
 
-TEMPLATE_HASH_TABLE(size_t, Int, Node, Set);
-
-typedef struct
-{
-	Set levels[MONAD_DIGITS+1];
-} Tree;
+enum Target {MIN, MAX};
+solution_t AssembleNumber(enum Target target);
 
 
 // Solving

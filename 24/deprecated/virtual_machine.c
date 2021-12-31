@@ -282,6 +282,8 @@ solution_t Test1()
 
 }
 
+#define MONAD_DIGITS 14
+
 bool ConvertToArray(solution_t num, solution_t digits[MONAD_DIGITS])
 {
     for(int i=MONAD_DIGITS-1; i >=0; --i)

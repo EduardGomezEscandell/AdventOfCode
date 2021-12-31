@@ -1,6 +1,17 @@
 #ifndef DAY_24_VM_H
 #define DAY_24_VM_H
 
+/**
+ *
+ * This file is not used in the solution but I thought it
+ * was interesting to include it.
+ * 
+ * It's an implementation of the virtual machine described 
+ * in the problem statement.
+ *
+ */
+
+
 #include "common/vector.h"
 
 #include <inttypes.h>
