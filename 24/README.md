@@ -106,7 +106,7 @@ We can then classify our blocks. With my input we see the following pattern:
 | 12    | pop  | 14 | -13 |
 | 13    | pop  | 9  | -11 |
 
-An important detail to notice is that there are 7 push and seven pop operations. We also know that the values in the stack are never zero, since pushing operations always push `w_i+k_i`, and this value is bounded by `[1,9] + [0,16] = [1,25]`.
+An important detail to notice is that there are seven push and seven pop operations. We also know that the values in the stack are never zero, since pushing operations always push `w_i+k_i`, and this value is bounded by `[1,9] + [0,16] = [1,25]`.
 
 The conclusion is that every value that is pushed must be popped for the end result to be zero. Therefore, the comparison in every *popping block* must be equal, else the stack won't be empty at the end of the last block.
 
