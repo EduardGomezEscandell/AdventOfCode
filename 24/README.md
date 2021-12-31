@@ -81,13 +81,14 @@ f_i(w,z) = {
 where `k_i` is again a value between 0 and 16 and hence `w+k` is within [1, 25].
 
 These two operations are the basic operations of a stack. The assembly code is operating on a stack by using a number in base 26:
-- The operation to see the top of the stack is the modulo 26.The operation to pop the stack is the integer division by 26.
+- The operation to see the top of the stack is the modulo 26.
+- The operation to pop the stack is the integer division by 26.
 - The operation to push onto the stack is to multiply by 26 and sum the pushed value (so long as the pushed value is less than 26).
 
 Hence, every *pushing block* is adding a digit at the end of the number, and every *popping block* is removing the last digit, and conditionally adding a new one.
 
 ## Analyzing the blocks
-We can then classify our blocks. With my inputs we see the following pattern:
+We can then classify our blocks. With my input we see the following pattern:
 
 | Block | Type | k  | c   |
 |-------|------|----|-----|
@@ -138,17 +139,17 @@ pop() - c_i == w_i
 ```
 Using the previous table to know what value is being popped, this allows us to obtain the following relationships:
 
-| Block | Condition     | Expanded     |
-|-------|---------------|--------------|
-| 3     | c - 11 == w3  | w3  = w2 - 7 |
-| 7     | g -  5 == w7  | w7  = w6 - 5 |
-| 9     | c +  0 == w9  | w9  = w8 + 7 |
-| 10    | f - 11 == w10 | w10 = w5 - 6 |
-| 11    | e - 13 == w11 | w11 = w4     |
-| 12    | b - 13 == w12 | w12 = w1 + 3 |
-| 13    | a - 11 == w13 | w13 = w0 - 3 |
+| Block | Condition       | Expanded       |
+|-------|-----------------|----------------|
+| 3     | `c - 11 == w3`  | `w3  = w2 - 7` |
+| 7     | `g -  5 == w7`  | `w7  = w6 - 5` |
+| 9     | `c +  0 == w9`  | `w9  = w8 + 7` |
+| 10    | `f - 11 == w10` | `w10 = w5 - 6` |
+| 11    | `e - 13 == w11` | `w11 = w4 + 0` |
+| 12    | `b - 13 == w12` | `w12 = w1 + 3` |
+| 13    | `a - 11 == w13` | `w13 = w0 - 3` |
 
-Hence we have the values for 7 of the digits. Look for instance at the expanded form of the 3rd block. Knowing that the third digit is the second one minus 7, means that the second one must be at least 8, since any lesser would entail an invalid value for the third digit.
+Hence we have the values for 7 of the digits. Let's now look at the expanded form of the 3rd block. Knowing that digit \#3 is digit \#2 minus 7, the latter must be at least 8, since any lesser would mean that the former is 0 or less.
 
 Applying this logic we obtain the following table:
 
@@ -165,11 +166,9 @@ Applying this logic we obtain the following table:
 ## Result
 
 Hence, in order to compute the maximum possible value, we take the upper bound for all the bounded digits, and compute the conditional ones. In order to compute the minimum, we simply use the lower bound.
-- Maximum: 969\*999\*2\*\*\*\*\*
-- Minimum: 418\*176\*1\*\*\*\*\*
+- Maximum: `969x999x2xxxxx`
+- Minimum: `418x176x1xxxxx`
 
 After computing the popping digits:
-- Maximum: 96929994293996
-- Minimum: 41811761181141
-
-
+- Maximum: `96929994293996`
+- Minimum: `41811761181141`
