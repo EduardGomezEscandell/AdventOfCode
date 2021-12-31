@@ -1,6 +1,6 @@
-## How I solved it
+# How I solved it
 
-# Simplifying the input
+## Simplifying the input
 First, I simplified the assembly code so that irrelevant instructions (such as `div z 1`) were removed.
 
 With some extra analysis, some blocks could be removed altogether. See this block at the very beginning of my problem input:
@@ -44,7 +44,7 @@ w = read()
 Applying this process carefully results in the code visible in `../data/24/adapted_input.txt`.
 
 
-# Blocks
+## Blocks
 In the aforementioned file, we can see that the code is separated in blocks. All blocks have the same operations:
 ```
 w = read()
@@ -64,7 +64,7 @@ z = f(w,z)
 
 The exact function `f(z,w)` for every block can be seen in `deprecated/simulate.c`. There we can see them fully simplified. We see how two tipes of blocks appear.
 
-# Pushing and popping
+## Pushing and popping
 
 The first type of block is a *pushing block*. It has a function of type:
 ```
@@ -86,7 +86,7 @@ These two operations are the basic operations of a stack. The assembly code is o
 
 Hence, every *pushing block* is adding a digit at the end of the number, and every *popping block* is removing the last digit, and conditionally adding a new one.
 
-# Analyzing the blocks
+## Analyzing the blocks
 We can then classify our blocks. With my inputs we see the following pattern:
 
 | Block | Type | k  | c   |
@@ -131,7 +131,7 @@ The stack must therefore evolve as:
 
 where each letter `a..j` is the result of that step's `w_i + k_i`.
 
-# Constraining the values
+## Constraining the values
 We now take each popping block and enforce the comparison:
 ```
 pop() - c_i == w_i
@@ -162,7 +162,7 @@ Applying this logic we obtain the following table:
 | 6     | 6           |  9          |
 | 8     | 1           |  2          |
 
-# Result
+## Result
 
 Hence, in order to compute the maximum possible value, we take the upper bound for all the bounded digits, and compute the conditional ones. In order to compute the minimum, we simply use the lower bound.
 - Maximum: 969\*999\*2\*\*\*\*\*
