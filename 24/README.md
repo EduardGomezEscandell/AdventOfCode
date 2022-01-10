@@ -73,9 +73,9 @@ where `k_i` is some value between 0 and 16. This means that `w+k` is always a va
 
 The second type of block is a *popping block*. It has a function of type:
 ```
-           {   z/26 + w + k_i       if z%26 + c_i != w
+           {  (z/26)*26 + w + k_i       if z%26 + c_i != w
 f_i(w,z) = {
-           {   z/26                 if z%26 + c_i == w
+           {   z/26                     if z%26 + c_i == w
 ```
 where `k_i` is again a value between 0 and 16 and hence `w+k` is within [1, 25].
 
