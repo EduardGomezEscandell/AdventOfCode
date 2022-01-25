@@ -210,13 +210,17 @@ void HT_name##PrintDebug(                                                     \
     const char * key_format,                                                  \
     const char * value_format)                                                \
 {                                                                             \
-printf(#HT_name" internal structure: {\n");                                   \
+    printf("DokMatrix"                                                        \
+           " internal structure: (%ld entries in %ld buckets){\n",            \
+           SIZE(ht->data), SIZE(ht->buckets));                                \
     for(HT_name##Bucket * b = ht->buckets.begin; b!=ht->buckets.end; ++b)     \
     {                                                                         \
+        if(SIZE(*b) == 0) continue;                                           \
         printf("  Bucket with hash %ld {\n", b - ht->buckets.begin);          \
         for(HT_name##Pair ** it =  b->begin; it != b->end; ++it)              \
         {                                                                     \
             printf("    ");                                                   \
+            printf("[%ld] ", *it - ht->data.begin);                           \
             printf(key_format, (*it)->key);                                   \
             printf(" : ");                                                    \
             printf(value_format, (*it)->value);                               \
@@ -257,7 +261,7 @@ HT_name##SearchResult HT_name##Find(HT_name * ht, const HT_key_t * key)       \
                                                                               \
     for(HT_name##Pair ** it = sr.bucket->begin; it != sr.bucket->end; ++it)   \
     {                                                                         \
-        if(ht->Compare(&(*it)->key, key) ==0)                                 \
+        if(ht->Compare(&((*it)->key), key) ==0)                                 \
         {                                                                     \
             sr.pair = *it;                                                    \
             return sr;                                                        \
@@ -281,7 +285,7 @@ HT_name##Pair * HT_name##_Private_Expand(HT_name * ht)                        \
         /* We use this to expand the number of buckets */                     \
     }                                                                         \
                                                                               \
-    ++ht->data.end;                                                           \
+    ++(ht->data.end);                                                         \
     return ht->data.end - 1;                                                  \
 }                                                                             \
                                                                               \
@@ -339,6 +343,13 @@ HT_val_t * HT_name##Remove(HT_name * ht, const HT_key_t key)                  \
     /* Removing from data */                                                  \
     *loc.pair = ht->data.end[-1];                                             \
     --ht->data.end;                                                           \
+                                                                              \
+    /* Changing pointer in bucket of last element */                          \
+    HT_name##SearchResult loc_end = HT_name##Find(ht, &ht->data.end->key);    \
+    HT_name##Pair ** it_end = loc_end.bucket->begin;                          \
+    for(; it_end != loc_end.bucket->end; ++it_end)                            \
+        if(*it_end == loc_end.pair) break;                                    \
+    *it_end = loc.pair;                                                       \
                                                                               \
     return &loc.pair->value;                                                  \
 }                                                                             \
