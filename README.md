@@ -2,7 +2,7 @@
 
 This repository contains my solutions to the 2021 Advent of Code challenge.
 
-This challenge consists of daily problems of varying difficulty released every morning from Dec 1st to Dec 25th. The organizer provides the instructions and an input file and the solution is validated by introducing the program output in the website.
+This challenge consists of daily problems of varying difficulty released every morning from Dec 1st to Dec 25th. The late problems are generally more complicated than the first few. The organizer provides the instructions and an input file and the solution is validated by introducing the program output in the website.
 
 The website of the challenge can be found at https://adventofcode.com/2021
 
