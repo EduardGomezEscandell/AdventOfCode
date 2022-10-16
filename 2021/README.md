@@ -11,7 +11,7 @@ The website of the challenge can be found at https://adventofcode.com/2021
 All problems have been solved and as such this repository will not be modified anymore.
 
 ## Scripts
-They must be run from the project's root folder
+Working directory must be at `${PROJECT_ROOT}/2021`.
 - `bash scripts/build.sh`:  Builds the project. Use environment variables:
   - `$BUILD_TYPE` to chose between `Release`(default) and `Debug`.
   - `$ADRESS_SANITIZER` to chose enable `ON` or disable `OFF`(default) the address sanitizer.
