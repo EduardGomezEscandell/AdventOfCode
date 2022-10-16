@@ -2,7 +2,7 @@
 	"folders":
 	[
 		{
-			"path": "~/Code/AdventOfCode2021",
+			"path": "~/Code/advent-of-code/2021",
 			"folder_exclude_patterns" : [
 				".vscode",
 				"__pycache__",
@@ -20,7 +20,7 @@
 		{
 			"name" : "CMake build",
 			"working_dir" : "${project_path}",
-			"file_regex": "\/home\/[a-zA-z0-9/]*\/AdventOfCode2021\/([^:]*):([0-9]*)",
+			"file_regex": "\/home\/[a-zA-z0-9/]*\/advent-of-code\/2021\/([^:]*):([0-9]*)",
 		    "shell_cmd": "bash scripts/build.sh",
 			"variants" : [
 				{
@@ -52,7 +52,7 @@
 				{
 					"name" : "Debug",
 					"shell_cmd" : "export FILEPATH=${file_path}; bash scripts/run.sh \\${FILEPATH##*/} Debug | tee \\$FILEPATH/sanitizer.valgrind",
-					"file_regex": "\/home\/[a-zA-z0-9/]*\/AdventOfCode2021\/([^:]*):([0-9]*)",
+					"file_regex": "\/home\/[a-zA-z0-9/]*\/advent-of-code\/2021\/([^:]*):([0-9]*)",
 				}
 			]
 		},
