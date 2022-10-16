@@ -4,11 +4,13 @@ on:
   push:
     branches: [ main ]
     paths:
-      - ./2021
+      - .github/workflows/2021.yml
+      - '2021/**'
   pull_request:
     branches: [ main ]
     paths:
-      - ./2021
+      - .github/workflows/2021.yml
+      - '2021/**'
   workflow_dispatch:
 
 jobs:
