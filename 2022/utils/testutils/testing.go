@@ -2,6 +2,7 @@
 package testutils
 
 import (
+	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -42,9 +43,17 @@ func backupMockables(mockablesByPtr []interface{}) (backup []*reflect.Value) {
 	return backup
 }
 
-// CheckEnv ensures that the testing environment variables are set.
-func CheckEnv(t *testing.T) {
+// RequireCheckEnv ensures that the necessary environment variables are set.
+func RequireCheckEnv(t *testing.T) {
 	t.Helper()
+	require.NoError(t, CheckEnv(), "Setup: Missing enviroment variables.")
+}
+
+// CheckEnv errors out if the necessary environment variables are set.
+func CheckEnv() error {
 	env := os.Getenv(input.EnvRootDir)
-	require.NotEmpty(t, env, "Environment variable %s not set. It should point to the root of the 2022 AoC project", input.EnvRootDir)
+	if env == "" {
+		return fmt.Errorf("Environment variable %s not set. It should point to the root of the 2022 AoC project", input.EnvRootDir)
+	}
+	return nil
 }

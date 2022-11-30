@@ -2,12 +2,23 @@ package day00_test
 
 import (
 	"bytes"
+	"log"
+	"os"
 	"testing"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/day00"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/testutils"
 	"github.com/stretchr/testify/require"
 )
+
+func TestMain(m *testing.M) {
+	err := testutils.CheckEnv()
+	if err != nil {
+		log.Fatalf("Setup: %v", err)
+	}
+	r := m.Run()
+	os.Exit(r)
+}
 
 func TestPart1(t *testing.T) {
 	testCases := map[string]struct {
@@ -59,8 +70,6 @@ func TestPart2(t *testing.T) {
 }
 
 func TestRealData(t *testing.T) {
-	testutils.CheckEnv(t)
-
 	expected := `Result of part 1: 1715
 Result of part 2: 1739
 `
