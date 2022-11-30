@@ -8,8 +8,6 @@ import (
 )
 
 func TestMock(t *testing.T) {
-	t.Parallel()
-
 	testCases := map[string]struct {
 		mocked interface{}
 		value  interface{}
@@ -35,7 +33,6 @@ func TestMock(t *testing.T) {
 
 			restore() // Ensuring no panics
 			require.Equal(t, v, tc.mocked)
-
 		})
 	}
 }

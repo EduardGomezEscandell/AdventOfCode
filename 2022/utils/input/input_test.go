@@ -40,7 +40,6 @@ func TestFilename(t *testing.T) {
 			require.NoError(t, err)
 
 			require.Equal(t, tc.want, got)
-
 		})
 	}
 }

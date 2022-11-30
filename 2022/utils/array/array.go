@@ -21,7 +21,7 @@ func Reduce[T, M number](vector []T, fold func(M, T) M) M {
 //
 // Equivalent to:
 //
-//  Reduce(AdjacentScan(merge), fold)
+//	Reduce(AdjacentScan(merge), fold)
 //
 // Note: the intermediate array is not stored into memory, making this operation faster than
 // the proposed equivalent one.

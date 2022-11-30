@@ -5,46 +5,31 @@ import (
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/generics"
 	"github.com/stretchr/testify/require"
 )
 
-func TestReduceInt(t *testing.T) {
-
-	testCases := map[string]struct {
-		input   []int
-		fold    func(int, int) int
-		expects int
-	}{
-		"empty sum":          {input: []int{}, fold: fun.Add[int], expects: 0},
-		"small sum":          {input: []int{1, 2, 3}, fold: fun.Add[int], expects: 6},
-		"normal sum":         {input: []int{8, 7, 5, 3, 3, -15}, fold: fun.Add[int], expects: 11},
-		"empty subtraction":  {input: []int{}, fold: fun.Sub[int], expects: 0},
-		"small subtraction":  {input: []int{1, 2, 3}, fold: fun.Sub[int], expects: -6},
-		"normal subtraction": {input: []int{8, 7, 5, 3, 3, -15}, fold: fun.Sub[int], expects: -11},
-	}
-
-	for name, tc := range testCases {
-		tc := tc
-		t.Run(name, func(t *testing.T) {
-			got := array.Reduce(tc.input, tc.fold)
-			require.Equal(t, tc.expects, got)
-		})
-	}
+func TestReduce(t *testing.T) {
+	t.Parallel()
+	t.Run("int", testReduce[int])
+	t.Run("int32", testReduce[int32])
+	t.Run("int64", testReduce[int64])
 }
 
-func TestReduceFloat(t *testing.T) {
+func testReduce[T generics.Signed](t *testing.T) { // nolint: thelper
+	t.Parallel()
 
 	testCases := map[string]struct {
-		input   []float32
-		fold    func(float32, float32) float32
-		expects float32
+		input   []T
+		fold    func(T, T) T
+		expects T
 	}{
-		"empty sum":          {input: []float32{}, fold: fun.Add[float32], expects: 0},
-		"small sum":          {input: []float32{1, 2, 3}, fold: fun.Add[float32], expects: 6},
-		"normal sum":         {input: []float32{8, 7, 5, 3, 3, -15}, fold: fun.Add[float32], expects: 11},
-		"empty subtraction":  {input: []float32{}, fold: fun.Sub[float32], expects: 0},
-		"small subtraction":  {input: []float32{1, 2, 3}, fold: fun.Sub[float32], expects: -6},
-		"normal subtraction": {input: []float32{8, 7, 5, 3, 3, -15}, fold: fun.Sub[float32], expects: -11},
+		"empty sum":          {input: []T{}, fold: fun.Add[T], expects: 0},
+		"small sum":          {input: []T{1, 2, 3}, fold: fun.Add[T], expects: 6},
+		"normal sum":         {input: []T{8, 7, 5, 3, 3, -15}, fold: fun.Add[T], expects: 11},
+		"empty subtraction":  {input: []T{}, fold: fun.Sub[T], expects: 0},
+		"small subtraction":  {input: []T{1, 2, 3}, fold: fun.Sub[T], expects: -6},
+		"normal subtraction": {input: []T{8, 7, 5, 3, 3, -15}, fold: fun.Sub[T], expects: -11},
 	}
 
 	for name, tc := range testCases {
@@ -57,7 +42,6 @@ func TestReduceFloat(t *testing.T) {
 }
 
 func TestAdjacentReduce(t *testing.T) {
-
 	testCases := map[string]struct {
 		input   []int
 		merge   func(int, int) int
@@ -79,7 +63,6 @@ func TestAdjacentReduce(t *testing.T) {
 }
 
 func TestScan(t *testing.T) {
-
 	testCases := map[string]struct {
 		input   []int
 		op      func(int) int
@@ -100,7 +83,6 @@ func TestScan(t *testing.T) {
 }
 
 func TestAdjacentScan(t *testing.T) {
-
 	testCases := map[string]struct {
 		input   []int
 		op      func(int, int) int

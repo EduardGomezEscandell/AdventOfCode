@@ -42,6 +42,7 @@ func backupMockables(mockablesByPtr []interface{}) (backup []*reflect.Value) {
 	return backup
 }
 
+// CheckEnv ensures that the testing environment variables are set.
 func CheckEnv(t *testing.T) {
 	t.Helper()
 	env := os.Getenv(input.EnvRootDir)
