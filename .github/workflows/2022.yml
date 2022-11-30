@@ -1,4 +1,4 @@
-name: "2021"
+name: "2022"
 
 on:
   push:
@@ -17,10 +17,10 @@ jobs:
   test-results:
     runs-on: ubuntu-latest
     env:
-      AOC_2022_ROOT: ${GITHUB_WORKSPACE}/2022
+      AOC_2022_ROOT: ${{ github.workspace }}/2022
     defaults:
       run:
-        working-directory: ./2022
+        working-directory: ${{ github.workspace }}/2022
 
     steps:
       - name: Check out repository
