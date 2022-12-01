@@ -1,4 +1,4 @@
-// Package day 01 solves 1.
+// Package day01 solves day 1 of AoC2022	.
 package day01
 
 import (
@@ -87,10 +87,14 @@ func Part2(input [][]uint) (uint, error) {
 	return arraySum(best3), nil
 }
 
+// ReadDataFile is a wrapper around input.ReadDataFile made to be
+// easily mocked.
 var ReadDataFile = func() ([]byte, error) {
 	return input.ReadDataFile(today, fileName)
 }
 
+// ParseInput reads the data file and returns the list of
+// reindeers and their calories.
 func ParseInput() (data [][]uint, err error) {
 	b, err := ReadDataFile()
 	if err != nil {

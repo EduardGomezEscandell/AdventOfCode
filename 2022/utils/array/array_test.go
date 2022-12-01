@@ -41,11 +41,18 @@ func testReduce[T generics.Signed](t *testing.T) { // nolint: thelper
 	}
 }
 
-func testScamReduce[T generics.Signed](t *testing.T) { // nolint: thelper
+func TestScanReduce(t *testing.T) {
+	t.Parallel()
+	t.Run("int", testScanReduce[int])
+	t.Run("int32", testScanReduce[int32])
+	t.Run("int64", testScanReduce[int64])
+}
+
+func testScanReduce[T generics.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 
 	sq := func(x T) int { return int(x * x) }
-	acc := func(x T, y int) T { return T(x + T(y)) }
+	acc := func(x T, y int) T { return x + T(y) }
 
 	testCases := map[string]struct {
 		input   []T
