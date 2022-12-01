@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"sort"
 	"strconv"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
@@ -19,6 +18,26 @@ const (
 	today    = 1
 	fileName = "input.txt"
 )
+
+// Part1 solves the first half of the problem.
+func Part1(input [][]uint) (uint, error) {
+	caloryCounts := array.Map(input, accumulate)
+	return array.Best(caloryCounts, fun.Gt[uint]), nil
+}
+
+// Part2 solves the second half of the problem.
+func Part2(input [][]uint) (uint, error) {
+	caloryCounts := array.Map(input, accumulate)
+	top3 := array.BestN(caloryCounts, 3, fun.Gt[uint])
+	return accumulate(top3), nil
+}
+
+// accumulate takes a slice and returns the sum of its members.
+func accumulate(arr []uint) uint {
+	return array.Reduce(arr, fun.Add[uint])
+}
+
+/// ---------- Here be boilerplate ------------------
 
 // Main is the entry point to today's problem solution.
 func Main(stdout io.Writer) error {
@@ -40,51 +59,6 @@ func Main(stdout io.Writer) error {
 	fmt.Fprintf(stdout, "Result of part 2: %v\n", result)
 
 	return nil
-}
-
-// Part1 solves the first half of the problem.
-func Part1(input [][]uint) (uint, error) {
-	if len(input) < 1 {
-		return 0, nil
-	}
-
-	var max uint
-	for _, reindeer := range input {
-		cals := array.Reduce(reindeer, fun.Add[uint])
-		if cals > max {
-			max = cals
-		}
-	}
-
-	return max, nil
-}
-
-// Part2 solves the second half of the problem.
-func Part2(input [][]uint) (uint, error) {
-	arraySum := func(v []uint) uint {
-		return array.Reduce(v, fun.Add[uint])
-	}
-
-	if len(input) < 4 {
-		return array.ScanReduce(input, arraySum, fun.Add[uint]), nil
-	}
-
-	best3 := array.Scan(input[:3], arraySum)
-	sort.Slice(best3, func(i, j int) bool {
-		return best3[i] < best3[j]
-	})
-
-	for _, reindeer := range input[3:] {
-		cals := arraySum(reindeer)
-		if cals > best3[0] {
-			best3[0] = cals
-		}
-		sort.Slice(best3, func(i, j int) bool {
-			return best3[i] < best3[j]
-		})
-	}
-
-	return arraySum(best3), nil
 }
 
 // ReadDataFile is a wrapper around input.ReadDataFile made to be

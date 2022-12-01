@@ -9,14 +9,93 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMap(t *testing.T) {
+	t.Parallel()
+	t.Run("int", testMap[int])
+	t.Run("int8", testMap[int8])
+	t.Run("int32", testMap[int32])
+	t.Run("int64", testMap[int64])
+}
+
 func TestReduce(t *testing.T) {
 	t.Parallel()
 	t.Run("int", testReduce[int])
+	t.Run("int8", testReduce[int8])
 	t.Run("int32", testReduce[int32])
 	t.Run("int64", testReduce[int64])
 }
 
-func testReduce[T generics.Signed](t *testing.T) { // nolint: thelper
+func TestMapReduce(t *testing.T) {
+	t.Parallel()
+	t.Run("int", testMapReduce[int])
+	t.Run("int8", testMapReduce[int8])
+	t.Run("int32", testMapReduce[int32])
+	t.Run("int64", testMapReduce[int64])
+}
+
+func TestAdjacentMap(t *testing.T) {
+	t.Parallel()
+	t.Run("int", testAdjacentMap[int])
+	t.Run("int8", testAdjacentMap[int8])
+	t.Run("int32", testAdjacentMap[int32])
+	t.Run("int64", testAdjacentMap[int64])
+}
+
+func TestAdjacentReduce(t *testing.T) {
+	t.Parallel()
+	t.Run("int", testAdjacentReduce[int])
+	t.Run("int8", testAdjacentReduce[int8])
+	t.Run("int32", testAdjacentReduce[int32])
+	t.Run("int64", testAdjacentReduce[int64])
+}
+
+func TestZipWith(t *testing.T) {
+	t.Parallel()
+	t.Run("int", testZipWith[int])
+	t.Run("int8", testZipWith[int8])
+	t.Run("int32", testZipWith[int32])
+	t.Run("int64", testZipWith[int64])
+}
+
+func TestZipReduce(t *testing.T) {
+	t.Parallel()
+	t.Run("int", testZipReduce[int])
+	t.Run("int8", testZipReduce[int8])
+	t.Run("int32", testZipReduce[int32])
+	t.Run("int64", testZipReduce[int64])
+}
+
+func TestTopN(t *testing.T) {
+	t.Parallel()
+	t.Run("int", testTopN[int])
+	t.Run("int8", testTopN[int8])
+	t.Run("int32", testTopN[int32])
+	t.Run("int64", testTopN[int64])
+}
+
+func testMap[T generics.Signed](t *testing.T) { // nolint: thelper
+	t.Parallel()
+
+	testCases := map[string]struct {
+		input   []T
+		op      func(T) int
+		expects []int
+	}{
+		"empty sign":  {input: []T{}, op: fun.Sign[T], expects: []int{}},
+		"small sign":  {input: []T{1, -2, 3}, op: fun.Sign[T], expects: []int{1, -1, 1}},
+		"normal sign": {input: []T{-8, 7, 0, 3, 3, -15}, op: fun.Sign[T], expects: []int{-1, 1, 0, 1, 1, -1}},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			got := array.Map(tc.input, tc.op)
+			require.Equal(t, tc.expects, got)
+		})
+	}
+}
+
+func testReduce[T generics.Signed](t *testing.T) { // nolint: thelper // nolint: thelper
 	t.Parallel()
 
 	testCases := map[string]struct {
@@ -41,14 +120,7 @@ func testReduce[T generics.Signed](t *testing.T) { // nolint: thelper
 	}
 }
 
-func TestScanReduce(t *testing.T) {
-	t.Parallel()
-	t.Run("int", testScanReduce[int])
-	t.Run("int32", testScanReduce[int32])
-	t.Run("int64", testScanReduce[int64])
-}
-
-func testScanReduce[T generics.Signed](t *testing.T) { // nolint: thelper
+func testMapReduce[T generics.Signed](t *testing.T) { // nolint: thelper // nolint: thelper
 	t.Parallel()
 
 	sq := func(x T) int { return int(x * x) }
@@ -68,22 +140,23 @@ func testScanReduce[T generics.Signed](t *testing.T) { // nolint: thelper
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			got := array.ScanReduce(tc.input, tc.unary, tc.fold)
+			got := array.MapReduce(tc.input, tc.unary, tc.fold)
 			require.Equal(t, tc.expects, got)
 		})
 	}
 }
 
-func TestAdjacentReduce(t *testing.T) {
+func testAdjacentReduce[T generics.Signed](t *testing.T) { // nolint: thelper
+	t.Parallel()
 	testCases := map[string]struct {
-		input   []int
-		merge   func(int, int) int
-		fold    func(int, int) int
-		expects int
+		input   []T
+		merge   func(T, T) T
+		fold    func(T, T) T
+		expects T
 	}{
-		"empty sum of differences":  {merge: fun.Sub[int], fold: fun.Add[int], expects: 0, input: []int{}},
-		"small sum of differences":  {merge: fun.Sub[int], fold: fun.Add[int], expects: -2, input: []int{1, 2, 3}},
-		"normal sum of differences": {merge: fun.Sub[int], fold: fun.Add[int], expects: 23, input: []int{8, 7, 5, 3, 3, -15}},
+		"empty sum of differences":  {merge: fun.Sub[T], fold: fun.Add[T], expects: 0, input: []T{}},
+		"small sum of differences":  {merge: fun.Sub[T], fold: fun.Add[T], expects: -2, input: []T{1, 2, 3}},
+		"normal sum of differences": {merge: fun.Sub[T], fold: fun.Add[T], expects: 23, input: []T{8, 7, 5, 3, 3, -15}},
 	}
 
 	for name, tc := range testCases {
@@ -95,45 +168,100 @@ func TestAdjacentReduce(t *testing.T) {
 	}
 }
 
-func TestScan(t *testing.T) {
+func testZipWith[T generics.Signed](t *testing.T) { // nolint: thelper
+	t.Parallel()
 	testCases := map[string]struct {
-		input   []int
-		op      func(int) int
-		expects []int
+		input1 []T
+		input2 []T
+		zip    func(T, T) T
+		want   []T
 	}{
-		"empty sign":  {input: []int{}, op: fun.Sign[int], expects: []int{}},
-		"small sign":  {input: []int{1, -2, 3}, op: fun.Sign[int], expects: []int{1, -1, 1}},
-		"normal sign": {input: []int{-8, 7, 0, 3, 3, -15}, op: fun.Sign[int], expects: []int{-1, 1, 0, 1, 1, -1}},
+		"empty":      {zip: fun.Sub[T], want: []T{}},
+		"half empty": {zip: fun.Sub[T], input1: []T{1}, want: []T{}},
+		"single":     {zip: fun.Sub[T], input1: []T{1}, input2: []T{2}, want: []T{-1}},
+		"normal":     {zip: fun.Sub[T], input1: []T{1, 3, 9}, input2: []T{2, -1, 6}, want: []T{-1, 4, 3}},
+		"normal add": {zip: fun.Add[T], input1: []T{1, 3, 9}, input2: []T{2, -1, 6}, want: []T{3, 2, 15}},
 	}
 
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			got := array.Scan(tc.input, tc.op)
+			got := array.ZipWith(tc.input1, tc.input2, tc.zip)
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func testZipReduce[T generics.Signed](t *testing.T) { // nolint: thelper
+	t.Parallel()
+
+	testCases := map[string]struct {
+		input1 []T
+		input2 []T
+		want   T
+	}{
+		"empty":      {want: 0},
+		"half empty": {input1: []T{1}, want: 0},
+		"single":     {input1: []T{1}, input2: []T{2}, want: 2},
+		"normal":     {input1: []T{1, 3, 9}, input2: []T{2, -1, 6}, want: 53},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			// Testing by computing inner product.
+			got := array.ZipReduce(tc.input1, tc.input2, fun.Mul[T], fun.Add[T])
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func testAdjacentMap[T generics.Signed](t *testing.T) { // nolint: thelper
+	t.Parallel()
+	testCases := map[string]struct {
+		input   []T
+		op      func(T, T) T
+		expects []T
+	}{
+		"empty sum":          {input: []T{}, op: fun.Add[T], expects: []T{}},
+		"small sum":          {input: []T{1, -2, 3}, op: fun.Add[T], expects: []T{-1, 1}},
+		"normal sum":         {input: []T{-8, 7, 0, 3, 3, -15}, op: fun.Add[T], expects: []T{-1, 7, 3, 6, -12}},
+		"empty subtraction":  {input: []T{}, op: fun.Sub[T], expects: []T{}},
+		"small subtraction":  {input: []T{1, -2, 3}, op: fun.Sub[T], expects: []T{3, -5}},
+		"normal subtraction": {input: []T{-8, 7, 0, 3, 3, -15}, op: fun.Sub[T], expects: []T{-15, 7, -3, 0, 18}},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			got := array.AdjacentMap(tc.input, tc.op)
 			require.Equal(t, tc.expects, got)
 		})
 	}
 }
 
-func TestAdjacentScan(t *testing.T) {
+func testTopN[T generics.Signed](t *testing.T) { // nolint: thelper
+	t.Parallel()
 	testCases := map[string]struct {
-		input   []int
-		op      func(int, int) int
-		expects []int
+		input []T
+		n     uint
+		comp  array.Comparator[T]
+		want  []T
 	}{
-		"empty sum":          {input: []int{}, op: fun.Add[int], expects: []int{}},
-		"small sum":          {input: []int{1, -2, 3}, op: fun.Add[int], expects: []int{-1, 1}},
-		"normal sum":         {input: []int{-8, 7, 0, 3, 3, -15}, op: fun.Add[int], expects: []int{-1, 7, 3, 6, -12}},
-		"empty subtraction":  {input: []int{}, op: fun.Sub[int], expects: []int{}},
-		"small subtraction":  {input: []int{1, -2, 3}, op: fun.Sub[int], expects: []int{3, -5}},
-		"normal subtraction": {input: []int{-8, 7, 0, 3, 3, -15}, op: fun.Sub[int], expects: []int{-15, 7, -3, 0, 18}},
+		"empty":           {n: 2, input: []T{}, comp: fun.Lt[T], want: []T{}},
+		"too short":       {n: 5, input: []T{1, 2, 3}, comp: fun.Lt[T], want: []T{1, 2, 3}},
+		"just the amount": {n: 5, input: []T{1, 4, 2, 3}, comp: fun.Lt[T], want: []T{1, 2, 3, 4}},
+		"bottom 3":        {n: 3, input: []T{8, 7, 5, 3, 3, 15}, comp: fun.Lt[T], want: []T{3, 3, 5}},
+		"top 3":           {n: 3, input: []T{8, 7, 5, 3, 3, 15}, comp: fun.Gt[T], want: []T{15, 8, 7}},
+		"bottom 4":        {n: 4, input: []T{-1, 84, 5, 101, 12, 9, 15, 1}, comp: fun.Lt[T], want: []T{-1, 1, 5, 9}},
+		"top 4":           {n: 4, input: []T{-1, 84, 5, 101, 12, 9, 15, 1}, comp: fun.Gt[T], want: []T{101, 84, 15, 12}},
 	}
 
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			got := array.AdjacentScan(tc.input, tc.op)
-			require.Equal(t, tc.expects, got)
+			got := array.BestN(tc.input, tc.n, tc.comp)
+			require.Equal(t, tc.want, got)
 		})
 	}
 }

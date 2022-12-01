@@ -43,10 +43,7 @@ func Main(stdout io.Writer) error {
 
 // Part1 solves the first half of the problem.
 func Part1(inp []uint) (uint, error) {
-	if len(inp) < 1 {
-		return 0, nil
-	}
-	return array.AdjacentReduce(inp, fun.Less[uint], fun.Add[uint]), nil
+	return array.AdjacentReduce(inp, fun.Lt[uint], fun.Count[uint]), nil
 }
 
 // Part2 solves the second half of the problem.
