@@ -13,7 +13,3 @@ Go to `2022/` and either run `go test ./...` directly, or do so with coverage in
 ```bash
 /path/to/repo/2022$ bash coverage.sh
 ```
-
-## Status
-
-Coming soon!
