@@ -7,8 +7,9 @@ mkdir -p "${COVERAGE_DIR}"
 go test -coverpkg=./... -coverprofile="${COVERAGE_DIR}/coverage.out" -covermode=set ./... > /dev/null
 
 
-if [[ -z "${GITHUB_WORKSPACE}" ]] ; then
-    go tool cover -html="${COVERAGE_DIR}/coverage.out" > "$COVERAGE_DIR/coverage.txt"
-else
-    go tool cover -func="${COVERAGE_DIR}/coverage.out"> "$COVERAGE_DIR/coverage.html"
+go tool cover -func="${COVERAGE_DIR}/coverage.out" | tee "$COVERAGE_DIR/coverage.txt"
+
+# Opening in browser when not on Gitub runner
+if [[ -z "${GITHUB_WORKSPACE+x}" ]] ; then
+    go tool cover -html="${COVERAGE_DIR}/coverage.out" > "$COVERAGE_DIR/coverage.html"
 fi
