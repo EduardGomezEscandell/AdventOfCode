@@ -15,13 +15,27 @@ func Reduce[T, M number](vector []T, fold func(M, T) M) M {
 	return acc
 }
 
+// ScanReduce scans and the reduces an array.
+//
+//	Reduce(Scan(arr, unary), fold)
+//
+// Note: the intermediate array is not stored into memory, making this operation faster than
+// the proposed equivalent one.
+func ScanReduce[T, M, I any](arr []T, unary func(T) I, fold func(M, I) M) M {
+	var acc M
+	for _, a := range arr {
+		acc = fold(acc, unary(a))
+	}
+	return acc
+}
+
 // AdjacentReduce slides a window of size 2 across the array arr applying operator 'merge',
 // producing an array of size len(arr)-1. The latter array is then reduced with the
 // fold operator.
 //
 // Equivalent to:
 //
-//	Reduce(AdjacentScan(merge), fold)
+//	Reduce(AdjacentScan(arr, merge), fold)
 //
 // Note: the intermediate array is not stored into memory, making this operation faster than
 // the proposed equivalent one.
@@ -38,7 +52,7 @@ func AdjacentReduce[T, A, I number](arr []T, merge func(T, T) I, fold func(A, I)
 }
 
 // Scan applies function f element-wise to generate another array of the same size.
-func Scan[T, M number](arr []T, f func(T) M) []M {
+func Scan[T, M any](arr []T, f func(T) M) []M {
 	if len(arr) < 1 {
 		return []M{}
 	}

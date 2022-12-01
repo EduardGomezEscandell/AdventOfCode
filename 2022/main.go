@@ -9,23 +9,27 @@ import (
 	"os"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/day00"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/day01"
 )
 
-var day uint
-var output string
-
 func main() {
+	var day uint
+	var output string
+
 	flag.UintVar(&day, "day", 0, "Day to run")
 	flag.StringVar(&output, "result", "stdout", "Output")
-	err := Start(day, output)
+
+	flag.Parse()
+
+	err := Run(day, output)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
 }
 
-// Start runs the main program. Extacted away from main() so
+// Run runs the main program. Extacted away from main() so
 // that it can be tested.
-func Start(day uint, output string) error {
+func Run(day uint, output string) error {
 	entrypoint, err := entryPoint(day)
 	if err != nil {
 		return err
@@ -42,6 +46,7 @@ func Start(day uint, output string) error {
 		}
 	}()
 
+	fmt.Fprintf(w, "DAY %d\n", day)
 	return entrypoint(w)
 }
 
@@ -49,6 +54,8 @@ func entryPoint(day uint) (func(io.Writer) error, error) {
 	switch day {
 	case 0:
 		return day00.Main, nil
+	case 1:
+		return day01.Main, nil
 	}
 	return nil, fmt.Errorf("Day %d is not implemented", day)
 }

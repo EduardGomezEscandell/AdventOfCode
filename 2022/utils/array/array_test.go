@@ -41,6 +41,32 @@ func testReduce[T generics.Signed](t *testing.T) { // nolint: thelper
 	}
 }
 
+func testScamReduce[T generics.Signed](t *testing.T) { // nolint: thelper
+	t.Parallel()
+
+	sq := func(x T) int { return int(x * x) }
+	acc := func(x T, y int) T { return T(x + T(y)) }
+
+	testCases := map[string]struct {
+		input   []T
+		unary   func(T) int
+		fold    func(T, int) T
+		expects T
+	}{
+		"empty sum of squares":  {input: []T{}, unary: sq, fold: acc, expects: 0},
+		"small sum of squares":  {input: []T{1, 2, 3}, unary: sq, fold: acc, expects: 14},
+		"normal sum of squares": {input: []T{7, 5, 3, 3}, unary: sq, fold: acc, expects: 92},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			got := array.ScanReduce(tc.input, tc.unary, tc.fold)
+			require.Equal(t, tc.expects, got)
+		})
+	}
+}
+
 func TestAdjacentReduce(t *testing.T) {
 	testCases := map[string]struct {
 		input   []int
