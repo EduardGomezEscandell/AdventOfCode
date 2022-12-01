@@ -17,25 +17,32 @@ var output string
 func main() {
 	flag.UintVar(&day, "day", 0, "Day to run")
 	flag.StringVar(&output, "result", "stdout", "Output")
-
-	Main, err := entryPoint(day)
+	err := Start(day, output)
 	if err != nil {
 		log.Fatalf("%v", err)
+	}
+}
+
+// Start runs the main program. Extacted away from main() so
+// that it can be tested.
+func Start(day uint, output string) error {
+	entrypoint, err := entryPoint(day)
+	if err != nil {
+		return err
 	}
 
 	w, err := getWriter(output)
 	if err != nil {
-		log.Fatalf("%v", err)
+		return err
 	}
 	defer func() {
 		err := w.Close()
-		log.Printf("Failed to close outfile: %v", err)
+		if err != nil {
+			log.Printf("Failed to close outfile: %v", err)
+		}
 	}()
 
-	err = Main(w)
-	if err != nil {
-		log.Fatalf("%v", err)
-	}
+	return entrypoint(w)
 }
 
 func entryPoint(day uint) (func(io.Writer) error, error) {

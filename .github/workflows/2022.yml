@@ -38,4 +38,10 @@ jobs:
         if: always()
         run: |
           go test ./...
+      
+      - name: Coverage
+        run: |
+          # Prints coverage info just for informational purposes
+          bash coverage.sh
+          
 

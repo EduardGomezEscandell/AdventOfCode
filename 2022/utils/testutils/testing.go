@@ -46,7 +46,7 @@ func backupMockables(mockablesByPtr []interface{}) (backup []*reflect.Value) {
 // RequireCheckEnv ensures that the necessary environment variables are set.
 func RequireCheckEnv(t *testing.T) {
 	t.Helper()
-	require.NoError(t, CheckEnv(), "Setup: Missing enviroment variables.")
+	require.NoError(t, CheckEnv(), "Setup: Missing environment variables.")
 }
 
 // CheckEnv errors out if the necessary environment variables are set.
