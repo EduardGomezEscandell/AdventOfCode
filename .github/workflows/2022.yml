@@ -1,0 +1,47 @@
+name: "2022"
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - .github/workflows/2022.yml
+      - '2022/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - .github/workflows/2022.yml
+      - '2022/**'
+  workflow_dispatch:
+
+jobs:
+  test-results:
+    runs-on: ubuntu-latest
+    env:
+      AOC_2022_ROOT: ${{ github.workspace }}/2022
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/2022
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
+          version: latest
+          working-directory: ${{ github.workspace }}/2022
+          args: --config=.golangci-ci.yaml
+      
+      - name: Test
+        if: always()
+        run: |
+          go test ./...
+      
+      - name: Coverage
+        run: |
+          # Prints coverage info just for informational purposes
+          bash coverage.sh
+          
+
