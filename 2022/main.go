@@ -35,6 +35,7 @@ func main() {
 	}
 }
 
+// CountDays counts the number of days that are implemented.
 func CountDays() uint {
 	return uint(len(entrypoints))
 }
