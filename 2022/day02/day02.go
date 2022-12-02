@@ -39,7 +39,7 @@ const (
 
 // The end result. The numeric value is 1,2,3 to make the input
 // easier to parse. The score is obtained by subtracting 1 and
-// multiplying by three: Lose, Draw, Win => 0,3,6
+// multiplying by three: Lose, Draw, Win => 0,3,6.
 const (
 	Lose uint = iota + 1
 	Draw
