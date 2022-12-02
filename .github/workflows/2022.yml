@@ -61,5 +61,5 @@ jobs:
         env: 
           executable: ./aoc2022
         run: |
-          timeit.sh 
+          ./timeit.sh
 
