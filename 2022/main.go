@@ -10,6 +10,7 @@ import (
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/day00"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/day01"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/day02"
 )
 
 func main() {
@@ -56,6 +57,8 @@ func entryPoint(day uint) (func(io.Writer) error, error) {
 		return day00.Main, nil
 	case 1:
 		return day01.Main, nil
+	case 2:
+		return day02.Main, nil
 	}
 	return nil, fmt.Errorf("Day %d is not implemented", day)
 }
