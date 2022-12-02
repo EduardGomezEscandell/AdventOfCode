@@ -7,6 +7,7 @@ day=0
 while [[ day -lt ndays ]]; do
     echo "::group::Day ${day}"
     time ${executable} --day="${day}"
+    echo
     echo "::endgroup::"
     ((++day))
 done
