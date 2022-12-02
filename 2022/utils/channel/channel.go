@@ -45,7 +45,7 @@ func Split[T any](ctx context.Context, input <-chan T, n int) []<-chan T {
 			}
 
 			// Asyncronously sending value down all channels
-			promises := array.Map(outputs, func(out chan T) <-chan bool {
+			failures := array.Map(outputs, func(out chan T) <-chan bool {
 				failed := make(chan bool)
 				go func() {
 					select {
@@ -59,7 +59,7 @@ func Split[T any](ctx context.Context, input <-chan T, n int) []<-chan T {
 				return failed
 			})
 			// Barrier: collecting failures (and ending if one failed)
-			anyFailed := array.MapReduce(promises, Recv[bool], fun.Or)
+			anyFailed := array.MapReduce(failures, Recv[bool], fun.Or)
 			if anyFailed {
 				return
 			}
