@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-results:
+  test:
     runs-on: ubuntu-latest
     env:
       AOC_2022_ROOT: ${{ github.workspace }}/2022
@@ -41,4 +41,25 @@ jobs:
           # Prints coverage info just for informational purposes
           bash coverage.sh
           
+  solve:
+    runs-on: ubuntu-latest
+    env:
+      AOC_2022_ROOT: ${{ github.workspace }}/2022
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/2022
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+      
+      - name: Build
+        run: |
+          go build -o aoc2022
+        
+      - name: Run
+        env: 
+          executable: ./aoc2022
+        run: |
+          ./timeit.sh
 

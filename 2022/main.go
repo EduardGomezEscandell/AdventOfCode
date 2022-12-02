@@ -16,16 +16,28 @@ import (
 func main() {
 	var day uint
 	var output string
+	var countDays bool
 
 	flag.UintVar(&day, "day", 0, "Day to run")
 	flag.StringVar(&output, "result", "stdout", "Output")
+	flag.BoolVar(&countDays, "count-days", false, "print the number of days available")
 
 	flag.Parse()
+
+	if countDays {
+		fmt.Printf("%d\n", CountDays())
+		return
+	}
 
 	err := Run(day, output)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
+}
+
+// CountDays counts the number of days that are implemented.
+func CountDays() uint {
+	return uint(len(entrypoints))
 }
 
 // Run runs the main program. Extacted away from main() so
@@ -52,15 +64,16 @@ func Run(day uint, output string) error {
 }
 
 func entryPoint(day uint) (func(io.Writer) error, error) {
-	switch day {
-	case 0:
-		return day00.Main, nil
-	case 1:
-		return day01.Main, nil
-	case 2:
-		return day02.Main, nil
+	if day > CountDays() {
+		return nil, fmt.Errorf("Day %d is not implemented", day)
 	}
-	return nil, fmt.Errorf("Day %d is not implemented", day)
+	return entrypoints[day], nil
+}
+
+var entrypoints = []func(io.Writer) error{
+	day00.Main,
+	day01.Main,
+	day02.Main,
 }
 
 func getWriter(output string) (io.WriteCloser, error) {
