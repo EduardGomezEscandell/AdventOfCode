@@ -29,6 +29,23 @@ func Map[T, O any](arr []T, f func(T) O) []O {
 	return o
 }
 
+// Foreach applies non-pure function f:T element-wise t modify the array.
+func Foreach[T any](arr []T, f func(*T)) {
+	for i := 0; i < len(arr); i++ {
+		f(&arr[i])
+	}
+}
+
+// Generate generates an array of length len, where arr[i] = f()
+// The function will be called in sequential order.
+func Generate[T any](len int, f func() T) []T {
+	arr := make([]T, 0, len)
+	for i := 0; i < len; i++ {
+		arr = append(arr, f())
+	}
+	return arr
+}
+
 // Reduce []T->O applies the function fold:MxT->M cummulatively,
 // starting with the default value for M. The end result is
 // equivalent to:
