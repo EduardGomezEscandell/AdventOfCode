@@ -89,6 +89,7 @@ func TestPart1(t *testing.T) {
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			lines := array.Map(tc.data, day03.NewLine)
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
@@ -117,6 +118,7 @@ func TestPart2(t *testing.T) {
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			lines := array.Map(tc.data, day03.NewLine)
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()

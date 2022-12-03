@@ -160,7 +160,7 @@ func AdjacentReduce[T, A, I any](arr []T, zip func(T, T) I, fold func(A, I) A) A
 //
 //	Best(arr, func(x, y int) bool { return x>y })
 //
-// Complexity is O(|arr|)
+// Complexity is O(|arr|).
 func Best[T any](arr []T, isBetter Comparator[T]) (acc T) {
 	if len(arr) == 0 {
 		return acc
@@ -186,7 +186,7 @@ func Best[T any](arr []T, isBetter Comparator[T]) (acc T) {
 //
 //	BestN(arr, 3, func(x, y int) bool { return x>y })
 //
-// Complexity is O(n·|arr|)
+// Complexity is O(n·|arr|).
 func BestN[T any](arr []T, n uint, isBetter Comparator[T]) []T {
 	if uint(len(arr)) <= n {
 		n = uint(len(arr))
@@ -206,7 +206,7 @@ func BestN[T any](arr []T, n uint, isBetter Comparator[T]) []T {
 	return acc
 }
 
-// Complexity is O(n)
+// Complexity is O(n).
 func updateBestN[T any](n uint, topN []T, x T, isBetter Comparator[T]) {
 	if isBetter(topN[n-1], x) { // Not top n
 		return
@@ -227,10 +227,11 @@ func updateBestN[T any](n uint, topN []T, x T, isBetter Comparator[T]) {
 // item j <=> comp(i,j) is true.
 //
 // Example: sort from smallest to largest:
-//   Sort(arr, func(l,r int) bool { return l<r }) // Sorts incrementally
-//   Sort(arr, fun.Lt)                            // The same, but shorter
 //
-// Complexity is O(|arr|·log(|arr|))
+//	Sort(arr, func(l,r int) bool { return l<r }) // Sorts incrementally
+//	Sort(arr, fun.Lt)                            // The same, but shorter
+//
+// Complexity is O(|arr|·log(|arr|)).
 func Sort[T any](arr []T, comp Comparator[T]) {
 	sort.Slice(arr, func(i, j int) bool {
 		return comp(arr[i], arr[j])
@@ -247,7 +248,7 @@ func Sort[T any](arr []T, comp Comparator[T]) {
 // repeated as many times as the smallest number of repetitions between the
 // two lists.
 //
-// Complexity is O(|first| + |second|)
+// Complexity is O(|first| + |second|).
 func Common[T any](first, second []T, comp Comparator[T]) []T {
 	common := []T{}
 	var f, s int
@@ -257,7 +258,7 @@ func Common[T any](first, second []T, comp Comparator[T]) []T {
 			f++
 			continue
 		}
-		// first[f] succeedes second[s]
+		// first[f] succeeds second[s]
 		if comp(second[s], first[f]) {
 			s++
 			continue
@@ -271,7 +272,7 @@ func Common[T any](first, second []T, comp Comparator[T]) []T {
 }
 
 // Unique modifies array arr so that all unique items are moved to the
-// beggining. Returns the index where the new end is.
+// beginning. Returns the index where the new end is.
 func Unique[T any](arr []T, comp Comparator[T]) (endUnique int) {
 	if len(arr) == 0 {
 		return 0

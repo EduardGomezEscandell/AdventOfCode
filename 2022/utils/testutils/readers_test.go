@@ -27,8 +27,7 @@ func TestStringSliceReader(t *testing.T) {
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			var r io.ReadCloser
-			r = testutils.NewMockReadCloser(t, strings.Join(tc.data, "\n"))
+			var r io.ReadCloser = testutils.NewMockReadCloser(t, strings.Join(tc.data, "\n"))
 
 			var output []string
 			scanner := bufio.NewScanner(r)

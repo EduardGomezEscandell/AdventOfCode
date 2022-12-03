@@ -41,7 +41,7 @@ func ReadDataFile(day uint, filename string) ([]byte, error) {
 	return os.ReadFile(path) // nolint: gosec
 }
 
-// ReadDataFile reads the requested data file.
+// DataFile opens the requested data file.
 func DataFile(day uint, filename string) (*os.File, error) {
 	path, err := DataFullPath(day, filename)
 	if err != nil {

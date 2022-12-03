@@ -21,13 +21,11 @@ const (
 	fileName = "input.txt"
 )
 
-type Sack [2][]rune
-
 // Part1 solves the first half of the problem.
 func Part1(dataChannel <-chan Line) (uint, error) {
 	var priorities uint
 	for {
-		elf, read, err := ReadElf(dataChannel)
+		elf, read, err := readElf(dataChannel)
 		if !read {
 			break // No more elves
 		}
@@ -36,7 +34,7 @@ func Part1(dataChannel <-chan Line) (uint, error) {
 		}
 
 		halfIdx := len(elf) / 2
-		var sack Sack
+		var sack [2][]rune
 		sack[0] = elf[:halfIdx]
 		sack[1] = elf[halfIdx:]
 
@@ -46,7 +44,7 @@ func Part1(dataChannel <-chan Line) (uint, error) {
 		c = c[:array.Unique(c, fun.Gt[rune])]
 		switch len(c) {
 		case 1:
-			priorities += RunePriority(c[0])
+			priorities += runePriority(c[0])
 		case 0:
 			return 0, fmt.Errorf("line [%s|%s] has no characters in common", string(sack[0]), string(sack[1]))
 		default:
@@ -65,7 +63,7 @@ func Part2(dataChannel <-chan Line) (uint, error) {
 		for i := 0; i < 3; i++ {
 			var read bool
 			var err error
-			elves[i], read, err = ReadElf(dataChannel)
+			elves[i], read, err = readElf(dataChannel)
 			if i == 0 && !read {
 				return priorities, nil // No more elves!
 			}
@@ -85,25 +83,25 @@ func Part2(dataChannel <-chan Line) (uint, error) {
 		// Deallng with results
 		switch len(common) {
 		case 1:
-			priorities += RunePriority(common[0])
+			priorities += runePriority(common[0])
 		case 0:
-			return 0, fmt.Errorf("No characters in common: %s", HelperElvesToString(elves))
+			return 0, fmt.Errorf("No characters in common: %s", helperElvesToString(elves))
 		default:
-			return 0, fmt.Errorf("Too many characters in common: %s", HelperElvesToString(elves))
+			return 0, fmt.Errorf("Too many characters in common: %s", helperElvesToString(elves))
 		}
 	}
 }
 
 // -------------- Implementation ----------------------
 
-func RunePriority(c rune) uint {
+func runePriority(c rune) uint {
 	if unicode.IsUpper(c) {
 		return 27 + uint(c) - uint('A')
 	}
 	return 1 + uint(c) - uint('a')
 }
 
-func ReadElf(dataChannel <-chan Line) ([]rune, bool, error) {
+func readElf(dataChannel <-chan Line) ([]rune, bool, error) {
 	line, ok := <-dataChannel
 	if !ok {
 		return nil, ok, errors.New("Failed to read from channel")
@@ -114,7 +112,7 @@ func ReadElf(dataChannel <-chan Line) ([]rune, bool, error) {
 	return []rune(line.Str()), true, nil
 }
 
-func HelperElvesToString(elves [][]rune) string {
+func helperElvesToString(elves [][]rune) string {
 	return array.Reduce(elves, func(acc string, elf []rune) string {
 		return fmt.Sprintf("%s\n    %s", acc, string(elf))
 	})
@@ -182,30 +180,37 @@ var DataReader = func() (r io.ReadCloser, e error) {
 	return f, nil
 }
 
+// Line packs info relevant to reading a line from a file.
 type Line struct {
 	string
 	error
 }
 
+// NewLine creates a mew Line.
 func NewLine(s string) Line {
 	return Line{string: s}
 }
 
+// Str reveals the string.
 func (l Line) Str() string {
 	return l.string
 }
 
+// Err reveals the error.
 func (l Line) Err() error {
 	return l.error
 }
 
-func ReadInputAsync(ctx context.Context, channelCapacity int) (<-chan Line, error) {
+// ReadInputAsync returns a channel that can read the input file line by line,
+// asyncronously. lookAhead is the number of lines that the reader can pre-fetch
+// from the file.
+func ReadInputAsync(ctx context.Context, lookAhead int) (<-chan Line, error) {
 	reader, err := DataReader()
 	if err != nil {
 		return nil, err
 	}
 
-	ch := make(chan Line, channelCapacity)
+	ch := make(chan Line, lookAhead)
 
 	go func() {
 		defer reader.Close()
