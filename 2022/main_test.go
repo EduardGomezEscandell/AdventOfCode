@@ -16,6 +16,8 @@ func TestRun(t *testing.T) {
 	}{
 		"day0":     {day: 0},
 		"day1":     {day: 1},
+		"day2":     {day: 2},
+		"day3":     {day: 3},
 		"day 1000": {day: 1000, wantErr: true},
 	}
 

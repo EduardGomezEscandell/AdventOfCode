@@ -58,7 +58,7 @@ func Generate[T any](len int, f func() T) []T {
 //
 //	Reduce(arr, func(x,y int)int { return x+y }) # Option 1.
 //	Reduce(arr, fun.Add[int])                    # Option 2.
-func Reduce[T, O number](arr []T, fold func(O, T) O) O {
+func Reduce[T, O any](arr []T, fold func(O, T) O) O {
 	var o O
 	for _, a := range arr {
 		o = fold(o, a)
@@ -86,12 +86,12 @@ func MapReduce[T, O, M any](arr []T, unary func(T) M, fold func(O, M) O) O {
 // ZipWith takes two arrays of type []L and []R, and applies zip:LxR->O
 // elementwise to produce an array of type []O and length equal to the
 // length of the shortest input.
-func ZipWith[L, R, O any](left []L, right []R, f func(L, R) O) []O {
-	ln := fun.Min(len(left), len(right))
+func ZipWith[L, R, O any](first []L, second []R, f func(L, R) O) []O {
+	ln := fun.Min(len(first), len(second))
 
 	o := make([]O, ln)
 	for i := 0; i < ln; i++ {
-		o[i] = f(left[i], right[i])
+		o[i] = f(first[i], second[i])
 	}
 	return o
 }
@@ -103,19 +103,19 @@ func ZipWith[L, R, O any](left []L, right []R, f func(L, R) O) []O {
 //
 // Equivalent to:
 //
-//	Reduce(ZipWith(left, right, zip), fold)
+//	Reduce(ZipWith(first, second, zip), fold)
 //
 // Note: the intermediate array is not stored in memory.
 //
 // Example: compute the inner product (u, v):
 //
 //	ZipReduce(u, v, func.Mul, func.Add)
-func ZipReduce[L, R, M, O any](left []L, right []R, zip func(L, R) M, fold func(O, M) O) O {
-	ln := fun.Min(len(left), len(right))
+func ZipReduce[L, R, M, O any](first []L, second []R, zip func(L, R) M, fold func(O, M) O) O {
+	ln := fun.Min(len(first), len(second))
 
 	var o O
 	for i := 0; i < ln; i++ {
-		o = fold(o, zip(left[i], right[i]))
+		o = fold(o, zip(first[i], second[i]))
 	}
 	return o
 }
@@ -159,6 +159,8 @@ func AdjacentReduce[T, A, I any](arr []T, zip func(T, T) I, fold func(A, I) A) A
 // Example use: return the maximum value in the list
 //
 //	Best(arr, func(x, y int) bool { return x>y })
+//
+// Complexity is O(|arr|).
 func Best[T any](arr []T, isBetter Comparator[T]) (acc T) {
 	if len(arr) == 0 {
 		return acc
@@ -178,22 +180,24 @@ func Best[T any](arr []T, isBetter Comparator[T]) (acc T) {
 // if isBetter(arr[i], arr[j]) is true for any value of j. Expected properties of isBetter:
 //
 //	Anticommutativity: isBetter(x,y) = !isBetter(y,x)
-//	Total ordering:    isBetter(x,y), isBetter(y,z) <==> isBetter(x, z).
+//	Total ordering:    isBetter(x,y), isBetter(y,z) <=> isBetter(x, z).
 //
 // Example use: return the 3 largest values in the list
 //
 //	BestN(arr, 3, func(x, y int) bool { return x>y })
+//
+// Complexity is O(n·|arr|).
 func BestN[T any](arr []T, n uint, isBetter Comparator[T]) []T {
 	if uint(len(arr)) <= n {
 		n = uint(len(arr))
 		acc := make([]T, n)
 		copy(acc, arr[:n])
-		sortArr(acc, isBetter)
+		Sort(acc, isBetter)
 		return acc
 	}
 	acc := make([]T, n)
 	copy(acc, arr[:n])
-	sortArr(acc, isBetter)
+	Sort(acc, isBetter)
 
 	for _, a := range arr[n:] {
 		updateBestN(n, acc, a, isBetter)
@@ -202,6 +206,7 @@ func BestN[T any](arr []T, n uint, isBetter Comparator[T]) []T {
 	return acc
 }
 
+// Complexity is O(n).
 func updateBestN[T any](n uint, topN []T, x T, isBetter Comparator[T]) {
 	if isBetter(topN[n-1], x) { // Not top n
 		return
@@ -218,8 +223,72 @@ func updateBestN[T any](n uint, topN []T, x T, isBetter Comparator[T]) {
 	topN[i] = x
 }
 
-func sortArr[T any](arr []T, isBetter Comparator[T]) {
+// Sort sorts a list according to a comparator comp. Item i preceedes
+// item j <=> comp(i,j) is true.
+//
+// Example: sort from smallest to largest:
+//
+//	Sort(arr, func(l,r int) bool { return l<r }) // Sorts incrementally
+//	Sort(arr, fun.Lt)                            // The same, but shorter
+//
+// Complexity is O(|arr|·log(|arr|)).
+func Sort[T any](arr []T, comp Comparator[T]) {
 	sort.Slice(arr, func(i, j int) bool {
-		return isBetter(arr[i], arr[j])
+		return comp(arr[i], arr[j])
 	})
+}
+
+// Common finds all elements that two slices have in common.
+//
+// The lists are expected to have been sorted with the comparator 'comp'.
+// Two items a,b are considered equivalent if both comp(a,b) and comp(b,a)
+// are false.
+//
+// It returns a slice with their common items. Items in the output list are
+// repeated as many times as the smallest number of repetitions between the
+// two lists.
+//
+// Complexity is O(|first| + |second|).
+func Common[T any](first, second []T, comp Comparator[T]) []T {
+	common := []T{}
+	var f, s int
+	for f < len(first) && s < len(second) {
+		// first[f] preceedes second[s]
+		if comp(first[f], second[s]) {
+			f++
+			continue
+		}
+		// first[f] succeeds second[s]
+		if comp(second[s], first[f]) {
+			s++
+			continue
+		}
+		// first[f] == second[s]
+		common = append(common, first[f])
+		f++
+		s++
+	}
+	return common
+}
+
+// Unique modifies array arr so that all unique items are moved to the
+// beginning. Returns the index where the new end is.
+func Unique[T any](arr []T, comp Comparator[T]) (endUnique int) {
+	if len(arr) == 0 {
+		return 0
+	}
+
+	equal := func(a, b T) bool { return !comp(a, b) && !comp(b, a) }
+	endUnique = 1
+	for i := 1; i < len(arr); i++ {
+		if equal(arr[i], arr[endUnique-1]) {
+			continue
+		}
+		if i != endUnique {
+			arr[endUnique], arr[i] = arr[i], arr[endUnique] // Swap
+		}
+		endUnique++
+	}
+
+	return endUnique
 }

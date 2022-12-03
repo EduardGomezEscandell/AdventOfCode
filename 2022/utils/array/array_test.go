@@ -73,6 +73,22 @@ func TestTopN(t *testing.T) {
 	t.Run("int64", testTopN[int64])
 }
 
+func TestCommon(t *testing.T) {
+	t.Parallel()
+	t.Run("int", testCommon[int])
+	t.Run("int8", testCommon[int8])
+	t.Run("int32", testCommon[int32])
+	t.Run("int64", testCommon[int64])
+}
+
+func TestUnique(t *testing.T) {
+	t.Parallel()
+	t.Run("int", testUnique[int])
+	t.Run("int8", testUnique[int8])
+	t.Run("int32", testUnique[int32])
+	t.Run("int64", testUnique[int64])
+}
+
 func testMap[T generics.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 
@@ -262,6 +278,71 @@ func testTopN[T generics.Signed](t *testing.T) { // nolint: thelper
 		t.Run(name, func(t *testing.T) {
 			got := array.BestN(tc.input, tc.n, tc.comp)
 			require.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func testCommon[T generics.Signed](t *testing.T) { // nolint: thelper
+	t.Parallel()
+	testCases := map[string]struct {
+		input1 []T
+		input2 []T
+		sort   func(T, T) bool
+		want   []T
+	}{
+		"less than, empty":                               {sort: fun.Lt[T], want: []T{}},
+		"greater than, empty":                            {sort: fun.Gt[T], want: []T{}},
+		"less than, half empty":                          {sort: fun.Lt[T], input1: []T{1, 6, 8}, want: []T{}},
+		"greater than, half empty":                       {sort: fun.Gt[T], input1: []T{1, 6, 8}, want: []T{}},
+		"less than, single, no shared":                   {sort: fun.Lt[T], input1: []T{1}, input2: []T{2}, want: []T{}},
+		"greater than, single, no shared":                {sort: fun.Gt[T], input1: []T{1}, input2: []T{2}, want: []T{}},
+		"less than, single, shared":                      {sort: fun.Lt[T], input1: []T{1}, input2: []T{1}, want: []T{1}},
+		"greater than, single, shared":                   {sort: fun.Gt[T], input1: []T{1}, input2: []T{1}, want: []T{1}},
+		"less than, normal, shared":                      {sort: fun.Lt[T], input1: []T{1, 3, 9}, input2: []T{1, 5, 9}, want: []T{1, 9}},
+		"greater than, normal, shared":                   {sort: fun.Gt[T], input1: []T{1, 3, 9}, input2: []T{1, 5, 9}, want: []T{9, 1}},
+		"less than, normal, no shared":                   {sort: fun.Lt[T], input1: []T{1, 3, 9}, input2: []T{2, 4, 6}, want: []T{}},
+		"greater than, normal, no shared":                {sort: fun.Gt[T], input1: []T{1, 3, 9}, input2: []T{2, 4, 6}, want: []T{}},
+		"less than, repeats, no shared":                  {sort: fun.Lt[T], input1: []T{15, 0, 15, 9}, input2: []T{0, 15}, want: []T{0, 15}},
+		"greater than, repeats, no shared":               {sort: fun.Gt[T], input1: []T{15, 0, 15, 9}, input2: []T{0, 15}, want: []T{15, 0}},
+		"less than, double repeats, no shared":           {sort: fun.Lt[T], input1: []T{15, 0, 15, 9}, input2: []T{0, 15, 15}, want: []T{0, 15, 15}},
+		"greater than, double repeats, no shared":        {sort: fun.Gt[T], input1: []T{15, 0, 15, 9}, input2: []T{0, 15, 15}, want: []T{15, 15, 0}},
+		"greater than, triple double repeats, no shared": {sort: fun.Gt[T], input1: []T{15, 15, 15, 9}, input2: []T{0, 15, 15}, want: []T{15, 15}},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			array.Sort(tc.input1, tc.sort)
+			array.Sort(tc.input2, tc.sort)
+			got := array.Common(tc.input1, tc.input2, tc.sort)
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func testUnique[T generics.Signed](t *testing.T) { // nolint: thelper
+	t.Parallel()
+	testCases := map[string]struct {
+		input     []T
+		sort      func(T, T) bool
+		wantArr   []T
+		wantCount int
+	}{
+		"empty":                           {sort: fun.Lt[T]},
+		"one":                             {sort: fun.Lt[T], input: []T{5}, wantArr: []T{5}, wantCount: 1},
+		"few, greater than, no repeats":   {sort: fun.Gt[T], input: []T{3, 1, 5}, wantArr: []T{5, 3, 1}, wantCount: 3},
+		"few, less than, no repeats":      {sort: fun.Lt[T], input: []T{3, 1, 5}, wantArr: []T{1, 3, 5}, wantCount: 3},
+		"few, greater than, some repeats": {sort: fun.Gt[T], input: []T{3, 1, 3, 5}, wantArr: []T{5, 3, 1, 3}, wantCount: 3},
+		"few, less than, some repeats":    {sort: fun.Lt[T], input: []T{3, 1, 3, 5}, wantArr: []T{1, 3, 5, 3}, wantCount: 3},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			array.Sort(tc.input, tc.sort)
+			got := array.Unique(tc.input, tc.sort)
+			require.Equal(t, tc.wantArr, tc.input)
+			require.Equal(t, tc.wantCount, got)
 		})
 	}
 }
