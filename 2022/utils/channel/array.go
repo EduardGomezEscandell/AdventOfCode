@@ -8,12 +8,12 @@ import (
 )
 
 // FromArray returns a channel that reads from array arr.
-func FromArray[T any](ctx context.Context, arr []T, capacity int) <-chan T {
+func FromArray[T any](ctx context.Context, arr []T, channelCapacity int) <-chan T {
 	if ctx == nil {
 		panic("nil context")
 	}
 
-	ch := make(chan T, capacity)
+	ch := make(chan T, channelCapacity)
 	go func() {
 		defer close(ch)
 		for _, a := range arr {

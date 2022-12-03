@@ -58,7 +58,7 @@ func Generate[T any](len int, f func() T) []T {
 //
 //	Reduce(arr, func(x,y int)int { return x+y }) # Option 1.
 //	Reduce(arr, fun.Add[int])                    # Option 2.
-func Reduce[T, O number](arr []T, fold func(O, T) O) O {
+func Reduce[T, O any](arr []T, fold func(O, T) O) O {
 	var o O
 	for _, a := range arr {
 		o = fold(o, a)
@@ -237,30 +237,57 @@ func Sort[T any](arr []T, comp Comparator[T]) {
 	})
 }
 
-// Common finds the first element that two slices have in common.
+// Common finds all elements that two slices have in common.
 //
 // The lists are expected to have been sorted with the comparator 'comp'.
 // Two items a,b are considered equivalent if both comp(a,b) and comp(b,a)
 // are false.
 //
-// It returns the indeces that point to the common object. If this object
-// is not found, -1 is returned.
+// It returns a slice with their common items. Items in the output list are
+// repeated as many times as the smallest number of repetitions between the
+// two lists.
 //
 // Complexity is O(|first| + |second|)
-func Common[T any](first, second []T, comp Comparator[T]) (f, s int) {
+func Common[T any](first, second []T, comp Comparator[T]) []T {
+	common := []T{}
+	var f, s int
 	for f < len(first) && s < len(second) {
-		// first[i] preceedes second[j]
+		// first[f] preceedes second[s]
 		if comp(first[f], second[s]) {
 			f++
 			continue
 		}
-		// first[i] succeedes second[j]
+		// first[f] succeedes second[s]
 		if comp(second[s], first[f]) {
 			s++
 			continue
 		}
-		// first[i] == second[j]
-		return f, s
+		// first[f] == second[s]
+		common = append(common, first[f])
+		f++
+		s++
 	}
-	return -1, -1
+	return common
+}
+
+// Unique modifies array arr so that all unique items are moved to the
+// beggining. Returns the index where the new end is.
+func Unique[T any](arr []T, comp Comparator[T]) (endUnique int) {
+	if len(arr) == 0 {
+		return 0
+	}
+
+	equal := func(a, b T) bool { return !comp(a, b) && !comp(b, a) }
+	endUnique = 1
+	for i := 1; i < len(arr); i++ {
+		if equal(arr[i], arr[endUnique-1]) {
+			continue
+		}
+		if i != endUnique {
+			arr[endUnique], arr[i] = arr[i], arr[endUnique] // Swap
+		}
+		endUnique++
+	}
+
+	return endUnique
 }
