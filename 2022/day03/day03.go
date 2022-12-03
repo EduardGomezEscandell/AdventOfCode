@@ -75,7 +75,7 @@ func Part2(dataChannel <-chan Line) (uint, error) {
 
 		// Finding common runes
 		common := elves[0]
-		for _, elf := range elves {
+		for _, elf := range elves[1:] {
 			common = array.Common(common, elf, fun.Lt[rune])
 		}
 		common = common[:array.Unique(common, fun.Lt[rune])]
