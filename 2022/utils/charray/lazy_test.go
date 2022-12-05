@@ -1,9 +1,12 @@
-package array_test
+package charray_test
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/generics"
 	"github.com/stretchr/testify/require"
@@ -89,6 +92,14 @@ func TestUnique(t *testing.T) {
 	t.Run("int64", testUnique[int64])
 }
 
+func TestMultiplex(t *testing.T) {
+	t.Parallel()
+	t.Run("int", testMultiplex[int])
+	t.Run("int8", testMultiplex[int8])
+	t.Run("int32", testMultiplex[int32])
+	t.Run("int64", testMultiplex[int64])
+}
+
 func testMap[T generics.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 
@@ -105,10 +116,21 @@ func testMap[T generics.Signed](t *testing.T) { // nolint: thelper
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			got := array.Map(tc.input, tc.op)
+			ch, cancel := inputToChannel(tc.input, 0, 10*time.Second)
+			defer cancel()
+
+			gotch := charray.Map(ch, tc.op)
+
+			got := array.FromChannel(gotch)
 			require.Equal(t, tc.expects, got)
 		})
 	}
+}
+
+func inputToChannel[T any](in []T, cap int, timeout time.Duration) (<-chan T, context.CancelFunc) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	outch := charray.FromArray(ctx, in, cap)
+	return outch, cancel
 }
 
 func testReduce[T generics.Signed](t *testing.T) { // nolint: thelper // nolint: thelper
@@ -130,7 +152,10 @@ func testReduce[T generics.Signed](t *testing.T) { // nolint: thelper // nolint:
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			got := array.Reduce(tc.input, tc.fold)
+			ch, cancel := inputToChannel(tc.input, 0, 10*time.Second)
+			defer cancel()
+
+			got := charray.Reduce(ch, tc.fold)
 			require.Equal(t, tc.expects, got)
 		})
 	}
@@ -156,7 +181,10 @@ func testMapReduce[T generics.Signed](t *testing.T) { // nolint: thelper // noli
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			got := array.MapReduce(tc.input, tc.unary, tc.fold)
+			ch, cancel := inputToChannel(tc.input, 0, 10*time.Second)
+			defer cancel()
+
+			got := charray.Reduce(charray.Map(ch, tc.unary), tc.fold)
 			require.Equal(t, tc.expects, got)
 		})
 	}
@@ -178,7 +206,10 @@ func testAdjacentReduce[T generics.Signed](t *testing.T) { // nolint: thelper
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			got := array.AdjacentReduce(tc.input, tc.merge, tc.fold)
+			ch, cancel := inputToChannel(tc.input, 0, 10*time.Second)
+			defer cancel()
+
+			got := charray.Reduce(charray.AdjacentMap(ch, tc.merge), tc.fold)
 			require.Equal(t, tc.expects, got)
 		})
 	}
@@ -202,7 +233,15 @@ func testZipWith[T generics.Signed](t *testing.T) { // nolint: thelper
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			got := array.ZipWith(tc.input1, tc.input2, tc.zip)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			ch1 := charray.FromArray(ctx, tc.input1, 0)
+			ch2 := charray.FromArray(ctx, tc.input2, 0)
+
+			gotch := charray.ZipWith(ch1, ch2, tc.zip)
+
+			got := array.FromChannel(gotch)
 			require.Equal(t, tc.want, got)
 		})
 	}
@@ -226,7 +265,13 @@ func testZipReduce[T generics.Signed](t *testing.T) { // nolint: thelper
 		tc := tc
 		t.Run(name, func(t *testing.T) {
 			// Testing by computing inner product.
-			got := array.ZipReduce(tc.input1, tc.input2, fun.Mul[T], fun.Add[T])
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			ch1 := charray.FromArray(ctx, tc.input1, 0)
+			ch2 := charray.FromArray(ctx, tc.input2, 0)
+
+			got := charray.Reduce(charray.ZipWith(ch1, ch2, fun.Mul[T]), fun.Add[T])
 			require.Equal(t, tc.want, got)
 		})
 	}
@@ -250,7 +295,12 @@ func testAdjacentMap[T generics.Signed](t *testing.T) { // nolint: thelper
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			got := array.AdjacentMap(tc.input, tc.op)
+			ch, cancel := inputToChannel(tc.input, 0, 10*time.Second)
+			defer cancel()
+
+			gotch := charray.AdjacentMap(ch, tc.op)
+
+			got := array.FromChannel(gotch)
 			require.Equal(t, tc.expects, got)
 		})
 	}
@@ -276,7 +326,10 @@ func testTopN[T generics.Signed](t *testing.T) { // nolint: thelper
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			got := array.BestN(tc.input, tc.n, tc.comp)
+			ch, cancel := inputToChannel(tc.input, 0, 10*time.Second)
+			defer cancel()
+
+			got := charray.BestN(ch, tc.n, tc.comp)
 			require.Equal(t, tc.want, got)
 		})
 	}
@@ -314,7 +367,15 @@ func testCommon[T generics.Signed](t *testing.T) { // nolint: thelper
 		t.Run(name, func(t *testing.T) {
 			array.Sort(tc.input1, tc.sort)
 			array.Sort(tc.input2, tc.sort)
-			got := array.Common(tc.input1, tc.input2, tc.sort)
+
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			ch1 := charray.FromArray(ctx, tc.input1, 0)
+			ch2 := charray.FromArray(ctx, tc.input2, 0)
+
+			gotch := charray.Common(ch1, ch2, tc.sort)
+			got := array.FromChannel(gotch)
 			require.Equal(t, tc.want, got)
 		})
 	}
@@ -323,26 +384,79 @@ func testCommon[T generics.Signed](t *testing.T) { // nolint: thelper
 func testUnique[T generics.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 	testCases := map[string]struct {
-		input     []T
-		sort      func(T, T) bool
-		wantArr   []T
-		wantCount int
+		input []T
+		sort  func(T, T) bool
+		want  []T
 	}{
-		"empty":                           {sort: fun.Lt[T]},
-		"one":                             {sort: fun.Lt[T], input: []T{5}, wantArr: []T{5}, wantCount: 1},
-		"few, greater than, no repeats":   {sort: fun.Gt[T], input: []T{3, 1, 5}, wantArr: []T{5, 3, 1}, wantCount: 3},
-		"few, less than, no repeats":      {sort: fun.Lt[T], input: []T{3, 1, 5}, wantArr: []T{1, 3, 5}, wantCount: 3},
-		"few, greater than, some repeats": {sort: fun.Gt[T], input: []T{3, 1, 3, 5}, wantArr: []T{5, 3, 1, 3}, wantCount: 3},
-		"few, less than, some repeats":    {sort: fun.Lt[T], input: []T{3, 1, 3, 5}, wantArr: []T{1, 3, 5, 3}, wantCount: 3},
+		"empty":                           {sort: fun.Lt[T], want: []T{}},
+		"one":                             {sort: fun.Lt[T], input: []T{5}, want: []T{5}},
+		"few, greater than, no repeats":   {sort: fun.Gt[T], input: []T{3, 1, 5}, want: []T{5, 3, 1}},
+		"few, less than, no repeats":      {sort: fun.Lt[T], input: []T{3, 1, 5}, want: []T{1, 3, 5}},
+		"few, greater than, some repeats": {sort: fun.Gt[T], input: []T{3, 1, 3, 5}, want: []T{5, 3, 1}},
+		"few, less than, some repeats":    {sort: fun.Lt[T], input: []T{3, 1, 3, 5}, want: []T{1, 3, 5}},
 	}
 
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
 			array.Sort(tc.input, tc.sort)
-			got := array.Unique(tc.input, fun.SortToEqual(tc.sort))
-			require.Equal(t, tc.wantArr, tc.input)
-			require.Equal(t, tc.wantCount, got)
+
+			ch, cancel := inputToChannel(tc.input, 0, 10*time.Second)
+			defer cancel()
+
+			gotch := charray.Unique(ch, fun.SortToEqual(tc.sort))
+
+			got := array.FromChannel(gotch)
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func testMultiplex[T generics.SignedInt](t *testing.T) { // nolint: thelper
+	t.Parallel()
+
+	testCases := map[string]struct {
+		input []T
+		want  [][]T
+	}{
+		"empty":      {want: [][]T{{}, {}}},
+		"half empty": {input: []T{1}, want: [][]T{{}, {1}}},
+		"samesies":   {input: []T{1, 3}, want: [][]T{{}, {1, 3}}},
+		"split":      {input: []T{1, 3, 8, 29}, want: [][]T{{8}, {1, 3, 29}}},
+		"normal":     {input: []T{-5, 8, 1, 32, 90, -101}, want: [][]T{{8, 32, 90}, {-5, 1, -101}}},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			// Testing by splitting between even and odd.
+			ch, cancel := inputToChannel(tc.input, 0, 10*time.Second)
+			defer cancel()
+
+			gotchans := charray.Multiplex(ch, 2, func(x T) int {
+				if x%2 == 0 {
+					return 0
+				}
+				return 1
+			})
+
+			// Converting multiplexed streams into arrays for easier assertion
+			got := make([][]T, len(gotchans))
+			done := make(chan struct{})
+			for i, ch := range gotchans {
+				i, ch := i, ch
+				go func() {
+					got[i] = array.FromChannel(ch)
+					done <- struct{}{}
+				}()
+			}
+
+			for range gotchans {
+				<-done
+			}
+			close(done)
+
+			require.Equal(t, tc.want, got)
 		})
 	}
 }

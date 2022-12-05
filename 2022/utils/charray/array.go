@@ -1,5 +1,4 @@
-// Package channel deals with channel operations.
-package channel
+package charray
 
 // This file contains aliases from the array package
 

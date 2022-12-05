@@ -7,6 +7,7 @@ import (
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/channel"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/generics"
 	"github.com/stretchr/testify/require"
 )
@@ -39,7 +40,7 @@ func testSplit[T generics.Signed](t *testing.T) { // nolint: thelper
 		t.Run(name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
-			input := channel.FromArray(ctx, tc.data, tc.buffer)
+			input := charray.FromArray(ctx, tc.data, tc.buffer)
 
 			chans := channel.Split(ctx, input, tc.nChannels)
 			require.Equal(t, tc.nChannels, len(chans))

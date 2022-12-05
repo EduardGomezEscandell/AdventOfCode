@@ -12,3 +12,8 @@ type Number interface {
 type Signed interface {
 	constraints.Signed | constraints.Float
 }
+
+// SignedInt to integers where negative values can be represented.
+type SignedInt interface {
+	constraints.Signed
+}

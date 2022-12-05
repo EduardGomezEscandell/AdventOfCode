@@ -49,6 +49,8 @@ func TestFilename(t *testing.T) {
 }
 
 func TestReadDataAsync(t *testing.T) {
+	t.Parallel()
+
 	testCases := map[string]struct {
 		data   []string
 		buffer int
@@ -68,12 +70,12 @@ func TestReadDataAsync(t *testing.T) {
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			reader := testutils.NewMockReadCloser(t, strings.Join(tc.data, "\n"))
+			t.Parallel()
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			defer cancel()
 
-			ch, err := input.ReadDataAsync(ctx, reader, 0)
+			ch, err := input.ReadDataAsync(ctx, testutils.NewMockReadCloser(t, strings.Join(tc.data, "\n")), 0)
 			require.NoError(t, err)
 
 			var output []string
