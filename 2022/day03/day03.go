@@ -2,7 +2,6 @@
 package day03
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -22,7 +21,7 @@ const (
 )
 
 // Part1 solves the first half of the problem.
-func Part1(dataChannel <-chan Line) (uint, error) {
+func Part1(dataChannel <-chan input.Line) (uint, error) {
 	var priorities uint
 	for {
 		elf, read, err := readElf(dataChannel)
@@ -56,7 +55,7 @@ func Part1(dataChannel <-chan Line) (uint, error) {
 }
 
 // Part2 solves the second half of the problem.
-func Part2(dataChannel <-chan Line) (uint, error) {
+func Part2(dataChannel <-chan input.Line) (uint, error) {
 	var priorities uint
 	for {
 		elves := make([][]rune, 3)
@@ -101,7 +100,7 @@ func runePriority(c rune) uint {
 	return 1 + uint(c) - uint('a')
 }
 
-func readElf(dataChannel <-chan Line) ([]rune, bool, error) {
+func readElf(dataChannel <-chan input.Line) ([]rune, bool, error) {
 	line, ok := <-dataChannel
 	if !ok {
 		return nil, ok, errors.New("Failed to read from channel")
@@ -130,7 +129,13 @@ type problemResult struct {
 func Main(stdout io.Writer) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	ch, err := ReadInputAsync(ctx, 3) // Reading in groups of three to optimize 2nd part
+
+	reader, err := DataReader()
+	if err != nil {
+		return err
+	}
+
+	ch, err := input.ReadDataAsync(ctx, reader, 3) // Reading in groups of three to optimize 2nd part
 	if err != nil {
 		return err
 	}
@@ -178,60 +183,4 @@ var DataReader = func() (r io.ReadCloser, e error) {
 		return nil, e
 	}
 	return f, nil
-}
-
-// Line packs info relevant to reading a line from a file.
-type Line struct {
-	string
-	error
-}
-
-// NewLine creates a mew Line.
-func NewLine(s string) Line {
-	return Line{string: s}
-}
-
-// Str reveals the string.
-func (l Line) Str() string {
-	return l.string
-}
-
-// Err reveals the error.
-func (l Line) Err() error {
-	return l.error
-}
-
-// ReadInputAsync returns a channel that can read the input file line by line,
-// asyncronously. lookAhead is the number of lines that the reader can pre-fetch
-// from the file.
-func ReadInputAsync(ctx context.Context, lookAhead int) (<-chan Line, error) {
-	reader, err := DataReader()
-	if err != nil {
-		return nil, err
-	}
-
-	ch := make(chan Line, lookAhead)
-
-	go func() {
-		defer reader.Close()
-		defer close(ch)
-
-		sc := bufio.NewScanner(reader)
-		for sc.Scan() {
-			ln := NewLine(sc.Text())
-
-			select {
-			case <-ctx.Done():
-				ch <- Line{error: ctx.Err()}
-				return
-			case ch <- ln:
-			}
-		}
-
-		if sc.Err() != nil {
-			ch <- Line{error: ctx.Err()}
-		}
-	}()
-
-	return ch, nil
 }

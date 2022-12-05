@@ -2,8 +2,11 @@
 package input
 
 import (
+	"bufio"
+	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -48,4 +51,55 @@ func DataFile(day uint, filename string) (*os.File, error) {
 		return nil, err
 	}
 	return os.Open(path)
+}
+
+// Line packs info relevant to reading a line from a file.
+type Line struct {
+	string
+	error
+}
+
+// NewLine creates a mew Line.
+func NewLine(s string) Line {
+	return Line{string: s}
+}
+
+// Str reveals the string.
+func (l Line) Str() string {
+	return l.string
+}
+
+// Err reveals the error.
+func (l Line) Err() error {
+	return l.error
+}
+
+// ReadDataAsync returns a channel that can read the input file line by line,
+// asyncronously. lookAhead is the number of lines that the reader can pre-fetch
+// from the file.
+func ReadDataAsync(ctx context.Context, reader io.ReadCloser, lookAhead int) (<-chan Line, error) {
+	ch := make(chan Line, lookAhead)
+
+	go func() {
+		defer reader.Close()
+		defer close(ch)
+
+		sc := bufio.NewScanner(reader)
+		for sc.Scan() {
+			ln := NewLine(sc.Text())
+
+			select {
+			case <-ctx.Done():
+				ch <- Line{error: ctx.Err()}
+				return
+			case ch <- ln:
+			}
+		}
+
+		if sc.Err() != nil {
+			ch <- Line{error: ctx.Err()}
+		}
+	}()
+
+	return ch, nil
 }
