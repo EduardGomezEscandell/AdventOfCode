@@ -24,9 +24,9 @@ const (
 func solve(dataChannel <-chan input.Line, parseLine func(input.Line) bool) (r uint, err error) {
 	// Managing errors
 	defer func() {
-		e := recover()
-		if e != nil {
-			err = e.(error)
+		rec := recover()
+		if rec != nil {
+			err = recoverError(rec)
 		}
 	}()
 
@@ -92,6 +92,17 @@ func lineContainsOverlap(line input.Line) bool {
 	}
 
 	return false
+}
+
+func recoverError(recovered any) error {
+	if recovered == nil {
+		return nil
+	}
+	e, ok := recovered.(error)
+	if ok {
+		return fmt.Errorf("panicked: %v", recovered)
+	}
+	return e
 }
 
 // ------------- Here be boilerplate ------------------

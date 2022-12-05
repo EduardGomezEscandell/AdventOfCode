@@ -98,7 +98,7 @@ func Close[T any](ch chan T) {
 	close(ch)
 }
 
-// ConvertToRecieveOnly converts chan into <-chan
+// ConvertToRecieveOnly converts chan into <-chan.
 func ConvertToRecieveOnly[T any](ch chan T) <-chan T {
 	return ch
 }

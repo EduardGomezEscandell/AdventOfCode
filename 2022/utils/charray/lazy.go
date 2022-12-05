@@ -14,6 +14,7 @@ func Map[T, O any](in <-chan T, f func(T) O) <-chan O {
 	out := make(chan O, cap(in))
 	go func() {
 		defer close(out)
+		defer channel.Exhaust(in)
 		for v := range in {
 			out <- f(v)
 		}
@@ -27,11 +28,12 @@ func Map[T, O any](in <-chan T, f func(T) O) <-chan O {
 // The function will be called in sequential order.
 // The channel is closed at the end.
 //
-// TODO: Cancelation
+// TODO: Cancelation.
 func Generate[O any](len int, cap int, f func() O) <-chan O {
 	out := make(chan O, cap)
 	go func() {
 		defer close(out)
+
 		for i := 0; i < len; i++ {
 			out <- f()
 		}
@@ -78,7 +80,6 @@ func ZipWith[F, S, O any](first <-chan F, second <-chan S, zip func(F, S) O) <-c
 			}
 			out <- zip(f, s)
 		}
-
 	}()
 	return out
 }
@@ -89,6 +90,8 @@ func AdjacentMap[I, O any](in <-chan I, f func(I, I) O) <-chan O {
 	out := make(chan O, cap(in))
 	go func() {
 		defer close(out)
+		defer channel.Exhaust(in)
+
 		prev := <-in
 		for curr := range in {
 			out <- f(prev, curr)
@@ -174,17 +177,17 @@ func Common[T any](first, second <-chan T, comp fun.Comparator[T]) <-chan T {
 		f, okf := <-first
 		s, oks := <-second
 		for okf && oks {
-			// first[f] preceedes second[s]
+			// f preceedes s
 			if comp(f, s) {
 				f, okf = <-first
 				continue
 			}
-			// first[f] succeeds second[s]
+			// f succeeds s
 			if comp(s, f) {
 				s, oks = <-second
 				continue
 			}
-			// first[f] == second[s]
+			// f == s
 			out <- f
 			f, okf = <-first
 			s, oks = <-second
@@ -201,11 +204,12 @@ func Common[T any](first, second <-chan T, comp fun.Comparator[T]) <-chan T {
 //
 // Sorting with < and applying == will work.
 //
-// Complexity is O(|in|)
+// Complexity is O(|in|).
 func Unique[T any](in <-chan T, equal fun.Comparator[T]) <-chan T {
 	out := make(chan T, cap(in))
 	go func() {
 		defer close(out)
+		defer channel.Exhaust(in)
 
 		prev, ok := <-in
 		if !ok {
