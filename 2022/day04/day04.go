@@ -17,11 +17,10 @@ const (
 	fileName = "input.txt"
 )
 
-// Part1 solves the first half of the problem.
-func Part1(dataChannel <-chan input.Line) (uint, error) {
+func Solve(dataChannel <-chan input.Line, parser func(input.Line) (bool, error)) (uint, error) {
 	var count uint
 	for line := range dataChannel {
-		fullOverlap, err := ParseLine(line)
+		fullOverlap, err := parser(line)
 		if err != nil {
 			return 0, err
 		}
@@ -32,17 +31,19 @@ func Part1(dataChannel <-chan input.Line) (uint, error) {
 	return count, nil
 }
 
+// Part1 solves the first half of the problem.
+func Part1(dataChannel <-chan input.Line) (uint, error) {
+	return Solve(dataChannel, LineContainsFullOverlap)
+}
+
 // Part2 solves the second half of the problem.
 func Part2(dataChannel <-chan input.Line) (uint, error) {
-	for range dataChannel {
-		// Emptying channel
-	}
-	return 0, nil
+	return Solve(dataChannel, LineContainsOverlap)
 }
 
 // -------------- Implementation ----------------------
 
-func ParseLine(line input.Line) (fullOverlap bool, err error) {
+func LineContainsFullOverlap(line input.Line) (fullOverlap bool, err error) {
 	if err := line.Err(); err != nil {
 		return false, err
 	}
@@ -63,6 +64,29 @@ func ParseLine(line input.Line) (fullOverlap bool, err error) {
 	if start == elf2[0] && finish == elf2[1] {
 		return true, nil
 	}
+	return false, nil
+}
+
+func LineContainsOverlap(line input.Line) (fullOverlap bool, err error) {
+	if err := line.Err(); err != nil {
+		return false, err
+	}
+
+	elf1 := [2]int{}
+	elf2 := [2]int{}
+	_, err = fmt.Sscanf(line.Str(), "%d-%d,%d-%d", &elf1[0], &elf1[1], &elf2[0], &elf2[1])
+	if err != nil {
+		return false, err
+	}
+
+	if elf1[0] <= elf2[0] && elf2[0] <= elf1[1] {
+		return true, nil // Elf2 starts halfway through elf1's work
+	}
+
+	if elf2[0] <= elf1[0] && elf1[0] <= elf2[1] {
+		return true, nil // Elf1 starts halfway through elf2's work
+	}
+
 	return false, nil
 }
 
