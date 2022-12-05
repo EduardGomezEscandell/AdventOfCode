@@ -99,7 +99,7 @@ func recoverError(recovered any) error {
 		return nil
 	}
 	e, ok := recovered.(error)
-	if ok {
+	if !ok {
 		return fmt.Errorf("panicked: %v", recovered)
 	}
 	return e

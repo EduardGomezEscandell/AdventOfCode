@@ -13,6 +13,7 @@ import (
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/day02"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/day03"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/day04"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/day05"
 )
 
 func main() {
@@ -67,7 +68,7 @@ func Run(day uint, output string) error {
 
 func entryPoint(day uint) (func(io.Writer) error, error) {
 	if day > CountDays() {
-		return nil, fmt.Errorf("Day %d is not implemented", day)
+		return nil, fmt.Errorf("day %d is not implemented", day)
 	}
 	return entrypoints[day], nil
 }
@@ -78,6 +79,7 @@ var entrypoints = []func(io.Writer) error{
 	day02.Main,
 	day03.Main,
 	day04.Main,
+	day05.Main,
 }
 
 func getWriter(output string) (io.WriteCloser, error) {
