@@ -147,6 +147,7 @@ func Main(stdout io.Writer) error {
 		result, err := Part1(channels[0])
 		if err != nil {
 			resultCh <- problemResult{0, "", err}
+			cancel()
 		}
 		resultCh <- problemResult{0, fmt.Sprintf("Result of part 1: %v", result), nil}
 	}()
@@ -155,6 +156,7 @@ func Main(stdout io.Writer) error {
 		result, err := Part2(channels[1])
 		if err != nil {
 			resultCh <- problemResult{1, "", err}
+			cancel()
 		}
 		resultCh <- problemResult{1, fmt.Sprintf("Result of part 2: %v", result), nil}
 	}()
