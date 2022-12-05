@@ -16,8 +16,8 @@ func TestStack(t *testing.T) {
 	t.Run("int64", testStack[int64])
 }
 
-func testStack[T generics.Signed](t *testing.T) {
-
+func testStack[T generics.Signed](t *testing.T) { // nolint: thelper
+	t.Parallel()
 	testCases := map[string]struct {
 		input []T
 	}{
@@ -30,6 +30,7 @@ func testStack[T generics.Signed](t *testing.T) {
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			s := stack.New[T]()
 			for _, p := range tc.input {
 				s.Push(p)

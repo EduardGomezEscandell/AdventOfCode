@@ -1,4 +1,4 @@
-// Package day01 solves day 1 of AoC2022	.
+// Package day05 solves day 5 of AoC2022	.
 package day05
 
 import (
@@ -37,7 +37,7 @@ func Solve(in <-chan input.Line, crane func(stacks []Stack, inst Instruction)) (
 	<-in // Discarding empty separator line
 
 	// Operating
-	instructions := charray.Map(in, ParseInstruction)
+	instructions := charray.Map(in, parseInstruction)
 	done := charray.Map(instructions, func(inst Instruction) struct{} {
 		crane(stacks, inst)
 		return struct{}{}
@@ -63,6 +63,7 @@ func part2(input <-chan input.Line) (string, error) {
 
 /// ---------- Implementation ------------------
 
+// Crane9000 performs instructions as specified in Part 1 of the problem statement.
 func Crane9000(stacks []Stack, inst Instruction) {
 	from := &stacks[inst.from]
 	to := &stacks[inst.to]
@@ -72,6 +73,7 @@ func Crane9000(stacks []Stack, inst Instruction) {
 	}
 }
 
+// Crane9001 performs instructions as specified in Part 2 of the problem statement.
 func Crane9001(stacks []Stack, inst Instruction) {
 	from := &stacks[inst.from]
 	intermediate := stack.New[rune](0, inst.qty)
@@ -86,12 +88,15 @@ func Crane9001(stacks []Stack, inst Instruction) {
 	}
 }
 
+// Stack is syntax sugar for stack.Stack[rune].
 type Stack = stack.Stack[rune]
+
+// Instruction contains the stack moving instruction.
 type Instruction struct {
 	from, to, qty int
 }
 
-func ParseInstruction(ln input.Line) Instruction {
+func parseInstruction(ln input.Line) Instruction {
 	if err := ln.Err(); err != nil {
 		panic(err)
 	}

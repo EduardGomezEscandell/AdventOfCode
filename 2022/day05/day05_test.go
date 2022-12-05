@@ -52,6 +52,7 @@ func TestParseInitalState(t *testing.T) {
 }
 
 func TestSolve(t *testing.T) {
+	t.Parallel()
 	fullExample := []string{
 		"    [D]    ",        // 0
 		"[N] [C]    ",        // 1

@@ -293,6 +293,7 @@ func Unique[T any](arr []T, equal fun.Comparator[T]) (endUnique int) {
 	return endUnique
 }
 
+// Reverse reverts an array.
 func Reverse[T any](arr []T) []T {
 	out := make([]T, 0, len(arr))
 	for j := len(arr) - 1; j >= 0; j-- {
@@ -301,6 +302,8 @@ func Reverse[T any](arr []T) []T {
 	return out
 }
 
+// Stride takes one value every n of them, stores it in
+// the output array and drops the rest.
 func Stride[T any](in []T, n int) []T {
 	out := make([]T, 0, len(in)/3)
 	for i := 0; i < len(in); i += n {
