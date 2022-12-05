@@ -17,14 +17,17 @@ const (
 	fileName = "input.txt"
 )
 
-func Solve(dataChannel <-chan input.Line, parser func(input.Line) (bool, error)) (uint, error) {
+// solve solves day 4's problem. It reads line by line and evaluates
+// parseLine on each line. If it returns true, the count is increased
+// by one.
+func solve(dataChannel <-chan input.Line, parseLine func(input.Line) (bool, error)) (uint, error) {
 	var count uint
 	for line := range dataChannel {
-		fullOverlap, err := parser(line)
+		lineMatched, err := parseLine(line)
 		if err != nil {
 			return 0, err
 		}
-		if fullOverlap {
+		if lineMatched {
 			count++
 		}
 	}
@@ -33,17 +36,17 @@ func Solve(dataChannel <-chan input.Line, parser func(input.Line) (bool, error))
 
 // Part1 solves the first half of the problem.
 func Part1(dataChannel <-chan input.Line) (uint, error) {
-	return Solve(dataChannel, LineContainsFullOverlap)
+	return solve(dataChannel, lineContainsFullOverlap)
 }
 
 // Part2 solves the second half of the problem.
 func Part2(dataChannel <-chan input.Line) (uint, error) {
-	return Solve(dataChannel, LineContainsOverlap)
+	return solve(dataChannel, lineContainsOverlap)
 }
 
 // -------------- Implementation ----------------------
 
-func LineContainsFullOverlap(line input.Line) (fullOverlap bool, err error) {
+func lineContainsFullOverlap(line input.Line) (fullOverlap bool, err error) {
 	if err := line.Err(); err != nil {
 		return false, err
 	}
@@ -67,7 +70,7 @@ func LineContainsFullOverlap(line input.Line) (fullOverlap bool, err error) {
 	return false, nil
 }
 
-func LineContainsOverlap(line input.Line) (fullOverlap bool, err error) {
+func lineContainsOverlap(line input.Line) (fullOverlap bool, err error) {
 	if err := line.Err(); err != nil {
 		return false, err
 	}
