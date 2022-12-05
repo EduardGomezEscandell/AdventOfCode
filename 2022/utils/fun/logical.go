@@ -2,6 +2,18 @@ package fun
 
 import "github.com/EduardGomezEscandell/AdventOfCode/2022/utils/generics"
 
+// Comparator is a function that takes two values and returs a boolean.
+// Useful for wrappers around <=, ==, >=, etc.
+type Comparator[T any] func(T, T) bool
+
+// SortToEqual takes a function used to sort (e.g <, >) and prodces a
+// function to check equality under that ordering.
+func SortToEqual[T any](comp Comparator[T]) Comparator[T] {
+	return func(a, b T) bool {
+		return !comp(a, b) && !comp(b, a)
+	}
+}
+
 // Gt is wrapper around the > operator.
 func Gt[T generics.Number](a, b T) bool {
 	return a > b

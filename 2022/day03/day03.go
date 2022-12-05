@@ -40,7 +40,7 @@ func Part1(dataChannel <-chan input.Line) (uint, error) {
 		array.Sort(sack[0], fun.Gt[rune])
 		array.Sort(sack[1], fun.Gt[rune])
 		c := array.Common(sack[0], sack[1], fun.Gt[rune])
-		c = c[:array.Unique(c, fun.Gt[rune])]
+		c = c[:array.Unique(c, fun.Eq[rune])]
 		switch len(c) {
 		case 1:
 			priorities += runePriority(c[0])
@@ -77,7 +77,7 @@ func Part2(dataChannel <-chan input.Line) (uint, error) {
 		for _, elf := range elves[1:] {
 			common = array.Common(common, elf, fun.Lt[rune])
 		}
-		common = common[:array.Unique(common, fun.Lt[rune])]
+		common = common[:array.Unique(common, fun.Eq[rune])]
 
 		// Deallng with results
 		switch len(common) {

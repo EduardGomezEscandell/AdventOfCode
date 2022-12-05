@@ -8,7 +8,7 @@ import (
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/day04"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/channel"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
 	"github.com/stretchr/testify/require"
 )
@@ -50,7 +50,7 @@ func TestPart1(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
-			ch := channel.FromArray(ctx, lines, 0)
+			ch := charray.FromArray(ctx, lines, 0)
 			got, err := day04.Part1(ch)
 
 			require.NoError(t, err)
@@ -87,7 +87,7 @@ func TestPart2(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
-			ch := channel.FromArray(ctx, lines, 0)
+			ch := charray.FromArray(ctx, lines, 0)
 			got, err := day04.Part2(ch)
 
 			require.NoError(t, err)

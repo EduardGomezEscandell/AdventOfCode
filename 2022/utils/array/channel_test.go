@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/channel"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/generics"
 	"github.com/stretchr/testify/require"
@@ -51,7 +51,7 @@ func testFromChannel[T generics.Signed](t *testing.T) { // nolint: thelper
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
-			ch := channel.FromArray(ctx, input, tc.buffer)
+			ch := charray.FromArray(ctx, input, tc.buffer)
 
 			var got []T
 			if tc.maxLen >= 0 {

@@ -1,7 +1,4 @@
-// Package channel deals with channel operations.
-package channel
-
-// This file contains aliases from the array package
+package charray
 
 import (
 	"context"

@@ -1,3 +1,4 @@
+// Package channel implements utilities relating to channels.
 package channel
 
 import (
@@ -91,4 +92,20 @@ type Recvd[T any] struct {
 // Send is a wrapper around ch <- val.
 func Send[T any](ch chan<- T, val T) {
 	ch <- val
+}
+
+// Close is a wrapper around close(ch).
+func Close[T any](ch chan T) {
+	close(ch)
+}
+
+// ConvertToRecieveOnly converts chan into <-chan.
+func ConvertToRecieveOnly[T any](ch chan T) <-chan T {
+	return ch
+}
+
+// Exhaust pulls and ignores all the values in a channel.
+func Exhaust[T any](ch <-chan T) {
+	for range ch {
+	}
 }

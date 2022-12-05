@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/channel"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
 )
@@ -20,18 +21,18 @@ const (
 // solve solves day 4's problem. It reads line by line and evaluates
 // parseLine on each line. If it returns true, the count is increased
 // by one.
-func solve(dataChannel <-chan input.Line, parseLine func(input.Line) (bool, error)) (uint, error) {
-	var count uint
-	for line := range dataChannel {
-		lineMatched, err := parseLine(line)
-		if err != nil {
-			return 0, err
+func solve(dataChannel <-chan input.Line, parseLine func(input.Line) bool) (r uint, err error) {
+	// Managing errors
+	defer func() {
+		rec := recover()
+		if rec != nil {
+			err = recoverError(rec)
 		}
-		if lineMatched {
-			count++
-		}
-	}
-	return count, nil
+	}()
+
+	// Parsing input
+	overlaps := charray.Map(dataChannel, parseLine)
+	return charray.Reduce(overlaps, fun.Count[uint]), nil
 }
 
 // Part1 solves the first half of the problem.
@@ -46,51 +47,62 @@ func Part2(dataChannel <-chan input.Line) (uint, error) {
 
 // -------------- Implementation ----------------------
 
-func lineContainsFullOverlap(line input.Line) (fullOverlap bool, err error) {
+func lineContainsFullOverlap(line input.Line) bool {
 	if err := line.Err(); err != nil {
-		return false, err
+		panic(err)
 	}
 
 	elf1 := [2]int{}
 	elf2 := [2]int{}
-	_, err = fmt.Sscanf(line.Str(), "%d-%d,%d-%d", &elf1[0], &elf1[1], &elf2[0], &elf2[1])
+	_, err := fmt.Sscanf(line.Str(), "%d-%d,%d-%d", &elf1[0], &elf1[1], &elf2[0], &elf2[1])
 	if err != nil {
-		return false, err
+		panic(err)
 	}
 
 	start := fun.Min(elf1[0], elf2[0])
 	finish := fun.Max(elf1[1], elf2[1])
 
 	if start == elf1[0] && finish == elf1[1] {
-		return true, nil
+		return true
 	}
 	if start == elf2[0] && finish == elf2[1] {
-		return true, nil
+		return true
 	}
-	return false, nil
+	return false
 }
 
-func lineContainsOverlap(line input.Line) (fullOverlap bool, err error) {
+func lineContainsOverlap(line input.Line) bool {
 	if err := line.Err(); err != nil {
-		return false, err
+		panic(err)
 	}
 
 	elf1 := [2]int{}
 	elf2 := [2]int{}
-	_, err = fmt.Sscanf(line.Str(), "%d-%d,%d-%d", &elf1[0], &elf1[1], &elf2[0], &elf2[1])
+	_, err := fmt.Sscanf(line.Str(), "%d-%d,%d-%d", &elf1[0], &elf1[1], &elf2[0], &elf2[1])
 	if err != nil {
-		return false, err
+		panic(err)
 	}
 
 	if elf1[0] <= elf2[0] && elf2[0] <= elf1[1] {
-		return true, nil // Elf2 starts halfway through elf1's work
+		return true // Elf2 starts halfway through elf1's work
 	}
 
 	if elf2[0] <= elf1[0] && elf1[0] <= elf2[1] {
-		return true, nil // Elf1 starts halfway through elf2's work
+		return true // Elf1 starts halfway through elf2's work
 	}
 
-	return false, nil
+	return false
+}
+
+func recoverError(recovered any) error {
+	if recovered == nil {
+		return nil
+	}
+	e, ok := recovered.(error)
+	if ok {
+		return fmt.Errorf("panicked: %v", recovered)
+	}
+	return e
 }
 
 // ------------- Here be boilerplate ------------------
@@ -123,6 +135,7 @@ func Main(stdout io.Writer) error {
 		result, err := Part1(channels[0])
 		if err != nil {
 			cancel()
+			channel.Exhaust(channels[0])
 			resultCh <- problemResult{0, "", err}
 		}
 		resultCh <- problemResult{0, fmt.Sprintf("Result of part 1: %v", result), nil}
@@ -133,6 +146,7 @@ func Main(stdout io.Writer) error {
 		if err != nil {
 			resultCh <- problemResult{1, "", err}
 			cancel()
+			channel.Exhaust(channels[1])
 		}
 		resultCh <- problemResult{1, fmt.Sprintf("Result of part 2: %v", result), nil}
 	}()

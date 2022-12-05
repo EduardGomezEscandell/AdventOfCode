@@ -1,11 +1,11 @@
-package channel_test
+package charray_test
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/channel"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/generics"
 	"github.com/stretchr/testify/require"
 )
@@ -48,7 +48,7 @@ func testFromArray[T generics.Signed](t *testing.T) { // nolint: thelper
 			input := make([]T, len(tc.data))
 			copy(input, tc.data)
 
-			ch := channel.FromArray(ctx, input, tc.capacity)
+			ch := charray.FromArray(ctx, input, tc.capacity)
 
 			// Stopping before starting?
 			if tc.whenCancel == Start {

@@ -11,10 +11,6 @@ import (
 
 type number generics.Number
 
-// Comparator is a function that takes two values and returs a boolean.
-// Useful for wrappers around <=, ==, >=, etc.
-type Comparator[T any] func(T, T) bool
-
 // Map applies function f:T->O element-wise to generate another
 // array []O of the same size.
 func Map[T, O any](arr []T, f func(T) O) []O {
@@ -161,7 +157,7 @@ func AdjacentReduce[T, A, I any](arr []T, zip func(T, T) I, fold func(A, I) A) A
 //	Best(arr, func(x, y int) bool { return x>y })
 //
 // Complexity is O(|arr|).
-func Best[T any](arr []T, isBetter Comparator[T]) (acc T) {
+func Best[T any](arr []T, isBetter fun.Comparator[T]) (acc T) {
 	if len(arr) == 0 {
 		return acc
 	}
@@ -187,7 +183,7 @@ func Best[T any](arr []T, isBetter Comparator[T]) (acc T) {
 //	BestN(arr, 3, func(x, y int) bool { return x>y })
 //
 // Complexity is O(n·|arr|).
-func BestN[T any](arr []T, n uint, isBetter Comparator[T]) []T {
+func BestN[T any](arr []T, n uint, isBetter fun.Comparator[T]) []T {
 	if uint(len(arr)) <= n {
 		n = uint(len(arr))
 		acc := make([]T, n)
@@ -200,14 +196,19 @@ func BestN[T any](arr []T, n uint, isBetter Comparator[T]) []T {
 	Sort(acc, isBetter)
 
 	for _, a := range arr[n:] {
-		updateBestN(n, acc, a, isBetter)
+		UpdateBestN(n, acc, a, isBetter)
 	}
 
 	return acc
 }
 
+// UpdateBestN takes a list topN sorted according to isBetter and emplaces
+// x in its position. After this, the last element is dropped from the list.
+// Note that if x were to be last, the emplace-then-drop step is skipped
+// altogether.
+//
 // Complexity is O(n).
-func updateBestN[T any](n uint, topN []T, x T, isBetter Comparator[T]) {
+func UpdateBestN[T any](n uint, topN []T, x T, isBetter fun.Comparator[T]) {
 	if isBetter(topN[n-1], x) { // Not top n
 		return
 	}
@@ -232,7 +233,7 @@ func updateBestN[T any](n uint, topN []T, x T, isBetter Comparator[T]) {
 //	Sort(arr, fun.Lt)                            // The same, but shorter
 //
 // Complexity is O(|arr|·log(|arr|)).
-func Sort[T any](arr []T, comp Comparator[T]) {
+func Sort[T any](arr []T, comp fun.Comparator[T]) {
 	sort.Slice(arr, func(i, j int) bool {
 		return comp(arr[i], arr[j])
 	})
@@ -249,7 +250,7 @@ func Sort[T any](arr []T, comp Comparator[T]) {
 // two lists.
 //
 // Complexity is O(|first| + |second|).
-func Common[T any](first, second []T, comp Comparator[T]) []T {
+func Common[T any](first, second []T, comp fun.Comparator[T]) []T {
 	common := []T{}
 	var f, s int
 	for f < len(first) && s < len(second) {
@@ -273,12 +274,11 @@ func Common[T any](first, second []T, comp Comparator[T]) []T {
 
 // Unique modifies array arr so that all unique items are moved to the
 // beginning. Returns the index where the new end is.
-func Unique[T any](arr []T, comp Comparator[T]) (endUnique int) {
+func Unique[T any](arr []T, equal fun.Comparator[T]) (endUnique int) {
 	if len(arr) == 0 {
 		return 0
 	}
 
-	equal := func(a, b T) bool { return !comp(a, b) && !comp(b, a) }
 	endUnique = 1
 	for i := 1; i < len(arr); i++ {
 		if equal(arr[i], arr[endUnique-1]) {
