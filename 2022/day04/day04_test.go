@@ -3,6 +3,8 @@ package day04_test
 import (
 	"bytes"
 	"context"
+	"log"
+	"os"
 	"testing"
 	"time"
 
@@ -10,17 +12,18 @@ import (
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/testutils"
 	"github.com/stretchr/testify/require"
 )
 
-// func TestMain(m *testing.M) {
-// 	err := testutils.CheckEnv()
-// 	if err != nil {
-// 		log.Printf("Setup: %v", err)
-// 	}
-// 	r := m.Run()
-// 	os.Exit(r)
-// }
+func TestMain(m *testing.M) {
+	err := testutils.CheckEnv()
+	if err != nil {
+		log.Printf("Setup: %v", err)
+	}
+	r := m.Run()
+	os.Exit(r)
+}
 
 func TestPart1(t *testing.T) {
 	t.Parallel()
