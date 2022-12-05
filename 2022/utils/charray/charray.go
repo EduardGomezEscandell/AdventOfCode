@@ -1,6 +1,7 @@
+// Package charray is used to implement operations usually applied to
+// arrays, but applied to channels instead. It's an async approach to
+// lazy evaluation.
 package charray
-
-// This file contains
 
 import (
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"

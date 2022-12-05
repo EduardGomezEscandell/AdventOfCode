@@ -1,3 +1,4 @@
+// Package channel implements utilities relating to channels.
 package channel
 
 import (
