@@ -2,12 +2,12 @@ name: "2022"
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
       - .github/workflows/2022.yml
-      - '2022/**'
+      - "2022/**"
   workflow_dispatch:
 
 jobs:
@@ -15,51 +15,39 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AOC_2022_ROOT: ${{ github.workspace }}/2022
-    defaults:
-      run:
-        working-directory: ${{ github.workspace }}/2022
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
-
+      - uses: actions/setup-go@v3
+        with:
+          go-version: "1.18"
       - name: Lint
         uses: golangci/golangci-lint-action@v3
         with:
-          # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
           version: latest
           working-directory: ${{ github.workspace }}/2022
           args: --config=.golangci-ci.yaml
-      
       - name: Test
-        if: always()
+        working-directory: ${{ github.workspace }}/2022
         run: |
-          go test ./...
-      
+          go test ./... --race
       - name: Coverage
+        working-directory: ${{ github.workspace }}/2022
         run: |
           # Prints coverage info just for informational purposes
-          bash coverage.sh
-          
-  solve:
+          ./coverage.sh
+
+  solve-and-time:
     runs-on: ubuntu-latest
     env:
       AOC_2022_ROOT: ${{ github.workspace }}/2022
-    defaults:
-      run:
-        working-directory: ${{ github.workspace }}/2022
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
-      
-      - name: Build
+      - uses: actions/setup-go@v3
+        with:
+          go-version: "1.18"
+      - name: Build and Run
+        working-directory: ${{ github.workspace }}/2022
         run: |
-          go build -o aoc2022
-        
-      - name: Run
-        env: 
-          executable: ./aoc2022
-        run: |
-          ./timeit.sh
-
+          ./run_all.sh
