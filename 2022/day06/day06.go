@@ -2,7 +2,6 @@
 package day06
 
 import (
-	"errors"
 	"fmt"
 	"io"
 
@@ -21,7 +20,7 @@ func Part1(data []byte) (int, error) {
 	return solve(data, 4)
 }
 
-// Part2 solves part 1 of today's problem.
+// Part2 solves part 2 of today's problem.
 func Part2(data []byte) (int, error) {
 	return solve(data, 14)
 }
@@ -49,14 +48,14 @@ func solve(data []byte, n int) (int, error) {
 		// Update prev and continue
 		prev[i%(n-1)] = v
 	}
-	return 0, errors.New("could not find four consecutive unique bytes in sequence")
+	return 0, fmt.Errorf("could not find %d consecutive unique bytes in sequence", n)
 }
 
 /// ---------- Here be boilerplate ------------------
 
 // Main is the entry point to today's problem solution.
 func Main(stdout io.Writer) error {
-	b, err := ReadDataFile()
+	b, err := input.ReadDataFile(today, fileName)
 	if err != nil {
 		return err
 	}
@@ -74,10 +73,4 @@ func Main(stdout io.Writer) error {
 	fmt.Fprintf(stdout, "Result of part 2: %v\n", result)
 
 	return nil
-}
-
-// ReadDataFile is a wrapper around input.ReadDataFile made to be
-// easily mocked.
-var ReadDataFile = func() ([]byte, error) {
-	return input.ReadDataFile(today, fileName)
 }
