@@ -311,3 +311,12 @@ func Stride[T any](in []T, n int) []T {
 	}
 	return out
 }
+
+func Search[T any](arr []T, x T, eq fun.Comparator[T]) int {
+	for i, v := range arr {
+		if eq(x, v) {
+			return i
+		}
+	}
+	return -1
+}
