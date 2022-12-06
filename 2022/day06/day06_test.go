@@ -37,6 +37,7 @@ func TestPart1(t *testing.T) {
 		name := name
 		want := want
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			got, err := day06.Part1([]byte(name))
 			require.NoError(t, err)
 			require.Equal(t, want, got)
@@ -44,9 +45,31 @@ func TestPart1(t *testing.T) {
 	}
 }
 
+func TestPart2(t *testing.T) {
+	t.Parallel()
+	testCases := map[string]int{
+		"mjqjpqmgbljsphdztnvjfqwrcgsmlb":    19,
+		"bvwbjplbgvbhsrlpgdmjqwftvncz":      23,
+		"nppdvjthqldpwncqszvftbrmjlhg":      23,
+		"nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg": 29,
+		"zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw":  26,
+	}
+
+	for name, want := range testCases {
+		name := name
+		want := want
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			got, err := day06.Part2([]byte(name))
+			require.NoError(t, err)
+			require.Equal(t, want, got)
+		})
+	}
+}
+
 func TestRealData(t *testing.T) {
-	expected := `Result of part 1: 8
-Result of part 2: 0
+	expected := `Result of part 1: 1855
+Result of part 2: 3256
 `
 	buff := new(bytes.Buffer)
 

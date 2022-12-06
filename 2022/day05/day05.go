@@ -1,4 +1,4 @@
-// Package day05 solves day 5 of AoC2022	.
+// Package day05 solves day 5 of AoC2022.
 package day05
 
 import (

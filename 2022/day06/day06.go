@@ -1,3 +1,4 @@
+// Package day06 solves day 6 of AoC2022.
 package day06
 
 import (
@@ -17,33 +18,38 @@ const (
 
 // Part1 solves part 1 of today's problem.
 func Part1(data []byte) (int, error) {
-	if len(data) < 4 {
-		return 0, errors.New("input must be at least 4 bytes")
+	return solve(data, 4)
+}
+
+// Part2 solves part 1 of today's problem.
+func Part2(data []byte) (int, error) {
+	return solve(data, 14)
+}
+
+func solve(data []byte, n int) (int, error) {
+	if len(data) < n {
+		return 0, fmt.Errorf("input must be at least %d bytes", n)
 	}
 
-	prev := [3]byte{} // prev contains the previous three bytes recieved.
-	copy(prev[:], data[:3])
+	window := make([]byte, n) // window contains prev+the new byte
+	prev := make([]byte, n-1) // prev contains the previous bytes received.
 
-	for i, v := range data[3:] {
-		window := [4]byte{v, prev[0], prev[1], prev[2]}
-		array.Sort(window[:], fun.Lt[byte])
-		repeats := array.AdjacentReduce(window[:], fun.Eq[byte], fun.Count[byte])
+	copy(prev[:], data[:n-1])
+	for i, v := range data[n-1:] {
+		// Assembling window
+		window[0] = v
+		copy(window[1:], prev)
+		// Sorting window and finding consecutive identical pairs
+		array.Sort(window, fun.Lt[byte])
+		repeats := array.AdjacentReduce(window, fun.Eq[byte], fun.Count[byte])
+		// If no repeats, we're done
 		if repeats == 0 {
-			return i + 4, nil
+			return i + n, nil
 		}
-		prev[i%3] = v
+		// Update prev and continue
+		prev[i%(n-1)] = v
 	}
 	return 0, errors.New("could not find four consecutive unique bytes in sequence")
-}
-
-// modulo computes the positive modulo, as oposed to Go's remainder,
-// which is negative for negative x.
-func modulo(x, n int) int {
-	return ((x % n) + n) % 3
-}
-
-func Part2(b []byte) (int, error) {
-	return 0, nil
 }
 
 /// ---------- Here be boilerplate ------------------
