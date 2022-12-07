@@ -27,35 +27,51 @@ const (
 
 type size int
 
-// Part1 solves the first half of the problem.
-func Part1(input <-chan input.Line) (int, error) {
+func AssembleFilesystem(input <-chan input.Line) (Filesystem, error) {
 	p := NewParser()
 
 	for ln := range input {
 		if err := ln.Err(); err != nil {
-			return 0, fmt.Errorf("failed to read line %d: %v", p.LineNo+1, err)
+			return p.Fs, fmt.Errorf("failed to read line %d: %v", p.LineNo+1, err)
 		}
-		p.NextLine(ln.Str())
+		err := p.NextLine(ln.Str())
+		if err != nil {
+			return p.Fs, err
+		}
 	}
 	channel.Exhaust(input) // Sync point
-
 	dfsComputeSizes(&p.Fs.Root)
+	return p.Fs, nil
+}
 
-	fmt.Println(String(p.Fs))
-
-	return int(dfsSumSmallDirs(&p.Fs.Root)), nil
+// Part1 solves the first half of the problem.
+func Part1(fs Filesystem) (int, error) {
+	return int(dfsSumSmallDirs(&fs.Root)), nil
 }
 
 // Part2 solves the second half of the problem.
-func Part2(input <-chan input.Line) (int, error) {
-	channel.Exhaust(input)
-	return 0, nil
+func Part2(fs Filesystem) (int, error) {
+	const (
+		totalCapacity  = 70_000_000
+		neededCapacity = 30_000_000
+	)
+	usedCapacity := fs.Root.Data.Size
+	if usedCapacity > totalCapacity {
+		return 0, fmt.Errorf("Drive is already beyond full: %d/%d", usedCapacity, totalCapacity)
+	}
+	currentCapactiy := totalCapacity - usedCapacity
+	if currentCapactiy > neededCapacity {
+		return 0, nil
+	}
+	neededRemoval := neededCapacity - currentCapactiy
+
+	return int(bfsFindRemovalCandidate(fs.Root, neededRemoval, usedCapacity+1)), nil
 }
 
 /// ---------- Tree exploration implementation ------------------
 func dfsComputeSizes(root *FsNode) size {
-	if !root.Value.IsDir {
-		return root.Value.Size
+	if !root.Data.IsDir {
+		return root.Data.Size
 	}
 
 	ch := make(chan size)
@@ -74,12 +90,12 @@ func dfsComputeSizes(root *FsNode) size {
 		close(ch)
 	}()
 
-	root.Value.Size = charray.Reduce(ch, fun.Add[size])
-	return root.Value.Size
+	root.Data.Size = charray.Reduce(ch, fun.Add[size], 0)
+	return root.Data.Size
 }
 
 func dfsSumSmallDirs(root *FsNode) size {
-	if !root.Value.IsDir {
+	if !root.Data.IsDir {
 		return 0
 	}
 
@@ -98,11 +114,47 @@ func dfsSumSmallDirs(root *FsNode) size {
 		wg.Wait()
 		close(ch)
 	}()
-	children := charray.Reduce(ch, fun.Add[size])
-	if root.Value.Size > 100000 {
+	children := charray.Reduce(ch, fun.Add[size], 0)
+	if root.Data.Size > 100000 {
 		return children
 	}
-	return children + root.Value.Size
+	return children + root.Data.Size
+}
+
+func bfsFindRemovalCandidate(root FsNode, neededSpace size, currentBest size) size {
+	// Files excluded
+	if !root.Data.IsDir {
+		return currentBest
+	}
+
+	// Prunning: all children will be smaller
+	if root.Data.Size < neededSpace {
+		return currentBest
+	}
+
+	// Updating best
+	currentBest = fun.Min(root.Data.Size, currentBest)
+
+	// Exploring children asyncronously
+	ch := make(chan size)
+	var wg sync.WaitGroup
+	for _, child := range root.Children {
+		child := child
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ch <- bfsFindRemovalCandidate(*child, neededSpace, currentBest)
+		}()
+	}
+
+	// Synching
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	// Collecting results
+	return charray.Reduce(ch, fun.Min[size], currentBest)
 }
 
 /// ---------- Parser implementation ------------------
@@ -143,8 +195,9 @@ type Parser struct {
 
 func NewParser() Parser {
 	var p Parser
-	p.Fs.Root.Value.Name = "/"
-	p.Fs.Root.Value.IsDir = true
+	p.Fs.Root.Data.Name = "/"
+	p.Fs.Root.Data.IsDir = true
+	p.cwdPath.Push(&p.Fs.Root)
 	return p
 }
 
@@ -196,7 +249,7 @@ func (p *Parser) NextLine(line string) (err error) {
 		if err == nil {
 			return
 		}
-		path := array.Map(p.cwdPath.Data(), func(f *FsNode) string { return f.Value.Name })
+		path := array.Map(p.cwdPath.Data(), func(f *FsNode) string { return f.Data.Name })
 		err = fmt.Errorf("error in line %d\nline: %s\ncwd:  %s\ncmd:  %s\nargs: %s\nerr: %v", p.LineNo, line, strings.Join(path, "/"), p.Cmd, p.Args, err)
 	}()
 	p.LineNo++
@@ -281,8 +334,8 @@ var evalCmdMap = map[string]func(*Parser, ...string) error{
 }
 
 var evalResponseMap = map[Cmd]func(*Parser, ...string) error{
-	BLANK: func(*Parser, ...string) error { return errors.New("unexpected response blank state") },
-	CD:    func(*Parser, ...string) error { return errors.New("unexpected response to command cd") },
+	BLANK: func(*Parser, ...string) error { return errors.New("unexpected response after blank state") },
+	CD:    func(*Parser, ...string) error { return errors.New("unexpected response after command cd") },
 	ERROR: func(*Parser, ...string) error { return errors.New("unexpected response after error state") },
 	LS: func(p *Parser, fields ...string) error {
 		if len(fields) != 2 {
@@ -308,10 +361,10 @@ func String(fs Filesystem) string {
 }
 
 func str(fn FsNode, indent string) string {
-	if !fn.Value.IsDir {
-		return fmt.Sprintf("%s- %s (file, size=%d)", indent, fn.Value.Name, fn.Value.Size)
+	if !fn.Data.IsDir {
+		return fmt.Sprintf("%s- %s (file, size=%d)", indent, fn.Data.Name, fn.Data.Size)
 	}
-	s := fmt.Sprintf("%s- %s (dir)", indent, fn.Value.Name)
+	s := fmt.Sprintf("%s- %s (dir)", indent, fn.Data.Name)
 	children := strings.Join(array.Map(fn.Children, func(child *FsNode) string { return str(*child, indent+"  ") }), "\n")
 	if len(children) == 0 {
 		return s
@@ -320,20 +373,20 @@ func str(fn FsNode, indent string) string {
 }
 
 func getChild(dir FsNode, filename string) int {
-	return array.FindIf(dir.Children, func(f *FsNode) bool { return f.Value.Name == filename })
+	return array.FindIf(dir.Children, func(f *FsNode) bool { return f.Data.Name == filename })
 }
 
 func (p *Parser) mkdir(name string) error {
 	idx := getChild(*p.Cwd(), name)
 	if idx != -1 {
 		original := p.Cwd().Children[idx]
-		if !original.Value.IsDir {
+		if !original.Data.IsDir {
 			return fmt.Errorf("Attempting to overwrite file %q as a directory", name)
 		}
 	}
 
 	p.Cwd().Children = append(p.Cwd().Children, &FsNode{
-		Value: FileDescriptor{
+		Data: FileDescriptor{
 			Name:  name,
 			IsDir: true,
 		},
@@ -346,16 +399,16 @@ func (p *Parser) touch(name string, sz size) error {
 	idx := getChild(*p.Cwd(), name)
 	if idx != -1 {
 		original := p.Cwd().Children[idx]
-		if original.Value.IsDir {
+		if original.Data.IsDir {
 			return fmt.Errorf("Attempting to overwrite directory %q as a file", name)
 		}
-		if sz != original.Value.Size {
-			return fmt.Errorf("Attempting to overwrite file %q with diferent size:\n\toriginal:%d\n\tnew:     %d", name, original.Value.Size, sz)
+		if sz != original.Data.Size {
+			return fmt.Errorf("Attempting to overwrite file %q with diferent size:\n\toriginal:%d\n\tnew:     %d", name, original.Data.Size, sz)
 		}
 		return nil
 	}
 	p.Cwd().Children = append(p.Cwd().Children, &FsNode{
-		Value: FileDescriptor{
+		Data: FileDescriptor{
 			Name: name,
 			Size: sz,
 		},
@@ -387,7 +440,7 @@ func (p *Parser) cd(target string) error {
 		return fmt.Errorf("cd: directory %q does not exist.", target)
 	}
 	child := p.Cwd().Children[idx]
-	if !child.Value.IsDir {
+	if !child.Data.IsDir {
 		p.Cmd = ERROR
 		return fmt.Errorf("cd: file %q is not a directory.", target)
 	}
@@ -418,12 +471,14 @@ func Main(stdout io.Writer) error {
 		return err
 	}
 
-	channels := channel.Split(ctx, ch, 2)
+	filesystem, err := AssembleFilesystem(ch)
+	if err != nil {
+		return err
+	}
 
 	resultCh := make(chan problemResult)
 	go func() {
-		result, err := Part1(channels[0])
-		channel.Exhaust(channels[0])
+		result, err := Part1(filesystem)
 		if err != nil {
 			resultCh <- problemResult{0, "", err}
 			cancel()
@@ -432,8 +487,7 @@ func Main(stdout io.Writer) error {
 	}()
 
 	go func() {
-		result, err := Part2(channels[1])
-		channel.Exhaust(channels[1])
+		result, err := Part2(filesystem)
 		if err != nil {
 			resultCh <- problemResult{1, "", err}
 			cancel()

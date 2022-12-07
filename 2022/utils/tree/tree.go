@@ -5,7 +5,7 @@ type Tree[T any] struct {
 }
 
 type Node[T any] struct {
-	Value    T
+	Data     T
 	Children []*Node[T]
 }
 

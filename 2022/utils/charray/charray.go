@@ -54,8 +54,8 @@ func Generate[O any](len int, cap int, f func() O) <-chan O {
 //
 //	Reduce(in, func(x,y int)int { return x+y }) # Option 1.
 //	Reduce(in, fun.Add[int])                    # Option 2.
-func Reduce[T, O any](in <-chan T, fold func(O, T) O) O {
-	var o O
+func Reduce[T, O any](in <-chan T, fold func(O, T) O, init O) O {
+	o := init
 	for v := range in {
 		o = fold(o, v)
 	}

@@ -155,7 +155,7 @@ func testReduce[T generics.Signed](t *testing.T) { // nolint: thelper // nolint:
 			ch, cancel := inputToChannel(tc.input, 0, 10*time.Second)
 			defer cancel()
 
-			got := charray.Reduce(ch, tc.fold)
+			got := charray.Reduce(ch, tc.fold, 0)
 			require.Equal(t, tc.expects, got)
 		})
 	}
@@ -184,7 +184,7 @@ func testMapReduce[T generics.Signed](t *testing.T) { // nolint: thelper // noli
 			ch, cancel := inputToChannel(tc.input, 0, 10*time.Second)
 			defer cancel()
 
-			got := charray.Reduce(charray.Map(ch, tc.unary), tc.fold)
+			got := charray.Reduce(charray.Map(ch, tc.unary), tc.fold, 0)
 			require.Equal(t, tc.expects, got)
 		})
 	}
@@ -209,7 +209,7 @@ func testAdjacentReduce[T generics.Signed](t *testing.T) { // nolint: thelper
 			ch, cancel := inputToChannel(tc.input, 0, 10*time.Second)
 			defer cancel()
 
-			got := charray.Reduce(charray.AdjacentMap(ch, tc.merge), tc.fold)
+			got := charray.Reduce(charray.AdjacentMap(ch, tc.merge), tc.fold, 0)
 			require.Equal(t, tc.expects, got)
 		})
 	}
@@ -271,7 +271,7 @@ func testZipReduce[T generics.Signed](t *testing.T) { // nolint: thelper
 			ch1 := charray.FromArray(ctx, tc.input1, 0)
 			ch2 := charray.FromArray(ctx, tc.input2, 0)
 
-			got := charray.Reduce(charray.ZipWith(ch1, ch2, fun.Mul[T]), fun.Add[T])
+			got := charray.Reduce(charray.ZipWith(ch1, ch2, fun.Mul[T]), fun.Add[T], 0)
 			require.Equal(t, tc.want, got)
 		})
 	}

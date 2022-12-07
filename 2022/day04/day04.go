@@ -32,7 +32,7 @@ func solve(dataChannel <-chan input.Line, parseLine func(input.Line) bool) (r ui
 
 	// Parsing input
 	overlaps := charray.Map(dataChannel, parseLine)
-	return charray.Reduce(overlaps, fun.Count[uint]), nil
+	return charray.Reduce(overlaps, fun.Count[uint], 0), nil
 }
 
 // Part1 solves the first half of the problem.
