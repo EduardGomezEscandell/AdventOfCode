@@ -9,7 +9,7 @@ type Tree[T any] struct {
 // Node is the basic unit of the tree. Each node points
 // to its data and its children.
 type Node[T any] struct {
-	Data     T
+	Data     *T
 	Children []*Node[T]
 }
 

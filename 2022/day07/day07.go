@@ -225,8 +225,11 @@ type Parser struct {
 // NewParser creates a Parser and initializes its file system.
 func NewParser() Parser {
 	var p Parser
-	p.Fs.Root.Data.Name = "/"
-	p.Fs.Root.Data.IsDir = true
+	p.Fs = tree.New[FileDescriptor]()
+	p.Fs.Root.Data = &FileDescriptor{
+		Name:  "/",
+		IsDir: true,
+	}
 	p.cwdPath.Push(&p.Fs.Root)
 	return p
 }
@@ -407,7 +410,7 @@ func (p *Parser) mkdir(name string) error {
 	}
 
 	p.Cwd().Children = append(p.Cwd().Children, &fsNode{
-		Data: FileDescriptor{
+		Data: &FileDescriptor{
 			Name:  name,
 			IsDir: true,
 		},
@@ -429,7 +432,7 @@ func (p *Parser) touch(name string, sz size) error {
 		return nil
 	}
 	p.Cwd().Children = append(p.Cwd().Children, &fsNode{
-		Data: FileDescriptor{
+		Data: &FileDescriptor{
 			Name: name,
 			Size: sz,
 		},
