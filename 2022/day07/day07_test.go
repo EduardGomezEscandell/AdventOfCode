@@ -5,6 +5,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -91,6 +92,62 @@ func TestPart2(t *testing.T) {
 			require.Equal(t, tc.want, got)
 		})
 	}
+}
+
+// TestAssembleFilesystem tests that the example filesystem is properly
+// parsed.
+func TestAssembleFilesystem(t *testing.T) {
+	data := `$ cd /
+$ ls
+dir a
+14848514 b.txt
+8504156 c.dat
+dir d
+$ cd a
+$ ls
+dir e
+29116 f
+2557 g
+62596 h.lst
+$ cd e
+$ ls
+584 i
+$ cd ..
+$ cd ..
+$ cd d
+$ ls
+4060174 j
+8033020 d.log
+5626152 d.ext
+7214296 k`
+
+	want := `- / (dir)
+  - a (dir)
+    - e (dir)
+      - i (file, size=584)
+    - f (file, size=29116)
+    - g (file, size=2557)
+    - h.lst (file, size=62596)
+  - b.txt (file, size=14848514)
+  - c.dat (file, size=8504156)
+  - d (dir)
+    - j (file, size=4060174)
+    - d.log (file, size=8033020)
+    - d.ext (file, size=5626152)
+    - k (file, size=7214296)`
+
+	// Reading through channel
+	lines := array.Map(strings.Split(data, "\n"), input.NewLine)
+	ctx, cancel := context.WithTimeout(context.Background(), 100000*time.Second)
+	defer cancel()
+	ch := charray.FromArray(ctx, lines, 0)
+
+	// Partsing
+	fs, err := day07.AssembleFilesystem(ch)
+	got := day07.String(fs)
+	t.Log(got)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
 }
 
 func TestRealData(t *testing.T) {
