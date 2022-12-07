@@ -68,9 +68,10 @@ func Run(day uint, output string) error {
 	fmt.Fprintf(w, "DAY %d\n", day)
 
 	start := time.Now()
-	defer fmt.Fprintf(w, "Time elapsed: %s\n", time.Since(start))
+	err = entrypoint(w)
+	fmt.Fprintf(w, "Time elapsed: %s\n", time.Since(start))
 
-	return entrypoint(w)
+	return err
 }
 
 func entryPoint(day uint) (func(io.Writer) error, error) {
