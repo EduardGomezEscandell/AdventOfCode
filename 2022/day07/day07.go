@@ -141,7 +141,7 @@ func Main(stdout io.Writer) error {
 		return err
 	}
 
-	ch, err := input.ReadDataAsync(ctx, reader, 0)
+	ch, err := input.ReadDataAsync(ctx, reader, 10)
 	if err != nil {
 		return err
 	}
