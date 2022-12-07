@@ -89,6 +89,14 @@ func TestUnique(t *testing.T) {
 	t.Run("int64", testUnique[int64])
 }
 
+func TestFind(t *testing.T) {
+	t.Parallel()
+	t.Run("int", testFind[int])
+	t.Run("int8", testFind[int8])
+	t.Run("int32", testFind[int32])
+	t.Run("int64", testFind[int64])
+}
+
 func testMap[T generics.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 
@@ -343,6 +351,39 @@ func testUnique[T generics.Signed](t *testing.T) { // nolint: thelper
 			got := array.Unique(tc.input, fun.SortToEqual(tc.sort))
 			require.Equal(t, tc.wantArr, tc.input)
 			require.Equal(t, tc.wantCount, got)
+		})
+	}
+}
+
+func testFind[T generics.Number](t *testing.T) { // nolint: thelper
+	t.Parallel()
+	testCases := map[string]struct {
+		data   []T
+		search T
+		want   int
+	}{
+		"empty":          {data: []T{}, want: -1},
+		"single, found":  {data: []T{5}, search: 5, want: 0},
+		"single, missed": {data: []T{3}, search: 9, want: -1},
+		"missed":         {data: []T{3, 13, 84, 6, 3}, search: 9, want: -1},
+		"first":          {data: []T{3, 13, 84, 6, 11}, search: 3, want: 0},
+		"last":           {data: []T{3, 13, 84, 6, 11}, search: 11, want: 4},
+		"repeated":       {data: []T{3, 13, 84, 6, 3}, search: 3, want: 0},
+		"standard":       {data: []T{3, 13, 84, 6, 3}, search: 84, want: 2},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			input := make([]T, len(tc.data))
+			copy(input, tc.data)
+
+			got := array.Find(input, tc.search, fun.Eq[T])
+			require.Equal(t, tc.want, got)
+
+			require.Equal(t, input, tc.data, "array.Find modified the input array")
 		})
 	}
 }

@@ -311,3 +311,26 @@ func Stride[T any](in []T, n int) []T {
 	}
 	return out
 }
+
+// Find traverses array arr searching for an element that matches val
+// according to comparator eq and returs its index. If none match,
+// -1 is returned.
+func Find[T any](arr []T, val T, eq fun.Comparator[T]) int {
+	for i, v := range arr {
+		if eq(v, val) {
+			return i
+		}
+	}
+	return -1
+}
+
+// FindIf traverses array arr searching for an element that makes
+// f return true, and returs its index. If none match, -1 is returned.
+func FindIf[T any](arr []T, eq func(T) bool) int {
+	for i, v := range arr {
+		if eq(v) {
+			return i
+		}
+	}
+	return -1
+}
