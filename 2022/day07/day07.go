@@ -27,7 +27,9 @@ const (
 
 type size int
 
-func AssembleFilesystem(input <-chan input.Line) (Filesystem, error) {
+// ParseFilesystem reads the log line by line and reconstructs the observed
+// filesystem.
+func ParseFilesystem(input <-chan input.Line) (Filesystem, error) {
 	p := NewParser()
 
 	for ln := range input {
@@ -68,8 +70,8 @@ func Part2(fs Filesystem) (int, error) {
 	return int(bfsFindRemovalCandidate(fs.Root, neededRemoval, usedCapacity+1)), nil
 }
 
-/// ---------- Tree exploration implementation ------------------
-func dfsComputeSizes(root *FsNode) size {
+// / ---------- Tree exploration implementation ------------------.
+func dfsComputeSizes(root *fsNode) size {
 	if !root.Data.IsDir {
 		return root.Data.Size
 	}
@@ -77,7 +79,7 @@ func dfsComputeSizes(root *FsNode) size {
 	ch := make(chan size)
 	var wg sync.WaitGroup
 
-	array.Foreach(root.Children, func(child **FsNode) {
+	array.Foreach(root.Children, func(child **fsNode) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -94,7 +96,7 @@ func dfsComputeSizes(root *FsNode) size {
 	return root.Data.Size
 }
 
-func dfsSumSmallDirs(root *FsNode) size {
+func dfsSumSmallDirs(root *fsNode) size {
 	if !root.Data.IsDir {
 		return 0
 	}
@@ -102,7 +104,7 @@ func dfsSumSmallDirs(root *FsNode) size {
 	ch := make(chan size)
 	var wg sync.WaitGroup
 
-	array.Foreach(root.Children, func(child **FsNode) {
+	array.Foreach(root.Children, func(child **fsNode) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -121,7 +123,7 @@ func dfsSumSmallDirs(root *FsNode) size {
 	return children + root.Data.Size
 }
 
-func bfsFindRemovalCandidate(root FsNode, neededSpace size, currentBest size) size {
+func bfsFindRemovalCandidate(root fsNode, neededSpace size, currentBest size) size {
 	// Files excluded
 	if !root.Data.IsDir {
 		return currentBest
@@ -159,13 +161,40 @@ func bfsFindRemovalCandidate(root FsNode, neededSpace size, currentBest size) si
 
 /// ---------- Parser implementation ------------------
 
-type Cmd int
-type LineType int
+// state is an enum containing the states of the finite state machine. Most of the time,
+// they refer to the command being run, or the command the response of which we're
+// reading.
+type state int
 
-type FsNode = tree.Node[FileDescriptor]
+const (
+	clean state = iota
+	ls
+	cd
+	failed
+)
+
+// Linetype is an enum containing the type of text lines we may read.
+type lineType int
+
+const (
+	command lineType = iota
+	response
+	empty
+)
+
+// fsNode is the node in the tree. It contains a pointer to a file
+// descriptor and pointers to its children.
+type fsNode = tree.Node[FileDescriptor]
+
+// path is a stack of nested file descriptors. It represents the route to
+// get from the root to a particular file.
+type path = stack.Stack[*fsNode]
+
+// Filesystem is a tree of file descriptors. It mocks a drive's filesystem.
 type Filesystem = tree.Tree[FileDescriptor]
-type Path = stack.Stack[*FsNode]
 
+// FileDescriptor contains data about a file/directory
+// in the filesystem.
 type FileDescriptor struct {
 	Name  string
 	Size  size
@@ -182,17 +211,18 @@ type FileDescriptor struct {
 // To transition, a line must be fed into it.
 type Parser struct {
 	// Current command and its args
-	Cmd  Cmd
+	Cmd  state
 	Args []string
 
 	// Filesystem
 	Fs      Filesystem
-	cwdPath Path
+	cwdPath path
 
 	// For better error reporting
 	LineNo int
 }
 
+// NewParser creates a Parser and initializes its file system.
 func NewParser() Parser {
 	var p Parser
 	p.Fs.Root.Data.Name = "/"
@@ -201,68 +231,58 @@ func NewParser() Parser {
 	return p
 }
 
-const (
-	BLANK Cmd = iota
-	LS
-	CD
-	ERROR
-)
-
-func (c Cmd) String() string {
+func (c state) String() string {
 	switch c {
-	case BLANK:
+	case clean:
 		return "blank state"
-	case LS:
+	case ls:
 		return "command ls"
-	case CD:
+	case cd:
 		return "command cd"
-	case ERROR:
+	case failed:
 		return "error state"
 	}
 	panic("Unknown state")
 }
 
-const (
-	CMD LineType = iota
-	RESPONSE
-	EMPTY
-)
-
-func (t LineType) String() string {
+func (t lineType) String() string {
 	switch t {
-	case CMD:
+	case command:
 		return "command"
-	case RESPONSE:
+	case response:
 		return "response"
-	case EMPTY:
+	case empty:
 		return "empty"
 	}
 	panic("Unknown state")
 }
 
-func (p Parser) Cwd() *FsNode {
+// Cwd is the Current Working Directory of the finite state
+// machines filesystem.
+func (p Parser) Cwd() *fsNode {
 	return p.cwdPath.Peek()
 }
 
+// NextLine consumes the next line and advances the finite state machine.
 func (p *Parser) NextLine(line string) (err error) {
 	defer func() {
 		if err == nil {
 			return
 		}
-		path := array.Map(p.cwdPath.Data(), func(f *FsNode) string { return f.Data.Name })
+		path := array.Map(p.cwdPath.Data(), func(f *fsNode) string { return f.Data.Name })
 		err = fmt.Errorf("error in line %d\nline: %s\ncwd:  %s\ncmd:  %s\nargs: %s\nerr: %v", p.LineNo, line, strings.Join(path, "/"), p.Cmd, p.Args, err)
 	}()
 	p.LineNo++
-	lineType, args := lineType(line)
+	lineType, args := classifyLineType(line)
 
 	switch lineType {
-	case EMPTY:
-		p.Cmd = BLANK
+	case empty:
+		p.Cmd = clean
 		p.Args = nil
 		return nil
-	case CMD:
+	case command:
 		return p.evalCommand(args[0], args[1:]...)
-	case RESPONSE:
+	case response:
 		return p.evalResponse(args...)
 	}
 
@@ -299,45 +319,45 @@ func (p *Parser) evalCommand(verb string, args ...string) (err error) {
 	return eval(p, args...)
 }
 
-func lineType(line string) (ld LineType, args []string) {
+func classifyLineType(line string) (lineType, []string) {
 	data := strings.Split(line, " ")
 	if len(data) == 0 {
-		return EMPTY, nil
+		return empty, nil
 	}
 	if data[0] != "$" {
-		return RESPONSE, data
+		return response, data
 	}
-	return CMD, data[1:]
+	return command, data[1:]
 }
 
 var evalCmdMap = map[string]func(*Parser, ...string) error{
 	"ls": func(p *Parser, args ...string) error {
 		p.Args = nil
 		if len(args) != 0 {
-			p.Cmd = ERROR
-			return fmt.Errorf("unexpected token afer ls: ls accepts no arguments.")
+			p.Cmd = failed
+			return fmt.Errorf("unexpected token afer ls: ls accepts no arguments")
 		}
-		p.Cmd = LS
+		p.Cmd = ls
 		return nil
 	},
 	"cd": func(p *Parser, args ...string) error {
 		if len(args) == 0 {
-			p.Cmd = ERROR
+			p.Cmd = failed
 			return fmt.Errorf("unexpected endline after 'cd': cd needs exactly one argument")
 		}
 		if len(args) > 1 {
-			p.Cmd = ERROR
+			p.Cmd = failed
 			return fmt.Errorf("unexpected token after %q: cd needs exactly one argument", args[0])
 		}
 		return p.cd(args[0])
 	},
 }
 
-var evalResponseMap = map[Cmd]func(*Parser, ...string) error{
-	BLANK: func(*Parser, ...string) error { return errors.New("unexpected response after blank state") },
-	CD:    func(*Parser, ...string) error { return errors.New("unexpected response after command cd") },
-	ERROR: func(*Parser, ...string) error { return errors.New("unexpected response after error state") },
-	LS: func(p *Parser, fields ...string) error {
+var evalResponseMap = map[state]func(*Parser, ...string) error{
+	clean:  func(*Parser, ...string) error { return errors.New("unexpected response after blank state") },
+	cd:     func(*Parser, ...string) error { return errors.New("unexpected response after command cd") },
+	failed: func(*Parser, ...string) error { return errors.New("unexpected response after error state") },
+	ls: func(p *Parser, fields ...string) error {
 		if len(fields) != 2 {
 			return fmt.Errorf("expected two tokens per line, found %d", len(fields))
 		}
@@ -356,24 +376,25 @@ var evalResponseMap = map[Cmd]func(*Parser, ...string) error{
 
 // Filesystem implementation
 
-func String(fs Filesystem) string {
+// FsToStrig represents the filesystem as a nested list.
+func FsToStrig(fs Filesystem) string {
 	return str(fs.Root, "")
 }
 
-func str(fn FsNode, indent string) string {
+func str(fn fsNode, indent string) string {
 	if !fn.Data.IsDir {
 		return fmt.Sprintf("%s- %s (file, size=%d)", indent, fn.Data.Name, fn.Data.Size)
 	}
 	s := fmt.Sprintf("%s- %s (dir)", indent, fn.Data.Name)
-	children := strings.Join(array.Map(fn.Children, func(child *FsNode) string { return str(*child, indent+"  ") }), "\n")
+	children := strings.Join(array.Map(fn.Children, func(child *fsNode) string { return str(*child, indent+"  ") }), "\n")
 	if len(children) == 0 {
 		return s
 	}
 	return s + "\n" + children
 }
 
-func getChild(dir FsNode, filename string) int {
-	return array.FindIf(dir.Children, func(f *FsNode) bool { return f.Data.Name == filename })
+func getChild(dir fsNode, filename string) int {
+	return array.FindIf(dir.Children, func(f *fsNode) bool { return f.Data.Name == filename })
 }
 
 func (p *Parser) mkdir(name string) error {
@@ -385,7 +406,7 @@ func (p *Parser) mkdir(name string) error {
 		}
 	}
 
-	p.Cwd().Children = append(p.Cwd().Children, &FsNode{
+	p.Cwd().Children = append(p.Cwd().Children, &fsNode{
 		Data: FileDescriptor{
 			Name:  name,
 			IsDir: true,
@@ -403,11 +424,11 @@ func (p *Parser) touch(name string, sz size) error {
 			return fmt.Errorf("Attempting to overwrite directory %q as a file", name)
 		}
 		if sz != original.Data.Size {
-			return fmt.Errorf("Attempting to overwrite file %q with diferent size:\n\toriginal:%d\n\tnew:     %d", name, original.Data.Size, sz)
+			return fmt.Errorf("Attempting to overwrite file %q with different size:\n\toriginal:%d\n\tnew:     %d", name, original.Data.Size, sz)
 		}
 		return nil
 	}
-	p.Cwd().Children = append(p.Cwd().Children, &FsNode{
+	p.Cwd().Children = append(p.Cwd().Children, &fsNode{
 		Data: FileDescriptor{
 			Name: name,
 			Size: sz,
@@ -419,7 +440,7 @@ func (p *Parser) touch(name string, sz size) error {
 func (p *Parser) cd(target string) error {
 	// cd /
 	if target == "/" {
-		p.cwdPath = Path{}
+		p.cwdPath = path{}
 		p.cwdPath.Push(&p.Fs.Root)
 		return nil
 	}
@@ -436,13 +457,13 @@ func (p *Parser) cd(target string) error {
 	// cd directory
 	idx := getChild(*p.Cwd(), target)
 	if idx == -1 {
-		p.Cmd = ERROR
-		return fmt.Errorf("cd: directory %q does not exist.", target)
+		p.Cmd = failed
+		return fmt.Errorf("cd: directory %q does not exist", target)
 	}
 	child := p.Cwd().Children[idx]
 	if !child.Data.IsDir {
-		p.Cmd = ERROR
-		return fmt.Errorf("cd: file %q is not a directory.", target)
+		p.Cmd = failed
+		return fmt.Errorf("cd: file %q is not a directory", target)
 	}
 	p.cwdPath.Push(child)
 	return nil
@@ -471,7 +492,7 @@ func Main(stdout io.Writer) error {
 		return err
 	}
 
-	filesystem, err := AssembleFilesystem(ch)
+	filesystem, err := ParseFilesystem(ch)
 	if err != nil {
 		return err
 	}

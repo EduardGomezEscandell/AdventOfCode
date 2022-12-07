@@ -49,8 +49,8 @@ func TestPart1(t *testing.T) {
 			defer cancel()
 
 			ch := charray.FromArray(ctx, lines, 0)
-			fs, err := day07.AssembleFilesystem(ch)
-			t.Logf(day07.String(fs))
+			fs, err := day07.ParseFilesystem(ch)
+			t.Logf(day07.FsToStrig(fs))
 			require.NoError(t, err, "Failed to read filesystem")
 
 			got, err := day07.Part1(fs)
@@ -82,8 +82,8 @@ func TestPart2(t *testing.T) {
 			defer cancel()
 
 			ch := charray.FromArray(ctx, lines, 0)
-			fs, err := day07.AssembleFilesystem(ch)
-			t.Log(day07.String(fs))
+			fs, err := day07.ParseFilesystem(ch)
+			t.Log(day07.FsToStrig(fs))
 			require.NoError(t, err, "Failed to read filesystem")
 
 			got, err := day07.Part2(fs)
@@ -143,8 +143,8 @@ $ ls
 	ch := charray.FromArray(ctx, lines, 0)
 
 	// Partsing
-	fs, err := day07.AssembleFilesystem(ch)
-	got := day07.String(fs)
+	fs, err := day07.ParseFilesystem(ch)
+	got := day07.FsToStrig(fs)
 	t.Log(got)
 	require.NoError(t, err)
 	require.Equal(t, want, got)
