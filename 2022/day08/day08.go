@@ -6,8 +6,10 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"sync"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
 )
@@ -88,15 +90,28 @@ func ComputeMinimumHeights(forest [][]Height) [][]Height {
 }
 
 func findBestScenery(forest [][]Height) uint {
-	var best uint
-	for i, row := range forest {
-		for j := range row {
-			i, j := i, j
-			best = fun.Min(ComputeScenery(forest, i, j), best)
-		}
+	ch := make(chan uint)
+
+	var wg sync.WaitGroup
+	for i := range forest {
+		wg.Add(1)
+		i := i
+		go func() {
+			defer wg.Done()
+			var best uint
+			for j := range forest[i] {
+				best = fun.Max(best, ComputeScenery(forest, i, j))
+			}
+			ch <- best
+		}()
 	}
 
-	return best
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	return charray.Best(ch, fun.Gt[uint])
 }
 
 // ComputeScenery computes the scenery score for a single location
