@@ -19,6 +19,7 @@ const (
 	fileName = "input.txt"
 )
 
+// Height is a tree height.
 type Height int8
 
 // Part1 solves the first half of the problem.
@@ -40,6 +41,8 @@ func Part2(input [][]Height) (uint, error) {
 
 // ---------------- Implementation -----------------------
 
+// ComputeMinimumHeights computes the minimum height necessary for a tree to be visible
+// at each location.
 func ComputeMinimumHeights(forest [][]Height) [][]Height {
 	depth := len(forest)
 	if depth == 0 {
@@ -89,6 +92,8 @@ func ComputeMinimumHeights(forest [][]Height) [][]Height {
 	return minHeights
 }
 
+// findBestScenery finds the best scenery. Rows are
+// computed in parallel.
 func findBestScenery(forest [][]Height) uint {
 	ch := make(chan uint)
 

@@ -192,7 +192,7 @@ func TestPart2(t *testing.T) {
 
 func TestRealData(t *testing.T) {
 	expected := `Result of part 1: 1719
-Result of part 2: 0
+Result of part 2: 590824
 `
 	buff := new(bytes.Buffer)
 
