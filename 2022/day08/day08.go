@@ -6,10 +6,8 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"sync"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
 )
@@ -35,7 +33,7 @@ func Part1(forest [][]Height) (uint, error) {
 
 // Part2 solves the second half of the problem.
 func Part2(input [][]Height) (uint, error) {
-	return FindBestScenery(input), nil
+	return findBestScenery(input), nil
 }
 
 // ---------------- Implementation -----------------------
@@ -89,31 +87,20 @@ func ComputeMinimumHeights(forest [][]Height) [][]Height {
 	return minHeights
 }
 
-func FindBestScenery(forest [][]Height) uint {
-	ch := make(chan uint)
-
-	var wg sync.WaitGroup
+func findBestScenery(forest [][]Height) uint {
+	var best uint
 	for i, row := range forest {
 		for j := range row {
-			wg.Add(1)
 			i, j := i, j
-			go func() {
-				defer wg.Done()
-				ch <- ComputeScenery(forest, i, j)
-			}()
+			best = fun.Min(ComputeScenery(forest, i, j), best)
 		}
 	}
 
-	go func() {
-		wg.Wait()
-		close(ch)
-	}()
-
-	best := charray.Best(ch, fun.Gt[uint])
 	return best
-
 }
 
+// ComputeScenery computes the scenery score for a single location
+// in the forest.
 func ComputeScenery(forest [][]Height, row, col int) uint {
 	depth := len(forest)
 	width := len(forest[0])
