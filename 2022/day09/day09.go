@@ -71,7 +71,6 @@ func Part2(in <-chan input.Line) (int, error) {
 				trail.add(diff.unit())
 			}
 			visits[rope[len(rope)-1]] = struct{}{}
-			// PrintBoard(rope[:])
 		}
 	}
 
@@ -158,7 +157,7 @@ func Main(stdout io.Writer) error {
 		return err
 	}
 
-	ch, err := input.ReadDataAsync(ctx, reader, 3) // Reading in groups of three to optimize 2nd part
+	ch, err := input.ReadDataAsync(ctx, reader, 10)
 	if err != nil {
 		return err
 	}
