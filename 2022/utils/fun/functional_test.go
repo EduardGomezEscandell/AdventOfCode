@@ -46,7 +46,7 @@ func testArithmetic[T generics.Signed](t *testing.T) { // nolint: thelper
 	}
 }
 
-func testAbs[T generics.Signed](t *testing.T) {
+func testAbs[T generics.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 	testCases := map[T]T{
 		0:   0,

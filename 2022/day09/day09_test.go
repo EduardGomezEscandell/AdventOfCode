@@ -73,7 +73,7 @@ func TestPart2(t *testing.T) {
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			// t.Parallel()
+			t.Parallel()
 			lines := array.Map(tc.data, input.NewLine)
 			ctx, cancel := context.WithTimeout(context.Background(), 100000*time.Second)
 			defer cancel()

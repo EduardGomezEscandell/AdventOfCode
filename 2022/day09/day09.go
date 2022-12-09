@@ -19,10 +19,10 @@ const (
 
 // Part1 solves the first half of the problem.
 func Part1(in <-chan input.Line) (int, error) {
-	var head Vec
-	var tail Vec
+	var head vec
+	var tail vec
 
-	visits := map[Vec]struct{}{
+	visits := map[vec]struct{}{
 		{0, 0}: {},
 	} // Using a map as a set
 
@@ -33,8 +33,8 @@ func Part1(in <-chan input.Line) (int, error) {
 		}
 		for step := 0; step < dist; step++ {
 			oldhead := head
-			head.Add(direction)
-			if head.Adjacent(tail) {
+			head.add(direction)
+			if head.adjacent(tail) {
 				continue
 			}
 			tail = oldhead
@@ -46,13 +46,12 @@ func Part1(in <-chan input.Line) (int, error) {
 }
 
 // Part2 solves the second half of the problem.
-// Part1 solves the first half of the problem.
 func Part2(in <-chan input.Line) (int, error) {
-	visits := map[Vec]struct{}{
+	visits := map[vec]struct{}{
 		{0, 0}: {},
 	} // Using a map as a set
 
-	var rope [10]Vec
+	var rope [10]vec
 
 	for ln := range in {
 		direction, dist, e := parseInstruction(ln)
@@ -60,16 +59,16 @@ func Part2(in <-chan input.Line) (int, error) {
 			return 0, e
 		}
 		for step := 0; step < dist; step++ {
-			rope[0].Add(direction)
+			rope[0].add(direction)
 			for i := range rope[1:] {
 				lead := &rope[i]
 				trail := &rope[i+1]
-				if lead.Adjacent(*trail) {
+				if lead.adjacent(*trail) {
 					break
 				}
 				diff := *lead
-				diff.Sub(*trail)
-				trail.Add(diff.Unit())
+				diff.sub(*trail)
+				trail.add(diff.unit())
 			}
 			visits[rope[len(rope)-1]] = struct{}{}
 			// PrintBoard(rope[:])
@@ -79,85 +78,54 @@ func Part2(in <-chan input.Line) (int, error) {
 	return len(visits), nil
 }
 
-// ------------ Debug -------------
-
-func PrintBoard(rope []Vec) {
-	size := 15
-	for y := size; y >= -size; y-- {
-		for x := -size; x <= size; x++ {
-			if x == 0 && y == 0 {
-				fmt.Print("s")
-				continue
-			}
-			idx := -1
-			for i, r := range rope {
-				if r.x == x && r.y == y {
-					idx = i
-					break
-				}
-			}
-			if idx != -1 {
-				fmt.Printf("%d", idx)
-				continue
-			}
-
-			fmt.Print(".")
-
-		}
-		fmt.Println()
-	}
-	fmt.Println("-------------------------------")
-}
-
 // ------------- Implementation ------------------
 
 var (
-	up    Vec = Vec{0, 1}
-	down  Vec = Vec{0, -1}
-	left  Vec = Vec{-1, 0}
-	right Vec = Vec{1, 0}
+	up    = vec{0, 1}
+	down  = vec{0, -1}
+	left  = vec{-1, 0}
+	right = vec{1, 0}
 )
 
-type Vec struct {
+type vec struct {
 	x int
 	y int
 }
 
-func (v *Vec) Add(w Vec) {
+func (v *vec) add(w vec) {
 	v.x += w.x
 	v.y += w.y
 }
 
-func (v *Vec) Sub(w Vec) {
+func (v *vec) sub(w vec) {
 	v.x -= w.x
 	v.y -= w.y
 }
 
-func (v *Vec) Adjacent(w Vec) bool {
+// adjacent indicates if two point vectors are at a taxicab or
+// diagonal distance under 2.
+func (v *vec) adjacent(w vec) bool {
 	return fun.Abs(v.x-w.x) < 2 && fun.Abs(v.y-w.y) < 2
 }
 
-// NormL1 is the taxicab norm of the vector
-func (v Vec) NormL1() int {
-	return v.x + v.y
-}
-
-func (v Vec) Unit() Vec {
-	return Vec{
+// unit gives a vector pointing in the same direction as the original,
+// with x,y contained in {-1,0,1}.
+func (v vec) unit() vec {
+	return vec{
 		x: fun.Sign(v.x),
 		y: fun.Sign(v.y),
 	}
 }
 
-func parseInstruction(ln input.Line) (Vec, int, error) {
+func parseInstruction(ln input.Line) (vec, int, error) {
 	if e := ln.Err(); e != nil {
-		return Vec{}, 0, e
+		return vec{}, 0, e
 	}
 	var direction rune
 	var distance int
 	_, err := fmt.Sscanf(ln.Str(), "%c %d", &direction, &distance)
 	if err != nil {
-		return Vec{}, 0, fmt.Errorf("could not parse %s: %v", ln.Str(), err)
+		return vec{}, 0, fmt.Errorf("could not parse %s: %v", ln.Str(), err)
 	}
 	switch direction {
 	case 'U':
@@ -169,7 +137,7 @@ func parseInstruction(ln input.Line) (Vec, int, error) {
 	case 'L':
 		return left, distance, nil
 	}
-	return Vec{}, 0, fmt.Errorf("could not parse %s: unknown direction %c", ln.Str(), direction)
+	return vec{}, 0, fmt.Errorf("could not parse %s: unknown direction %c", ln.Str(), direction)
 }
 
 // ------------- Here be boilerplate ------------------
