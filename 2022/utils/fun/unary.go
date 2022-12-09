@@ -13,3 +13,7 @@ func Sign[T generics.Signed](a T) int {
 	}
 	return 0
 }
+
+func Abs[T generics.Signed](a T) T {
+	return T(Sign(a)) * a
+}
