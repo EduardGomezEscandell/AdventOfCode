@@ -26,21 +26,47 @@ func main() {
 	var day uint
 	var output string
 	var countDays bool
+	var timed bool
+	var everyDay bool
 
-	flag.UintVar(&day, "day", 0, "Day to run")
-	flag.StringVar(&output, "result", "stdout", "Output")
-	flag.BoolVar(&countDays, "count-days", false, "print the number of days available")
+	flag.UintVar(&day, "day", 0, "Run a single day")
+	flag.StringVar(&output, "output", "stdout", "Output")
+	flag.BoolVar(&countDays, "count-days", false, "Print the number of days available and exit.")
+	flag.BoolVar(&timed, "time", false, "Run the program many times to get an average execution time, ignoring the results.")
+	flag.BoolVar(&everyDay, "all", false, "Run all days.")
 
 	flag.Parse()
 
 	if countDays {
-		fmt.Printf("%d\n", CountDays())
-		return
+		log.Printf("%d\n", CountDays())
+		os.Exit(0)
 	}
 
-	err := Run(day, output)
+	// Getting the writer
+	w, err := getWriter(output)
 	if err != nil {
-		log.Fatalf("%v", err)
+		log.Fatalf("Error in writer: %v", err)
+	}
+	defer w.Close()
+
+	// Choosing runner
+	runner := RunDay
+	if timed {
+		runner = TimeDay
+	}
+
+	// Running
+	if everyDay {
+		err := RunAll(w, runner)
+		if err != nil {
+			log.Fatalf("Error running all: %v", err)
+		}
+		os.Exit(0)
+	}
+
+	err = runner(day, w)
+	if err != nil {
+		log.Fatalf("Error running single day: %v", err)
 	}
 }
 
@@ -49,32 +75,44 @@ func CountDays() uint {
 	return uint(len(entrypoints))
 }
 
-// Run runs the main program. Extacted away from main() so
-// that it can be tested.
-func Run(day uint, output string) error {
+// RunAll runs every implemented day.
+func RunAll(w io.Writer, runner func(uint, io.Writer) error) error {
+	fmt.Fprintf(w, "Advent of Code 2022\n--------------------\n")
+	for i := uint(1); i < CountDays(); i++ {
+		err := runner(i, w)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// TimeDay runs the solution for a particular day and
+// coputes an average solving time.
+func TimeDay(day uint, w io.Writer) error {
 	entrypoint, err := entryPoint(day)
 	if err != nil {
-		return err
+		return fmt.Errorf("day %2d: %v", day, err)
 	}
 
-	w, err := getWriter(output)
+	t, err := timedRun(entrypoint)
 	if err != nil {
-		return err
+		return fmt.Errorf("day %2d: %v", day, err)
 	}
-	defer func() {
-		err := w.Close()
-		if err != nil {
-			log.Printf("Failed to close outfile: %v", err)
-		}
-	}()
+	fmt.Fprintf(w, "Day %2d: %6d µs\n", day, t/time.Microsecond)
+	return nil
+}
+
+// RunDay runs the solution for a particular day.
+func RunDay(day uint, w io.Writer) error {
+	entrypoint, err := entryPoint(day)
+	if err != nil {
+		return fmt.Errorf("day %2d: %v", day, err)
+	}
 
 	fmt.Fprintf(w, "DAY %d\n", day)
-
-	start := time.Now()
-	err = entrypoint(w)
-	fmt.Fprintf(w, "Time elapsed: %s\n", time.Since(start))
-
-	return err
+	defer fmt.Fprintln(w)
+	return entrypoint(w)
 }
 
 func entryPoint(day uint) (func(io.Writer) error, error) {
@@ -104,7 +142,28 @@ func getWriter(output string) (io.WriteCloser, error) {
 		return os.Stdout, nil
 	case "stderr":
 		return os.Stderr, nil
+	case "null":
+		return os.Stderr, nil
 	}
 
 	return os.Create(output) // nolint: gosec
+}
+
+func timedRun(f func(io.Writer) error) (time.Duration, error) {
+	w, err := os.OpenFile(os.DevNull, os.O_WRONLY, 0) // Throwing away stdout
+	if err != nil {
+		return 0, err
+	}
+
+	var acc time.Duration
+	n := 100
+	for i := 0; i < n; i++ {
+		start := time.Now()
+		err = f(w)
+		acc += time.Since(start)
+		if err != nil {
+			return 0, err
+		}
+	}
+	return time.Duration(int64(acc) / int64(n)), nil
 }
