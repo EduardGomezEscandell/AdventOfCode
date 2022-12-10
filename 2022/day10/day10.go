@@ -41,7 +41,7 @@ func Part1(in <-chan input.Line) (int, error) {
 
 // Part2 solves the second half of the problem.
 func Part2(in <-chan input.Line) (string, error) {
-	screen := array.Generate(6, func() []rune { return array.Generate(40, func() rune { return '.' }) })
+	screen := array.Generate(6, func() []rune { return array.Generate(40, func() rune { return ' ' }) })
 	cpu := newCPU(in)
 	for !cpu.done {
 		col := cpu.counter % 40
