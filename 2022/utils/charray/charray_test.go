@@ -152,7 +152,7 @@ func testReduce[T generics.Signed](t *testing.T) { // nolint: thelper // nolint:
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			ch, cancel := inputToChannel(tc.input, 0, 10*time.Second)
+			ch, cancel := inputToChannel(tc.input, 0, time.Second)
 			defer cancel()
 
 			got := charray.Reduce(ch, tc.fold, 0)
@@ -233,7 +233,7 @@ func testZipWith[T generics.Signed](t *testing.T) { // nolint: thelper
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
 			ch1 := charray.FromArray(ctx, tc.input1, 0)
@@ -265,7 +265,7 @@ func testZipReduce[T generics.Signed](t *testing.T) { // nolint: thelper
 		tc := tc
 		t.Run(name, func(t *testing.T) {
 			// Testing by computing inner product.
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
 			ch1 := charray.FromArray(ctx, tc.input1, 0)
@@ -368,7 +368,7 @@ func testCommon[T generics.Signed](t *testing.T) { // nolint: thelper
 			array.Sort(tc.input1, tc.sort)
 			array.Sort(tc.input2, tc.sort)
 
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
 			ch1 := charray.FromArray(ctx, tc.input1, 0)

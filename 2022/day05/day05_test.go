@@ -40,7 +40,7 @@ func TestParseInitalState(t *testing.T) {
 	}
 
 	lines := array.Map(example, input.NewLine)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	ch := charray.FromArray(ctx, lines, 0)
@@ -85,7 +85,7 @@ func TestSolve(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			lines := array.Map(tc.data, input.NewLine)
-			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
 			ch := charray.FromArray(ctx, lines, 0)

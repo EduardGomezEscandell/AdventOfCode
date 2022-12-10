@@ -38,7 +38,7 @@ func testSplit[T generics.Signed](t *testing.T) { // nolint: thelper
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 			input := charray.FromArray(ctx, tc.data, tc.buffer)
 
