@@ -13,3 +13,9 @@ func Sign[T generics.Signed](a T) int {
 	}
 	return 0
 }
+
+// Abs returns the absolute value of a, i.e. a scalar
+// with the same magnitude and with positive sign.
+func Abs[T generics.Signed](a T) T {
+	return T(Sign(a)) * a
+}
