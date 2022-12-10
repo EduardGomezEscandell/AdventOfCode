@@ -59,12 +59,12 @@ func Part2(in <-chan input.Line) (string, error) {
 		return "", cpu.err
 	}
 
-	return printScreen(screen), nil
+	return showScreen(screen), nil
 }
 
 // ------------- Implementation ------------------
 
-func printScreen(screen [][]rune) string {
+func showScreen(screen [][]rune) string {
 	return strings.Join(array.Map(screen, func(r []rune) string { return string(r) }), "\n")
 }
 
@@ -76,56 +76,21 @@ func newCPU(in <-chan input.Line) *cpu {
 		X:         1,
 		counter:   0,
 	}
-	c.instr = fetch{cpu: &c}
+	c.instr = fetchDecode{cpu: &c}
 	return &c
 }
 
 type cpu struct {
-	instrPipe <-chan input.Line // pipe to recieve instructions from
-	instr     Instruction       // next instruction to evaluate
-	err       error             // Error state of the CPU
-	done      bool              // Indicates if the machine is done running
+	instrPipe <-chan input.Line // pipe to receive instructions from
+	instr     instruction       // next instruction to evaluate
+	err       error             // error state of the CPU
+	done      bool              // indicates if the machine is done running
 	X         int               // X register
 	counter   int               // instruction counter
 }
 
-type Instruction interface {
+type instruction interface {
 	eval()
-}
-
-type fetch struct {
-	cpu *cpu
-}
-
-func (f fetch) eval() {
-	ln, ok := <-f.cpu.instrPipe
-	if !ok {
-		f.cpu.done = true
-		return
-	}
-	if ln.Err() != nil {
-		f.cpu.err = ln.Err()
-		f.cpu.done = true
-	}
-	instr := strings.Fields(ln.Str())
-	if len(instr) == 1 && instr[0] == "noop" {
-		f.cpu.instr = fetch{f.cpu}
-		return
-	}
-
-	if len(instr) == 2 && instr[0] == "addx" {
-		v, err := strconv.Atoi(instr[1])
-		if err != nil {
-			f.cpu.err = fmt.Errorf("non-numeric argument to addx: %s", ln.Str())
-			f.cpu.done = true
-			return
-		}
-		f.cpu.instr = addx{f.cpu, v}
-		return
-	}
-
-	f.cpu.err = fmt.Errorf("unknown instruction: %s", ln.Str())
-	f.cpu.done = true
 }
 
 type addx struct {
@@ -135,7 +100,43 @@ type addx struct {
 
 func (a addx) eval() {
 	a.cpu.X += a.v
-	a.cpu.instr = fetch{a.cpu}
+	a.cpu.instr = fetchDecode{a.cpu}
+}
+
+type fetchDecode struct {
+	cpu *cpu
+}
+
+func (f fetchDecode) eval() {
+	// Fetch
+	ln, read := <-f.cpu.instrPipe
+	if !read {
+		f.cpu.done = true
+		return
+	}
+	if ln.Err() != nil {
+		f.cpu.err = ln.Err()
+		f.cpu.done = true
+		return
+	}
+	// Decode
+	instr := strings.Fields(ln.Str())
+	if len(instr) == 1 && instr[0] == "noop" {
+		f.cpu.instr = fetchDecode{f.cpu}
+		return
+	}
+	if len(instr) == 2 && instr[0] == "addx" {
+		v, err := strconv.Atoi(instr[1])
+		if err != nil {
+			f.cpu.err = fmt.Errorf("non-integer argument to addx: %s", ln.Str())
+			f.cpu.done = true
+			return
+		}
+		f.cpu.instr = addx{f.cpu, v}
+		return
+	}
+	f.cpu.err = fmt.Errorf("unknown instruction: %s", ln.Str())
+	f.cpu.done = true
 }
 
 // ------------- Here be boilerplate ------------------
