@@ -72,7 +72,7 @@ func TestReadDataAsync(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
 			ch, err := input.ReadDataAsync(ctx, testutils.NewMockReadCloser(t, strings.Join(tc.data, "\n")), 0)

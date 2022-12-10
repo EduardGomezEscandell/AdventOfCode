@@ -42,7 +42,7 @@ func TestPart1(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			lines := array.Map(tc.data, input.NewLine)
-			ctx, cancel := context.WithTimeout(context.Background(), 100000*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
 			ch := charray.FromArray(ctx, lines, 0)
@@ -80,7 +80,7 @@ func TestPart2(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			lines := array.Map(tc.data, input.NewLine)
-			ctx, cancel := context.WithTimeout(context.Background(), 100000*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
 			ch := charray.FromArray(ctx, lines, 0)

@@ -48,7 +48,7 @@ func testFromChannel[T generics.Signed](t *testing.T) { // nolint: thelper
 			input := make([]T, len(tc.data))
 			copy(input, tc.data)
 
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
 			ch := charray.FromArray(ctx, input, tc.buffer)
