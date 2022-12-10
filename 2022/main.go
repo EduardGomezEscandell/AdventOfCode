@@ -19,6 +19,7 @@ import (
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/day07"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/day08"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/day09"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/day10"
 )
 
 func main() {
@@ -94,6 +95,7 @@ var entrypoints = []func(io.Writer) error{
 	day07.Main,
 	day08.Main,
 	day09.Main,
+	day10.Main,
 }
 
 func getWriter(output string) (io.WriteCloser, error) {
