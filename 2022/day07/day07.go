@@ -150,26 +150,17 @@ func Main(stdout io.Writer) error {
 	if err != nil {
 		return err
 	}
+	cancel()
 
 	resultCh := make(chan problemResult)
 	go func() {
 		result, err := Part1(filesystem)
-		if err != nil {
-			resultCh <- problemResult{0, "", err}
-			cancel()
-			return
-		}
-		resultCh <- problemResult{0, fmt.Sprintf("Result of part 1: %v", result), nil}
+		resultCh <- problemResult{0, fmt.Sprintf("Result of part 1: %v", result), err}
 	}()
 
 	go func() {
 		result, err := Part2(filesystem)
-		if err != nil {
-			resultCh <- problemResult{1, "", err}
-			cancel()
-			return
-		}
-		resultCh <- problemResult{1, fmt.Sprintf("Result of part 2: %v", result), nil}
+		resultCh <- problemResult{1, fmt.Sprintf("Result of part 2: %v", result), err}
 	}()
 
 	var results [2]problemResult

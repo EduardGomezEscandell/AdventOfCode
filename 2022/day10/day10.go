@@ -169,22 +169,18 @@ func Main(stdout io.Writer) error {
 		result, err := Part1(channels[0])
 		channel.Exhaust(channels[0])
 		if err != nil {
-			resultCh <- problemResult{0, "", err}
 			cancel()
-			return
 		}
-		resultCh <- problemResult{0, fmt.Sprintf("Result of part 1: %v", result), nil}
+		resultCh <- problemResult{0, fmt.Sprintf("Result of part 1: %v", result), err}
 	}()
 
 	go func() {
 		result, err := Part2(channels[1])
-		channel.Exhaust(channels[1])
 		if err != nil {
-			resultCh <- problemResult{1, "", err}
 			cancel()
-			return
 		}
-		resultCh <- problemResult{1, fmt.Sprintf("Result of part 2:\n%s", result), nil}
+		channel.Exhaust(channels[1])
+		resultCh <- problemResult{1, fmt.Sprintf("Result of part 2:\n%s", result), err}
 	}()
 
 	var results [2]problemResult
