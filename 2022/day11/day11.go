@@ -154,6 +154,7 @@ func Main(stdout io.Writer) error {
 		result, err := Part2(input)
 		if err != nil {
 			resultCh <- problemResult{1, "", err}
+			return
 		}
 		resultCh <- problemResult{1, fmt.Sprintf("Result of part 2: %d", result), nil}
 	}()
