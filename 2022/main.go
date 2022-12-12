@@ -83,7 +83,7 @@ func CountDays() uint {
 // RunAll runs every implemented day.
 func RunAll(w io.Writer, runner func(uint, io.Writer) error) error {
 	fmt.Fprintf(w, "Advent of Code 2022\n--------------------\n")
-	for i := uint(1); i < CountDays(); i++ {
+	for i := uint(1); i <= CountDays(); i++ {
 		err := runner(i, w)
 		if err != nil {
 			return err
