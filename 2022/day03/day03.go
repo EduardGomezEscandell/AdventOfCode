@@ -145,6 +145,7 @@ func Main(stdout io.Writer) error {
 	resultCh := make(chan problemResult)
 	go func() {
 		result, err := Part1(channels[0])
+		channel.Exhaust(channels[0])
 		if err != nil {
 			resultCh <- problemResult{0, "", err}
 			cancel()
@@ -155,6 +156,7 @@ func Main(stdout io.Writer) error {
 
 	go func() {
 		result, err := Part2(channels[1])
+		channel.Exhaust(channels[1])
 		if err != nil {
 			resultCh <- problemResult{1, "", err}
 			cancel()
