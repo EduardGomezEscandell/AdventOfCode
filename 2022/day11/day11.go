@@ -20,91 +20,156 @@ const (
 )
 
 // Part1 solves the first half of the problem.
-func Part1(monkeys []Monkey) (int, error) {
-	for i := 0; i < 20; i++ {
-		round(monkeys)
-	}
-
-	best2 := array.BestN(monkeys, 2, func(a, b Monkey) bool { return a.Inspections > b.Inspections })
-	return best2[0].Inspections * best2[1].Inspections, nil
-}
-
-func round(monkeys []Monkey) {
-	for i := range monkeys {
-		monkeyTurn(i, monkeys)
-	}
-}
-
-func monkeyTurn(id int, monkeys []Monkey) {
-	m := &monkeys[id]
-	sz := len(m.Inventory)
-	for i := 0; i < sz; i++ {
-		// Popping from front
-		v := m.Inventory[0]
-		m.Inventory = m.Inventory[1:]
-		// Inspection
-		v = m.Inspect(v)
-		m.Inspections++
-		// Relief
-		v /= 3
-		// Sending
-		target := m.ThrowTrue
-		if v%m.TestValue != 0 {
-			target = m.ThrowFalse
-		}
-		monkeys[target].Inventory = append(monkeys[target].Inventory, v)
-	}
+func Part1(monkeys []Monkey) (uint64, error) {
+	return Solve(monkeys, 20, 3)
 }
 
 // Part2 solves the second half of the problem.
-func Part2(monkeys []Monkey) (int, error) {
-	return 0, nil
+func Part2(monkeys []Monkey) (uint64, error) {
+	return Solve(monkeys, 10_000, 1)
+}
+
+// Solve solves todays' problem.
+func Solve(monkeys []Monkey, nrounds int, stressDivisor uint64) (uint64, error) {
+	if len(monkeys) < 2 {
+		return 0, errors.New("Need at least two monkeys to play")
+	}
+	// Computing everything mod lcd to avoid overflows
+	// lcd: least common multiple of the test values of the monkeys
+	tv := array.Map(monkeys, func(m Monkey) uint64 { return m.TestValue })
+	lcd := LCM(tv[0], tv[1], tv[2:]...)
+	// lcd := array.MapReduce(monkeys, func(m Monkey) uint64 { return m.TestValue }, fun.Mul[uint64], 1)
+
+	for i := 0; i < nrounds; i++ {
+		round(monkeys, stressDivisor, lcd)
+	}
+
+	monkeyBusiness := array.BestN(monkeys, 2, func(a, b Monkey) bool { return a.Inspections > b.Inspections })
+	return monkeyBusiness[0].Inspections * monkeyBusiness[1].Inspections, nil
 }
 
 // ------------- Implementation ------------------
 
-type Monkey struct {
-	Id          int
-	Inventory   []uint64
-	Inspect     func(uint64) uint64
-	TestValue   uint64
-	ThrowTrue   int
-	ThrowFalse  int
-	Inspections int
+func round(monkeys []Monkey, stressDivisor, stressMod uint64) {
+	for i := range monkeys {
+		turn(monkeys, i, stressDivisor, stressMod)
+	}
 }
 
+func turn(monkeys []Monkey, turn int, stressDivisor, stressMod uint64) {
+	m := &monkeys[turn]
+	m.Inspections += uint64(len(m.Inventory))
+
+	queue := []uint64{}
+	m.Inventory, queue = queue, m.Inventory
+
+	for _, x := range queue {
+		v := m.A*x*x + m.B*x + m.C
+		if v <= x {
+			fmt.Println("Overflow!!!")
+		}
+		v /= stressDivisor
+		v %= stressMod
+
+		t := m.ThrowTrue
+		if v%m.TestValue != 0 {
+			t = m.ThrowFalse
+		}
+		monkeys[t].Inventory = append(monkeys[t].Inventory, v)
+	}
+}
+
+// GCD computes the greatest common divisor (GCD) via Euclidean algorithm.
+func GCD(a, b uint64) uint64 {
+	for b != 0 {
+		t := b
+		b = a % b
+		a = t
+	}
+	return a
+}
+
+// LCM finds the Least Common Multiple (LCM) via GCD.
+func LCM(a, b uint64, integers ...uint64) uint64 {
+	result := a * b / GCD(a, b)
+
+	for i := 0; i < len(integers); i++ {
+		result = LCM(result, integers[i])
+	}
+
+	return result
+}
+
+// Monkey as in the monkeys in the problem statement.
+type Monkey struct {
+	ID          int      // Id of the monkey
+	Inventory   []uint64 // Items held by the monkey
+	A           uint64   // A inspect coefficient: y = Axx + Bx + C
+	B           uint64   // B inspect coefficient: y = Axx + Bx + C
+	C           uint64   // C inspect coefficient: y = Axx + Bx + C
+	TestValue   uint64   // Value to test divisibility
+	ThrowTrue   int      // Where to throw items when divisible
+	ThrowFalse  int      // Where to throw items when non-divisible
+	Inspections uint64   // Number of objects inspected
+}
+
+// NewMonkey creates a new monkey.
 func NewMonkey(id int) Monkey {
 	return Monkey{
-		Id:          id,
-		Inventory:   []uint64{},
-		Inspect:     func(uint64) uint64 { panic(fmt.Sprintf("No function for monkey #%d", id)) },
-		TestValue:   1,
-		ThrowTrue:   id,
-		ThrowFalse:  id,
-		Inspections: 0,
+		ID:        id,
+		Inventory: []uint64{},
 	}
 }
 
 // ---------- Here be boilerplate ------------------
 
+type problemResult struct {
+	id  int
+	res string
+	err error
+}
+
 // Main is the entry point to today's problem solution.
 func Main(stdout io.Writer) error {
-	inp, err := ParseInput()
-	if err != nil {
-		return err
+	resultCh := make(chan problemResult)
+	go func() {
+		input, err := ParseInput()
+		if err != nil {
+			resultCh <- problemResult{0, "", err}
+			return
+		}
+		result, err := Part1(input)
+		if err != nil {
+			resultCh <- problemResult{0, "", err}
+		}
+		resultCh <- problemResult{0, fmt.Sprintf("Result of part 1: %d", result), nil}
+	}()
+
+	go func() {
+		input, err := ParseInput()
+		if err != nil {
+			resultCh <- problemResult{0, "", err}
+			return
+		}
+		result, err := Part2(input)
+		if err != nil {
+			resultCh <- problemResult{1, "", err}
+		}
+		resultCh <- problemResult{1, fmt.Sprintf("Result of part 2: %d", result), nil}
+	}()
+
+	var results [2]problemResult
+	for i := 0; i < 2; i++ {
+		r := <-resultCh
+		results[r.id] = r
 	}
 
-	result, err := Part1(inp)
-	if err != nil {
-		return err
+	for _, v := range results {
+		if v.err != nil {
+			return v.err
+		}
+		fmt.Fprintln(stdout, v.res)
 	}
-	fmt.Fprintf(stdout, "Result of part 1: %v\n", result)
-
-	result, err = Part2(inp)
-	if err != nil {
-		return err
-	}
-	fmt.Fprintf(stdout, "Result of part 2: %v\n", result)
 
 	return nil
 }
@@ -150,100 +215,117 @@ func nextLine(s *bufio.Scanner) (string, error) {
 
 func parseMonkey(id int, sc *bufio.Scanner) (Monkey, error) {
 	m := NewMonkey(id)
-	var err error
-
-	// Empty line (title line in first iteration)
-	line := sc.Text()
 
 	// Title line
-	if line == "" {
-		line, err = nextLine(sc)
-	}
-	if err != nil {
-		return m, err
-	}
+	{
+		var err error
+		line := sc.Text()
+		if line == "" {
+			line, err = nextLine(sc)
+		}
+		if err != nil {
+			return m, err
+		}
 
-	want := fmt.Sprintf("Monkey %d:", id)
-	if line != want {
-		return m, fmt.Errorf("unexpected line.\nWant: %s\nGot : %s", want, line)
-	}
-
-	if line, err = nextLine(sc); err != nil {
-		return m, err
+		want := fmt.Sprintf("Monkey %d:", id)
+		if line != want {
+			return m, fmt.Errorf("unexpected line.\nWant: %s\nGot : %s", want, line)
+		}
 	}
 
 	// Filling inventory
-	want = "  Starting items:"
-	if !strings.HasPrefix(line, want) {
-		return m, fmt.Errorf("unexpected line.\nWant: %s.*\nGot : %s", want, line)
-	}
-	for i, s := range strings.Split(line[len(want)+1:], ", ") {
-		item, err := strconv.Atoi(s)
+	{
+		line, err := nextLine(sc)
 		if err != nil {
-			return m, fmt.Errorf("unexpected non-integer in position %d: %q.\nWant: %s %%d, %%d ...\nGot : %s", i, s, want, line)
+			return m, err
 		}
-		m.Inventory = append(m.Inventory, uint64(item))
+		want := "  Starting items:"
+		if !strings.HasPrefix(line, want) {
+			return m, fmt.Errorf("unexpected line.\nWant: %s.*\nGot : %s", want, line)
+		}
+		for i, s := range strings.Split(line[len(want)+1:], ", ") {
+			item, err := strconv.Atoi(s)
+			if err != nil {
+				return m, fmt.Errorf("unexpected non-integer in position %d: %q.\nWant: %s %%d, %%d ...\nGot : %s", i, s, want, line)
+			}
+			m.Inventory = append(m.Inventory, uint64(item))
+		}
 	}
 
 	// Operation
-	if line, err = nextLine(sc); err != nil {
-		return m, err
-	}
-	var op rune
-	var val uint64
-	if _, err := fmt.Sscanf(line, "  Operation: new = old %c %d", &op, &val); err != nil {
-		if _, err := fmt.Sscanf(line, "  Operation: new = old %c old", &op); err != nil {
-			return m, fmt.Errorf("unexpected line.\nWant:   Operation: new = old %%c (%%d|old)\nGot : %s", line)
+	{
+		line, err := nextLine(sc)
+		if err != nil {
+			return m, err
 		}
-		switch op {
-		case '*':
-			m.Inspect = func(x uint64) uint64 { return x * x }
-		case '+':
-			m.Inspect = func(x uint64) uint64 { return x + x }
-		default:
-			return m, fmt.Errorf("unexpected line.\nWant: Operation: new = old [*+] ...\nGot : %s", line)
-		}
-	} else {
-		val := val
-		switch op {
-		case '*':
-			m.Inspect = func(x uint64) uint64 { return x * val }
-		case '+':
-			m.Inspect = func(x uint64) uint64 { return x + val }
-		default:
-			return m, fmt.Errorf("unexpected line.\nWant: Operation: new = old [*+] ...\nGot : %s", line)
+		var op rune
+		var val uint64
+		if _, err := fmt.Sscanf(line, "  Operation: new = old %c %d", &op, &val); err != nil {
+			if _, err := fmt.Sscanf(line, "  Operation: new = old %c old", &op); err != nil {
+				return m, fmt.Errorf("unexpected line.\nWant:   Operation: new = old %%c (%%d|old)\nGot : %s", line)
+			}
+			switch op {
+			case '*':
+				m.A = 1
+			case '+':
+				m.B = 2
+			default:
+				return m, fmt.Errorf("unexpected line.\nWant: Operation: new = old [*+] ...\nGot : %s", line)
+			}
+		} else {
+			switch op {
+			case '*':
+				m.B = val
+			case '+':
+				m.B = 1
+				m.C = val
+			default:
+				return m, fmt.Errorf("unexpected line.\nWant: Operation: new = old [*+] ...\nGot : %s", line)
+			}
 		}
 	}
 
 	// Test
-	if line, err = nextLine(sc); err != nil {
-		return m, err
+	{
+		line, err := nextLine(sc)
+		if err != nil {
+			return m, err
+		}
+		want := "  Test: divisible by %d"
+		var val uint64
+		if _, err := fmt.Sscanf(line, want, &val); err != nil {
+			return m, fmt.Errorf("unexpected line.\nWant: %s\nGot : %s", want, line)
+		}
+		m.TestValue = val
 	}
-	want = "  Test: divisible by %d"
-	if _, err := fmt.Sscanf(line, want, &val); err != nil {
-		return m, fmt.Errorf("unexpected line.\nWant: %s\nGot : %s", want, line)
-	}
-	m.TestValue = val
 
 	// If true
-	if line, err = nextLine(sc); err != nil {
-		return m, err
+	{
+		line, err := nextLine(sc)
+		if err != nil {
+			return m, err
+		}
+		want := "    If true: throw to monkey %d"
+		var val int
+		if _, err := fmt.Sscanf(line, want, &val); err != nil {
+			return m, fmt.Errorf("unexpected line.\nWant: %s\nGot : %s", want, line)
+		}
+		m.ThrowTrue = val
 	}
-	want = "    If true: throw to monkey %d"
-	if _, err := fmt.Sscanf(line, want, &val); err != nil {
-		return m, fmt.Errorf("unexpected line.\nWant: %s\nGot : %s", want, line)
-	}
-	m.ThrowTrue = int(val)
 
 	// If false
-	if line, err = nextLine(sc); err != nil {
-		return m, err
+	{
+		line, err := nextLine(sc)
+		if err != nil {
+			return m, err
+		}
+		var val int
+		want := "    If false: throw to monkey %d"
+		if _, err := fmt.Sscanf(line, want, &val); err != nil {
+			return m, fmt.Errorf("unexpected line.\nWant: %s\nGot : %s", want, line)
+		}
+		m.ThrowFalse = val
 	}
-	want = "    If false: throw to monkey %d"
-	if _, err := fmt.Sscanf(line, want, &val); err != nil {
-		return m, fmt.Errorf("unexpected line.\nWant: %s\nGot : %s", want, line)
-	}
-	m.ThrowFalse = int(val)
 
 	return m, nil
 }

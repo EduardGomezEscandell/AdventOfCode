@@ -71,8 +71,8 @@ func Reduce[T, O any](arr []T, fold func(O, T) O) O {
 //	Reduce(Map(arr, unary), fold)
 //
 // Note: the intermediate array is not stored in memory.
-func MapReduce[T, O, M any](arr []T, unary func(T) M, fold func(O, M) O) O {
-	var o O
+func MapReduce[T, O, M any](arr []T, unary func(T) M, fold func(O, M) O, init O) O {
+	o := init
 	for _, a := range arr {
 		o = fold(o, unary(a))
 	}

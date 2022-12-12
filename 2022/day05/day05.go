@@ -47,7 +47,7 @@ func Solve(in <-chan input.Line, crane func(stacks []Stack, inst Instruction)) (
 	channel.Exhaust(done)
 
 	// Obtaining values
-	top := array.MapReduce(stacks, (Stack).Peek, fun.Append[rune])
+	top := array.MapReduce(stacks, (Stack).Peek, fun.Append[rune], []rune{})
 	return string(top), nil
 }
 
