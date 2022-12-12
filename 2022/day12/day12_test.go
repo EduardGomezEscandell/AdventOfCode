@@ -58,7 +58,7 @@ func TestPart2(t *testing.T) {
 		data [][]uint8
 		want int
 	}{
-		"empty": {want: 0},
+		"example": {data: strToUint8([]string{"Sabqponm", "abcryxxl", "accszExk", "acctuvwj", "abdefghi"}), want: 29},
 	}
 
 	for name, tc := range testCases {
@@ -75,8 +75,8 @@ func TestPart2(t *testing.T) {
 }
 
 func TestRealData(t *testing.T) {
-	expected := `Result of part 1: 630
-Result of part 2: 0
+	expected := `Result of part 1: 370
+Result of part 2: 363
 `
 	buff := new(bytes.Buffer)
 

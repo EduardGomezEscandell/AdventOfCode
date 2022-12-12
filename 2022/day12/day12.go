@@ -5,11 +5,10 @@ import (
 	"bufio"
 	"bytes"
 	"container/heap"
-	"math"
-
 	"errors"
 	"fmt"
 	"io"
+	"math"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
@@ -29,53 +28,89 @@ func Part1(world [][]uint8) (int, error) {
 
 	cost := array.Map(world, func(row []uint8) []int { return array.Map(row, func(uint8) int { return math.MaxInt }) })
 
-	best := findCell(world, 'S')
-	end := findCell(world, 'E')
+	// We start at the S cell
+	start := findCell(world, 'S')
+	world[start.i][start.j] = 'a'
+	cost[start.i][start.j] = 0
 
-	world[best.i][best.j] = 'a'
+	// We end at the E cell
+	end := findCell(world, 'E')
 	world[end.i][end.j] = 'z'
 
-	candidates := myheap.New(func(a, b Idx) bool { return cost[a.i][a.j] < cost[b.i][b.j] })
-
-	cost[best.i][best.j] = 0
-
-	visit(world, cost, candidates, best)
-
-	for candidates.Len() != 0 {
-		best = heap.Pop(candidates).(Idx)
+	// Dijkstra time!
+	candidates := myheap.New(func(a, b idx) bool { return cost[a.i][a.j] < cost[b.i][b.j] })
+	allowed := func(jump int) bool { return jump < 2 }
+	visit(world, cost, candidates, allowed, start)
+	for i := 0; candidates.Len() != 0; i++ {
+		if i > len(world)*len(world[0]) {
+			break
+		}
+		best := heap.Pop(candidates).(idx) // nolint: forcetypeassert
 		if best == end {
 			return cost[best.i][best.j], nil
 		}
-		visit(world, cost, candidates, best)
+		visit(world, cost, candidates, allowed, best)
 	}
 	return 0, errors.New("failed to find a path to the end")
 }
 
-func visit(world [][]uint8, cost [][]int, candidates *myheap.Heap[Idx], idx Idx) {
-	if idx.i > 0 {
-		to := Idx{idx.i - 1, idx.j}
-		consider(world, cost, candidates, idx, to)
+// Part2 solves the second half of the problem.
+func Part2(world [][]uint8) (int, error) {
+	if len(world) == 0 || len(world[0]) == 0 {
+		return 0, errors.New("empty world")
 	}
 
-	if idx.i < len(world)-1 {
-		to := Idx{idx.i + 1, idx.j}
-		consider(world, cost, candidates, idx, to)
+	cost := array.Map(world, func(row []uint8) []int { return array.Map(row, func(uint8) int { return math.MaxInt }) })
+
+	// S cell is just like any other 'a' cell now
+	s := findCell(world, 'S')
+	world[s.i][s.j] = 'a'
+
+	// We start at the E cell
+	start := findCell(world, 'E')
+	world[start.i][start.j] = 'z'
+	cost[start.i][start.j] = 0
+
+	// Dijkstra time!
+	candidates := myheap.New(func(a, b idx) bool { return cost[a.i][a.j] < cost[b.i][b.j] })
+	allowed := func(jump int) bool { return jump > -2 }
+	visit(world, cost, candidates, allowed, start)
+	for candidates.Len() != 0 {
+		best := heap.Pop(candidates).(idx) // nolint: forcetypeassert
+		if world[best.i][best.j] == 'a' {
+			return cost[best.i][best.j], nil
+		}
+		visit(world, cost, candidates, allowed, best)
+	}
+	return 0, errors.New("failed to find a path from the end")
+}
+
+// ---------- Implementation ------------------.
+func visit(world [][]uint8, cost [][]int, candidates *myheap.Heap[idx], allowed func(int) bool, at idx) {
+	if at.i > 0 {
+		to := idx{at.i - 1, at.j}
+		consider(world, cost, candidates, allowed, at, to)
 	}
 
-	if idx.j > 0 {
-		to := Idx{idx.i, idx.j - 1}
-		consider(world, cost, candidates, idx, to)
+	if at.i < len(world)-1 {
+		to := idx{at.i + 1, at.j}
+		consider(world, cost, candidates, allowed, at, to)
 	}
 
-	if idx.j < len(world[0])-1 {
-		to := Idx{idx.i, idx.j + 1}
-		consider(world, cost, candidates, idx, to)
+	if at.j > 0 {
+		to := idx{at.i, at.j - 1}
+		consider(world, cost, candidates, allowed, at, to)
+	}
+
+	if at.j < len(world[0])-1 {
+		to := idx{at.i, at.j + 1}
+		consider(world, cost, candidates, allowed, at, to)
 	}
 }
 
-func consider(world [][]uint8, cost [][]int, candidates *myheap.Heap[Idx], from, to Idx) {
+func consider(world [][]uint8, cost [][]int, candidates *myheap.Heap[idx], allowed func(int) bool, from, to idx) {
 	climb := int(world[to.i][to.j]) - int(world[from.i][from.j])
-	if climb > 1 {
+	if !allowed(climb) {
 		return
 	}
 	c := cost[from.i][from.j] + 1
@@ -86,28 +121,22 @@ func consider(world [][]uint8, cost [][]int, candidates *myheap.Heap[Idx], from,
 	}
 }
 
-type Idx struct {
+type idx struct {
 	i, j int
 }
 
-func findCell(world [][]uint8, w uint8) Idx {
+func findCell(world [][]uint8, w uint8) idx {
 	for r, row := range world {
 		for c, cell := range row {
 			if cell != w {
 				continue
 			}
-			return Idx{r, c}
+			return idx{r, c}
 		}
 	}
-	return Idx{-1, -1}
+	return idx{-1, -1}
 }
 
-// Part2 solves the second half of the problem.
-func Part2(world [][]uint8) (int, error) {
-	return 0, nil
-}
-
-// ---------- Implementation ------------------
 // ---------- Here be boilerplate ------------------
 
 type problemResult struct {
@@ -141,6 +170,7 @@ func Main(stdout io.Writer) error {
 		result, err := Part2(input)
 		if err != nil {
 			resultCh <- problemResult{1, "", err}
+			return
 		}
 		resultCh <- problemResult{1, fmt.Sprintf("Result of part 2: %d", result), nil}
 	}()
@@ -186,12 +216,4 @@ func ParseInput() ([][]uint8, error) {
 	}
 
 	return world, nil
-}
-
-func nextLine(s *bufio.Scanner) (string, error) {
-	read := s.Scan()
-	if !read {
-		return "", errors.New("Failed to read from scanner")
-	}
-	return s.Text(), nil
 }
