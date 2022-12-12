@@ -21,5 +21,5 @@ AOC_2022_ROOT=`pwd` go test ./... --race
 ```
 or do so with coverage included:
 ```bash
-AOC_2022_ROOT=`pwd` /path/to/repo/2022$ bash coverage.sh
+/path/to/repo/2022$ AOC_2022_ROOT=`pwd` bash coverage.sh
 ```
