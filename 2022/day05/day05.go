@@ -188,6 +188,7 @@ func Main(stdout io.Writer) error {
 		if err != nil {
 			resultCh <- problemResult{0, "", err}
 			cancel()
+			return
 		}
 		resultCh <- problemResult{0, fmt.Sprintf("Result of part 1: %v", result), nil}
 	}()
@@ -198,6 +199,7 @@ func Main(stdout io.Writer) error {
 		if err != nil {
 			resultCh <- problemResult{1, "", err}
 			cancel()
+			return
 		}
 		resultCh <- problemResult{1, fmt.Sprintf("Result of part 2: %v", result), nil}
 	}()
