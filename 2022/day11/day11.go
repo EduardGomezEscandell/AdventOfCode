@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
 )
 
@@ -19,34 +20,68 @@ const (
 )
 
 // Part1 solves the first half of the problem.
-func Part1(in []Monkey) (int, error) {
-	return 0, nil
+func Part1(monkeys []Monkey) (int, error) {
+	for i := 0; i < 20; i++ {
+		round(monkeys)
+	}
+
+	best2 := array.BestN(monkeys, 2, func(a, b Monkey) bool { return a.Inspections > b.Inspections })
+	return best2[0].Inspections * best2[1].Inspections, nil
+}
+
+func round(monkeys []Monkey) {
+	for i := range monkeys {
+		monkeyTurn(i, monkeys)
+	}
+}
+
+func monkeyTurn(id int, monkeys []Monkey) {
+	m := &monkeys[id]
+	sz := len(m.Inventory)
+	for i := 0; i < sz; i++ {
+		// Popping from front
+		v := m.Inventory[0]
+		m.Inventory = m.Inventory[1:]
+		// Inspection
+		v = m.Inspect(v)
+		m.Inspections++
+		// Relief
+		v /= 3
+		// Sending
+		target := m.ThrowTrue
+		if v%m.TestValue != 0 {
+			target = m.ThrowFalse
+		}
+		monkeys[target].Inventory = append(monkeys[target].Inventory, v)
+	}
 }
 
 // Part2 solves the second half of the problem.
-func Part2(in []Monkey) (int, error) {
+func Part2(monkeys []Monkey) (int, error) {
 	return 0, nil
 }
 
 // ------------- Implementation ------------------
 
 type Monkey struct {
-	Id         int
-	Inventory  []int
-	Inspect    func(int) int
-	TestValue  int
-	ThrowTrue  int
-	ThrowFalse int
+	Id          int
+	Inventory   []uint64
+	Inspect     func(uint64) uint64
+	TestValue   uint64
+	ThrowTrue   int
+	ThrowFalse  int
+	Inspections int
 }
 
 func NewMonkey(id int) Monkey {
 	return Monkey{
-		Id:         id,
-		Inventory:  []int{},
-		Inspect:    func(int) int { panic(fmt.Sprintf("No function for monkey #%d", id)) },
-		TestValue:  1,
-		ThrowTrue:  id,
-		ThrowFalse: id,
+		Id:          id,
+		Inventory:   []uint64{},
+		Inspect:     func(uint64) uint64 { panic(fmt.Sprintf("No function for monkey #%d", id)) },
+		TestValue:   1,
+		ThrowTrue:   id,
+		ThrowFalse:  id,
+		Inspections: 0,
 	}
 }
 
@@ -147,7 +182,7 @@ func parseMonkey(id int, sc *bufio.Scanner) (Monkey, error) {
 		if err != nil {
 			return m, fmt.Errorf("unexpected non-integer in position %d: %q.\nWant: %s %%d, %%d ...\nGot : %s", i, s, want, line)
 		}
-		m.Inventory = append(m.Inventory, item)
+		m.Inventory = append(m.Inventory, uint64(item))
 	}
 
 	// Operation
@@ -155,25 +190,26 @@ func parseMonkey(id int, sc *bufio.Scanner) (Monkey, error) {
 		return m, err
 	}
 	var op rune
-	var val int
+	var val uint64
 	if _, err := fmt.Sscanf(line, "  Operation: new = old %c %d", &op, &val); err != nil {
 		if _, err := fmt.Sscanf(line, "  Operation: new = old %c old", &op); err != nil {
 			return m, fmt.Errorf("unexpected line.\nWant:   Operation: new = old %%c (%%d|old)\nGot : %s", line)
 		}
 		switch op {
 		case '*':
-			m.Inspect = func(x int) int { return x * x }
+			m.Inspect = func(x uint64) uint64 { return x * x }
 		case '+':
-			m.Inspect = func(x int) int { return x + x }
+			m.Inspect = func(x uint64) uint64 { return x + x }
 		default:
 			return m, fmt.Errorf("unexpected line.\nWant: Operation: new = old [*+] ...\nGot : %s", line)
 		}
 	} else {
+		val := val
 		switch op {
 		case '*':
-			m.Inspect = func(x int) int { return x * val }
+			m.Inspect = func(x uint64) uint64 { return x * val }
 		case '+':
-			m.Inspect = func(x int) int { return x + val }
+			m.Inspect = func(x uint64) uint64 { return x + val }
 		default:
 			return m, fmt.Errorf("unexpected line.\nWant: Operation: new = old [*+] ...\nGot : %s", line)
 		}
@@ -197,7 +233,7 @@ func parseMonkey(id int, sc *bufio.Scanner) (Monkey, error) {
 	if _, err := fmt.Sscanf(line, want, &val); err != nil {
 		return m, fmt.Errorf("unexpected line.\nWant: %s\nGot : %s", want, line)
 	}
-	m.ThrowTrue = val
+	m.ThrowTrue = int(val)
 
 	// If false
 	if line, err = nextLine(sc); err != nil {
@@ -207,7 +243,7 @@ func parseMonkey(id int, sc *bufio.Scanner) (Monkey, error) {
 	if _, err := fmt.Sscanf(line, want, &val); err != nil {
 		return m, fmt.Errorf("unexpected line.\nWant: %s\nGot : %s", want, line)
 	}
-	m.ThrowFalse = val
+	m.ThrowFalse = int(val)
 
 	return m, nil
 }
