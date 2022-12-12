@@ -144,7 +144,7 @@ func testReduce[T generics.Signed](t *testing.T) { // nolint: thelper // nolint:
 	}
 }
 
-func testMapReduce[T generics.Signed](t *testing.T) { // nolint: thelper // nolint: thelper
+func testMapReduce[T generics.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 
 	sq := func(x T) int { return int(x * x) }
@@ -164,7 +164,7 @@ func testMapReduce[T generics.Signed](t *testing.T) { // nolint: thelper // noli
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			got := array.MapReduce(tc.input, tc.unary, tc.fold)
+			got := array.MapReduce(tc.input, tc.unary, tc.fold, 0)
 			require.Equal(t, tc.expects, got)
 		})
 	}

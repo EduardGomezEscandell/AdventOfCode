@@ -60,7 +60,7 @@ func Split[T any](ctx context.Context, input <-chan T, n int) []<-chan T {
 				return failed
 			})
 			// Barrier: collecting failures (and ending if one failed)
-			anyFailed := array.MapReduce(failures, Recv[bool], fun.Or)
+			anyFailed := array.MapReduce(failures, Recv[bool], fun.Or, false)
 			if anyFailed {
 				return
 			}

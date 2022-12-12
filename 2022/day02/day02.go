@@ -19,12 +19,12 @@ const (
 
 // Part1 solves the first half of the problem.
 func Part1(input []Round) (uint, error) {
-	return array.MapReduce(input, (Round).ScoreP1, fun.Add[uint]), nil
+	return array.MapReduce(input, (Round).ScoreP1, fun.Add[uint], 0), nil
 }
 
 // Part2 solves the second half of the problem.
 func Part2(input []Round) (uint, error) {
-	return array.MapReduce(input, (Round).ScoreP2, fun.Add[uint]), nil
+	return array.MapReduce(input, (Round).ScoreP2, fun.Add[uint], 0), nil
 }
 
 // ---------------- Implementation -----------------------
