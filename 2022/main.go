@@ -2,10 +2,10 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"time"
 
@@ -31,25 +31,26 @@ func main() {
 	var timed bool
 	var everyDay bool
 
-	flag.UintVar(&day, "day", 0, "Run a single day")
-	flag.StringVar(&output, "output", "stdout", "Output")
+	flag.UintVar(&day, "day", CountDays(), "Run a single day. If unspecified, the latest day will run.")
+	flag.StringVar(&output, "output", "stdout", "Where to print the output (can be stdout, stderr or a filename).")
 	flag.BoolVar(&countDays, "count-days", false, "Print the number of days available and exit.")
 	flag.BoolVar(&timed, "time", false, "Run the program many times to get an average execution time, ignoring the results.")
-	flag.BoolVar(&everyDay, "all", false, "Run all days.")
+	flag.BoolVar(&everyDay, "all", false, "Run all days. This flag overrides -day.")
 
 	flag.Parse()
-
-	if countDays {
-		log.Printf("%d\n", CountDays())
-		os.Exit(0)
-	}
 
 	// Getting the writer
 	w, err := getWriter(output)
 	if err != nil {
-		log.Fatalf("Error in writer: %v", err)
+		fmt.Fprintf(os.Stderr, "Error in writer: %v\n", err)
+		os.Exit(1)
 	}
 	defer w.Close()
+
+	if countDays {
+		fmt.Fprintf(w, "%d\n", CountDays())
+		os.Exit(0)
+	}
 
 	// Choosing runner
 	runner := RunDay
@@ -61,20 +62,22 @@ func main() {
 	if everyDay {
 		err := RunAll(w, runner)
 		if err != nil {
-			log.Fatalf("Error running all: %v", err)
+			fmt.Fprintf(os.Stderr, "Error running all: %v\n", err)
+			os.Exit(1)
 		}
 		os.Exit(0)
 	}
 
 	err = runner(day, w)
 	if err != nil {
-		log.Fatalf("Error running single day: %v", err)
+		fmt.Fprintf(os.Stderr, "Error running single: %v\n", err)
+		os.Exit(1)
 	}
 }
 
 // CountDays counts the number of days that are implemented.
 func CountDays() uint {
-	return uint(len(entrypoints))
+	return uint(len(entrypoints)) - 1
 }
 
 // RunAll runs every implemented day.
@@ -119,7 +122,7 @@ func RunDay(day uint, w io.Writer) error {
 
 func entryPoint(day uint) (func(io.Writer) error, error) {
 	if day > CountDays() {
-		return nil, fmt.Errorf("day %d is not implemented", day)
+		return nil, errors.New("not implemented")
 	}
 	return entrypoints[day], nil
 }
