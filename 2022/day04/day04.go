@@ -143,12 +143,11 @@ func Main(stdout io.Writer) error {
 
 	go func() {
 		result, err := Part2(channels[1])
-		channel.Exhaust(channels[1])
 		if err != nil {
-			resultCh <- problemResult{1, "", err}
 			cancel()
 		}
-		resultCh <- problemResult{1, fmt.Sprintf("Result of part 2: %v", result), nil}
+		channel.Exhaust(channels[1])
+		resultCh <- problemResult{1, fmt.Sprintf("Result of part 2: %v", result), err}
 	}()
 
 	var results [2]problemResult
