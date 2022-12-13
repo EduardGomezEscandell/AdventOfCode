@@ -11,7 +11,6 @@ import (
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/channel"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
 )
@@ -22,35 +21,52 @@ const (
 )
 
 // Part1 solves the first half of the problem.
-func Part1(in <-chan input.Line) (int, error) {
-	ch := parseInput(in)
-	var idx int
-	r := charray.Reduce(ch, func(acc int, t [2]item) int {
-		idx++
-		if compItems(t[0], t[1]) == gt {
-			return acc
+func Part1(in <-chan item) (int, error) {
+	var acc int
+	for idx := 1; ; idx++ {
+		t1, ok := <-in
+		if !ok {
+			break
 		}
-		return acc + idx
-	}, 0)
+		t2, ok := <-in
+		if !ok {
+			return 0, fmt.Errorf("Failed to read second line of pair #%d", idx)
+		}
+		if compItems(t1, t2) == gt {
+			continue
+		}
+		acc += idx
+	}
 
-	return r, nil
+	return acc, nil
 }
 
 // Part2 solves the second half of the problem.
-func Part2(in <-chan input.Line) (int, error) {
-	// arr := array.FromChannel(parseInput(in))
-	// var err error
-	// extraInput := []item{nil, nil}
-	// if extraInput[0], err = Parse("[[2]]"); err != nil {
-	// 	return 0, err
-	// }
-	// if extraInput[1], err = Parse("[[6]]"); err != nil {
-	// 	return 0, err
-	// }
-	// arr = append(arr, extraInput)
+func Part2(in <-chan item) (int, error) {
+	arr := array.FromChannel(in)
 
-	channel.Exhaust(in)
-	return 0, nil
+	var err error
+	extraInput := []item{nil, nil}
+	if extraInput[0], err = Parse("[[2]]"); err != nil {
+		return 0, err
+	}
+	if extraInput[1], err = Parse("[[6]]"); err != nil {
+		return 0, err
+	}
+	arr = append(arr, extraInput[0], extraInput[1])
+
+	array.Sort(arr, func(a, b item) bool { return compItems(a, b) == lt })
+	x := array.FindIf(arr, func(a item) bool { return compItems(a, extraInput[0]) == eq })
+
+	if x == -1 {
+		return 0, fmt.Errorf("Failed to find packet %s:\n%s", PrettyPrint(extraInput[0]), strings.Join(array.Map(arr, PrettyPrint), "\n"))
+	}
+	y := array.FindIf(arr, func(a item) bool { return compItems(a, extraInput[1]) == eq })
+	if y == -1 {
+		return 0, fmt.Errorf("Failed to find packet %s: %s", PrettyPrint(extraInput[1]), strings.Join(array.Map(arr, PrettyPrint), " ; "))
+	}
+
+	return (x + 1) * (y + 1), nil
 }
 
 // ------------- Implementation ------------------
@@ -114,46 +130,23 @@ func compSlices(u, v []item) Comp {
 	return compInts(len(u), len(v))
 }
 
-func parseInput(in <-chan input.Line) <-chan [2]item {
-	out := make(chan [2]item, cap(in))
+func ParseInput(in <-chan input.Line) <-chan item {
+	out := make(chan item, cap(in))
 
 	go func() {
 		defer close(out)
-		for {
-			// Reading first line in pair
-			line1, ok := <-in
-			if !ok {
-				panic(fmt.Errorf("Failed to read first line"))
-			}
-			if err := line1.Err(); err != nil {
+		for ln := range in {
+			if err := ln.Err(); err != nil {
 				panic(err)
 			}
-			t1, err := Parse(line1.Str())
+			if ln.Str() == "" {
+				continue
+			}
+			t1, err := Parse(ln.Str())
 			if err != nil {
 				panic(fmt.Errorf("failed to parse first line: %v", err))
 			}
-
-			// Reading second line in pair
-			line2, ok := <-in
-			if !ok {
-				panic(fmt.Errorf("Failed to read second line"))
-			}
-			if err := line2.Err(); err != nil {
-				panic(err)
-			}
-			t2, err := Parse(line2.Str())
-			if err != nil {
-				panic(fmt.Errorf("failed to parse second line: %v", err))
-			}
-
-			// Channeling
-			out <- [2]item{t1, t2}
-
-			// Reading empty line to know if we're done
-			_, ok = <-in
-			if !ok {
-				return
-			}
+			out <- t1
 		}
 	}()
 
@@ -264,7 +257,7 @@ func Main(stdout io.Writer) error {
 		return err
 	}
 
-	channels := channel.Split(ctx, ch, 2)
+	channels := channel.Split(ctx, ParseInput(ch), 2)
 
 	resultCh := make(chan problemResult)
 	go func() {

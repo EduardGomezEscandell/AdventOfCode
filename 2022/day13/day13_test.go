@@ -99,7 +99,7 @@ func TestPart1(t *testing.T) {
 			defer cancel()
 
 			ch := charray.FromArray(ctx, lines, 0)
-			got, err := day13.Part1(ch)
+			got, err := day13.Part1(day13.ParseInput((ch)))
 
 			require.NoError(t, err)
 			require.Equal(t, tc.want, got)
@@ -114,7 +114,31 @@ func TestPart2(t *testing.T) {
 		data []string
 		want int
 	}{
-		"empty": {data: []string{}, want: 0},
+		"example": {data: []string{
+			"[1,1,3,1,1]",
+			"[1,1,5,1,1]",
+			"",
+			"[[1],[2,3,4]]",
+			"[[1],4]",
+			"",
+			"[9]",
+			"[[8,7,6]]",
+			"",
+			"[[4,4],4,4]",
+			"[[4,4],4,4,4]",
+			"",
+			"[7,7,7,7]",
+			"[7,7,7]",
+			"",
+			"[]",
+			"[3]",
+			"",
+			"[[[]]]",
+			"[[]]",
+			"",
+			"[1,[2,[3,[4,[5,6,7]]]],8,9]",
+			"[1,[2,[3,[4,[5,6,0]]]],8,9]",
+		}, want: 140},
 	}
 
 	for name, tc := range testCases {
@@ -126,7 +150,7 @@ func TestPart2(t *testing.T) {
 			defer cancel()
 
 			ch := charray.FromArray(ctx, lines, 0)
-			got, err := day13.Part2(ch)
+			got, err := day13.Part2(day13.ParseInput((ch)))
 
 			require.NoError(t, err)
 			require.Equal(t, tc.want, got)
@@ -136,7 +160,7 @@ func TestPart2(t *testing.T) {
 
 func TestRealData(t *testing.T) {
 	expected := `Result of part 1: 5882
-Result of part 2: 0
+Result of part 2: 24948
 `
 	buff := new(bytes.Buffer)
 
