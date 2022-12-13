@@ -95,7 +95,6 @@ func RunAll(w io.Writer, runner func(uint, io.Writer) (time.Duration, error)) er
 	if acc > 0 {
 		fmt.Fprintln(w, "-------------------")
 		fmt.Fprintf(w, "Total   %7d µs\n", acc/time.Microsecond)
-
 	}
 	return nil
 }
