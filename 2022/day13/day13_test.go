@@ -26,6 +26,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestParse(t *testing.T) {
+	t.Parallel()
 	testCases := map[string]struct {
 		data string
 	}{

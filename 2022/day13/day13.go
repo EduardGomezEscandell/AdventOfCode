@@ -21,7 +21,7 @@ const (
 )
 
 // Part1 solves the first half of the problem.
-func Part1(in <-chan item) (int, error) {
+func Part1(in <-chan node) (int, error) {
 	var acc int
 	for idx := 1; ; idx++ {
 		t1, ok := <-in
@@ -32,7 +32,7 @@ func Part1(in <-chan item) (int, error) {
 		if !ok {
 			return 0, fmt.Errorf("Failed to read second line of pair #%d", idx)
 		}
-		if compItems(t1, t2) == gt {
+		if compNodes(t1, t2) == gt {
 			continue
 		}
 		acc += idx
@@ -42,11 +42,12 @@ func Part1(in <-chan item) (int, error) {
 }
 
 // Part2 solves the second half of the problem.
-func Part2(in <-chan item) (int, error) {
+func Part2(in <-chan node) (int, error) {
 	arr := array.FromChannel(in)
 
+	// Append extra entries
 	var err error
-	extraInput := []item{nil, nil}
+	extraInput := []node{nil, nil}
 	if extraInput[0], err = Parse("[[2]]"); err != nil {
 		return 0, err
 	}
@@ -55,45 +56,53 @@ func Part2(in <-chan item) (int, error) {
 	}
 	arr = append(arr, extraInput[0], extraInput[1])
 
-	array.Sort(arr, func(a, b item) bool { return compItems(a, b) == lt })
-	x := array.FindIf(arr, func(a item) bool { return compItems(a, extraInput[0]) == eq })
+	// Sort
+	array.Sort(arr, func(a, b node) bool { return compNodes(a, b) == lt })
+	x := array.FindIf(arr, func(a node) bool { return compNodes(a, extraInput[0]) == eq })
 
+	// Find extra entries
 	if x == -1 {
-		return 0, fmt.Errorf("Failed to find packet %s:\n%s", PrettyPrint(extraInput[0]), strings.Join(array.Map(arr, PrettyPrint), "\n"))
+		return 0, fmt.Errorf("Failed to find packet %s in AST:\n%s", PrettyPrint(extraInput[0]), strings.Join(array.Map(arr, PrettyPrint), "\n"))
 	}
-	y := array.FindIf(arr, func(a item) bool { return compItems(a, extraInput[1]) == eq })
+	y := array.FindIf(arr, func(a node) bool { return compNodes(a, extraInput[1]) == eq })
 	if y == -1 {
-		return 0, fmt.Errorf("Failed to find packet %s: %s", PrettyPrint(extraInput[1]), strings.Join(array.Map(arr, PrettyPrint), " ; "))
+		return 0, fmt.Errorf("Failed to find packet %s in AST:\n%s", PrettyPrint(extraInput[1]), strings.Join(array.Map(arr, PrettyPrint), "\n"))
 	}
 
+	// Convert to 1-indexing and get the result
 	return (x + 1) * (y + 1), nil
 }
 
-// ------------- Implementation ------------------
-type item interface {
-}
+// ------------- Implementation ------------------.
 
-type Comp int
+// A node of the abstract syntax tree. Can be either
+// a list of nodes, or an integer (a leaf).
+type node interface{}
+
+// comp is the result of a strict comparison.
+type comp int
 
 const (
-	lt Comp = iota - 1
-	eq
-	gt
+	lt comp = iota - 1 // less than
+	eq                 // equal
+	gt                 // greater than
 )
 
-func compItems(a, b item) Comp {
+// compNodes compares nodes according to the
+// criteria specified by the problem statement.
+func compNodes(a, b node) comp {
 	x, aInt := a.(int)
 	y, bInt := b.(int)
-	u, aList := a.([]item)
-	v, bList := b.([]item)
+	u, aList := a.([]node)
+	v, bList := b.([]node)
 
 	switch {
 	case aInt && bInt:
 		return compInts(x, y)
 	case aInt && bList:
-		return compSlices([]item{a}, v)
+		return compSlices([]node{a}, v)
 	case aList && bInt:
-		return compSlices(u, []item{b})
+		return compSlices(u, []node{b})
 	case aList && bList:
 		return compSlices(u, v)
 	}
@@ -108,7 +117,9 @@ func compItems(a, b item) Comp {
 	panic(errors.New(errMsg))
 }
 
-func compInts(a, b int) Comp {
+// compSlices compares integer-nodes according to the
+// criterion specified by the problem statement.
+func compInts(a, b int) comp {
 	switch {
 	case a < b:
 		return lt
@@ -119,10 +130,12 @@ func compInts(a, b int) Comp {
 	}
 }
 
-func compSlices(u, v []item) Comp {
+// compSlices compares list-nodes according to the
+// criteria specified by the problem statement.
+func compSlices(u, v []node) comp {
 	size := fun.Min(len(u), len(v))
 	for i := 0; i < size; i++ {
-		c := compItems(u[i], v[i])
+		c := compNodes(u[i], v[i])
 		if c != eq {
 			return c
 		}
@@ -130,8 +143,29 @@ func compSlices(u, v []item) Comp {
 	return compInts(len(u), len(v))
 }
 
-func ParseInput(in <-chan input.Line) <-chan item {
-	out := make(chan item, cap(in))
+// Parse takes a string containing the representation of the syntax tree
+// in the format
+//   - An node is either an integer or a list of other nodes.
+//   - Lists are represented as a comma-separated lists of nodes, enclosed in [square brackets].
+//   - Integers are represented in base 10
+//   - The abstract syntax tree contains a root node which is always a list.
+func Parse(s string) (node, error) {
+	last := len(s) - 1
+	if s[0] != '[' || s[last] != ']' {
+		return nil, fmt.Errorf(`wrong format. Expected "[...]", got %q`, s)
+	}
+	var i int
+	t, err := parse(s[1:], &i)
+	if err != nil {
+		return nil, fmt.Errorf("failed parsing string: %v\nPartial result: %s", err, PrettyPrint(t))
+	}
+	return t, nil
+}
+
+// ParseInput takes the input channel and returns a channel
+// with abstract syntax trees. Empty lines are discarded.
+func ParseInput(in <-chan input.Line) <-chan node {
+	out := make(chan node, cap(in))
 
 	go func() {
 		defer close(out)
@@ -153,21 +187,10 @@ func ParseInput(in <-chan input.Line) <-chan item {
 	return out
 }
 
-func Parse(s string) (item, error) {
-	last := len(s) - 1
-	if s[0] != '[' || s[last] != ']' {
-		return nil, fmt.Errorf(`wrong format. Expected "[...]", got %q`, s)
-	}
-	var i int
-	t, err := parse(s[1:], &i)
-	if err != nil {
-		return nil, fmt.Errorf("failed parsing string: %v\nPartial result: %s", err, PrettyPrint(t))
-	}
-	return t, nil
-}
-
-func parse(s string, i *int) (item, error) {
-	root := []item{}
+// parse takes a string and an index and parses the subtree from s[i] until
+// the next closing bracket ']'.
+func parse(s string, i *int) (node, error) {
+	root := []node{}
 	var num *int
 	for *i < len(s) {
 		char := s[*i]
@@ -175,7 +198,7 @@ func parse(s string, i *int) (item, error) {
 		switch char {
 		case '[':
 			if num != nil {
-				return nil, fmt.Errorf("error: string %q, character i=%d: number %d succeeded by ']'. Expected comma or another digit.", s, *i-1, *num)
+				return nil, fmt.Errorf("error: string %q, character i=%d: number %d succeeded by ']'. Expected comma or another digit", s, *i-1, *num)
 			}
 			x, err := parse(s, i)
 			if err != nil {
@@ -206,24 +229,17 @@ func parse(s string, i *int) (item, error) {
 	return root, errors.New("unexpected end of string without closing ']'")
 }
 
-func nextLine(in <-chan input.Line) (string, bool, error) {
-	r, ok := <-in
-	if !ok {
-		return "", false, nil
-	}
-	return r.Str(), true, r.Err()
-}
-
 func charToInt(c byte) (int, error) {
 	if c > '9' || c < '0' {
-		return 0, fmt.Errorf("Charcter %c (%d) is not an integer!", c, c)
+		return 0, fmt.Errorf("character %c (%d) is not an integer", c, c)
 	}
 	return int(c - '0'), nil
 }
 
-func PrettyPrint(t item) string {
+// PrettyPrint converts the AST into a string in the same format as the problem statement.
+func PrettyPrint(t node) string {
 	x, aInt := t.(int)
-	u, aList := t.([]item)
+	u, aList := t.([]node)
 
 	switch {
 	case aInt:
