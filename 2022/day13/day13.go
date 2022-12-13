@@ -54,23 +54,23 @@ func Part2(in <-chan node) (int, error) {
 	if extraInput[1], err = Parse("[[6]]"); err != nil {
 		return 0, err
 	}
-	arr = append(arr, extraInput[0], extraInput[1])
 
-	// Sort
-	array.Sort(arr, func(a, b node) bool { return compNodes(a, b) == lt })
-	x := array.FindIf(arr, func(a node) bool { return compNodes(a, extraInput[0]) == eq })
+	// Sorting extra values (yes I could hard code it, whatever)
+	array.Sort(extraInput[:], func(a, b node) bool { return compNodes(a, b) == lt })
 
-	// Find extra entries
-	if x == -1 {
-		return 0, fmt.Errorf("Failed to find packet %s in AST:\n%s", PrettyPrint(extraInput[0]), strings.Join(array.Map(arr, PrettyPrint), "\n"))
-	}
-	y := array.FindIf(arr, func(a node) bool { return compNodes(a, extraInput[1]) == eq })
-	if y == -1 {
-		return 0, fmt.Errorf("Failed to find packet %s in AST:\n%s", PrettyPrint(extraInput[1]), strings.Join(array.Map(arr, PrettyPrint), "\n"))
-	}
+	// The index of each value is the count of entries that are beneath it in order, plus one.
+	// This solution is O(N), whereas sorting would be O(N log N)
+	countSmaller := array.Reduce(arr, func(acc [2]int, x node) [2]int {
+		if compNodes(x, extraInput[0]) != gt {
+			return [2]int{acc[0] + 1, acc[1] + 1}
+		}
+		if compNodes(x, extraInput[1]) != gt {
+			return [2]int{acc[0], acc[1] + 1}
+		}
+		return acc
+	}, [2]int{0, 1}) // Initial values are {0,1} because the second extra value has the first one before it
 
-	// Convert to 1-indexing and get the result
-	return (x + 1) * (y + 1), nil
+	return (countSmaller[0] + 1) * (countSmaller[1] + 1), nil
 }
 
 // ------------- Implementation ------------------.
