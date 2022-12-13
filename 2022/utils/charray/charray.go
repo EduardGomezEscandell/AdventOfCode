@@ -245,3 +245,24 @@ func Multiplex[T any](in <-chan T, n int, selection func(T) int) []<-chan T {
 	}()
 	return array.Map(outs, channel.ConvertToRecieveOnly[T])
 }
+
+// Concat concatenates two channeled arrays.
+func Concat[T any](a <-chan T, b <-chan T) <-chan T {
+	out := make(chan T, fun.Max(cap(a), cap(b)))
+	go func() {
+		defer close(out)
+
+		go func() {
+			defer channel.Exhaust(a)
+			defer channel.Exhaust(b)
+			defer close(out)
+			for v := range a {
+				out <- v
+			}
+			for v := range b {
+				out <- v
+			}
+		}()
+	}()
+	return out
+}
