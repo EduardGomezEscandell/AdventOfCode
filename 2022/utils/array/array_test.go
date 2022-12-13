@@ -97,6 +97,14 @@ func TestFind(t *testing.T) {
 	t.Run("int64", testFind[int64])
 }
 
+func TestPartition(t *testing.T) {
+	t.Parallel()
+	t.Run("int", testPartition[int])
+	t.Run("int8", testPartition[int8])
+	t.Run("int32", testPartition[int32])
+	t.Run("int64", testPartition[int64])
+}
+
 func testMap[T generics.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 
@@ -138,7 +146,7 @@ func testReduce[T generics.Signed](t *testing.T) { // nolint: thelper // nolint:
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			got := array.Reduce(tc.input, tc.fold)
+			got := array.Reduce(tc.input, tc.fold, 0)
 			require.Equal(t, tc.expects, got)
 		})
 	}
@@ -384,6 +392,40 @@ func testFind[T generics.Number](t *testing.T) { // nolint: thelper
 			require.Equal(t, tc.want, got)
 
 			require.Equal(t, input, tc.data, "array.Find modified the input array")
+		})
+	}
+}
+
+func testPartition[T generics.Number](t *testing.T) { // nolint: thelper
+	t.Parallel()
+	testCases := map[string]struct {
+		data   []T
+		search T
+		want   int
+	}{
+		"empty":          {data: []T{}, want: 0},
+		"single, before": {data: []T{5}, search: 3, want: 0},
+		"single, after":  {data: []T{3}, search: 9, want: 1},
+		"standard":       {data: []T{3, 13, 84, 6, 3}, search: 9, want: 3},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			input := make([]T, len(tc.data))
+			copy(input, tc.data)
+
+			got := array.Partition(input, func(x T) bool { return x < tc.search })
+			require.Equal(t, tc.want, got)
+
+			for i, v := range input[:got] {
+				require.LessOrEqual(t, v, tc.search, "Item %d is greater than the partition: %d > %d. Array: %v", i, v, tc.search, input)
+			}
+			for i, v := range input[got:] {
+				require.GreaterOrEqual(t, v, tc.search, "Item %d is smaller than the partition: %d < %d. Array: %v", i, v, tc.search, input)
+			}
 		})
 	}
 }

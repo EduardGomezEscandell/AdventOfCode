@@ -54,8 +54,8 @@ func Generate[T any](len int, f func() T) []T {
 //
 //	Reduce(arr, func(x,y int)int { return x+y }) # Option 1.
 //	Reduce(arr, fun.Add[int])                    # Option 2.
-func Reduce[T, O any](arr []T, fold func(O, T) O) O {
-	var o O
+func Reduce[T, O any](arr []T, fold func(O, T) O, init O) O {
+	o := init
 	for _, a := range arr {
 		o = fold(o, a)
 	}
@@ -326,11 +326,51 @@ func Find[T any](arr []T, val T, eq fun.Comparator[T]) int {
 
 // FindIf traverses array arr searching for an element that makes
 // f return true, and returs its index. If none match, -1 is returned.
-func FindIf[T any](arr []T, eq func(T) bool) int {
+func FindIf[T any](arr []T, eq fun.Predicate[T]) int {
 	for i, v := range arr {
 		if eq(v) {
 			return i
 		}
 	}
 	return -1
+}
+
+// Partition rearranges a list such that
+//
+//	pred(arr[i]) is true <=> i < j
+//
+// and returns this value j. If the entire list fulfils the predicate,
+// j will be equal to the length.
+//
+// Example: partition smaller than 3:
+//
+//		j := Partition(arr, func(x int) bool { return l<3 })
+//
+//	 arr -> [numbers, less, than 3, numbers, greater, than 3]
+//	                                ^
+//	                                j
+//
+// Complexity is O(|arr|).
+func Partition[T any](arr []T, pred fun.Predicate[T]) int {
+	if len(arr) == 0 {
+		return 0
+	}
+	var i int
+	var j int
+	if pred(arr[0]) {
+		j++
+	}
+
+	for i = 1; i < len(arr); i++ {
+		if !pred(arr[i]) {
+			continue
+		}
+		if i == j {
+			continue
+		}
+		//Swap
+		arr[i], arr[j] = arr[j], arr[i]
+		j++
+	}
+	return j
 }

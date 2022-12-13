@@ -34,7 +34,7 @@ func Part2(input [][]uint) (uint, error) {
 
 // accumulate takes a slice and returns the sum of its members.
 func accumulate(arr []uint) uint {
-	return array.Reduce(arr, fun.Add[uint])
+	return array.Reduce(arr, fun.Add[uint], 0)
 }
 
 /// ---------- Here be boilerplate ------------------
