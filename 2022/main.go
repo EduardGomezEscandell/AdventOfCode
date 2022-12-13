@@ -69,7 +69,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	err = runner(day, w)
+	_, err = runner(day, w)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error running single: %v\n", err)
 		os.Exit(1)
@@ -82,43 +82,50 @@ func CountDays() uint {
 }
 
 // RunAll runs every implemented day.
-func RunAll(w io.Writer, runner func(uint, io.Writer) error) error {
+func RunAll(w io.Writer, runner func(uint, io.Writer) (time.Duration, error)) error {
 	fmt.Fprintf(w, "Advent of Code 2022\n--------------------\n")
+	var acc time.Duration
 	for i := uint(1); i <= CountDays(); i++ {
-		err := runner(i, w)
+		d, err := runner(i, w)
 		if err != nil {
 			return err
 		}
+		acc += d
+	}
+	if acc > 0 {
+		fmt.Fprintln(w, "-------------------")
+		fmt.Fprintf(w, "Total   %7d µs\n", acc/time.Microsecond)
+
 	}
 	return nil
 }
 
 // TimeDay runs the solution for a particular day and
 // coputes an average solving time.
-func TimeDay(day uint, w io.Writer) error {
+func TimeDay(day uint, w io.Writer) (time.Duration, error) {
 	entrypoint, err := entryPoint(day)
 	if err != nil {
-		return fmt.Errorf("day %2d: %v", day, err)
+		return 0, fmt.Errorf("day %2d: %v", day, err)
 	}
 
 	t, err := timedRun(entrypoint)
 	if err != nil {
-		return fmt.Errorf("day %2d: %v", day, err)
+		return t, fmt.Errorf("day %2d: %v", day, err)
 	}
-	fmt.Fprintf(w, "Day %2d: %6d µs\n", day, t/time.Microsecond)
-	return nil
+	fmt.Fprintf(w, "Day %2d: %7d µs\n", day, t/time.Microsecond)
+	return t, nil
 }
 
 // RunDay runs the solution for a particular day.
-func RunDay(day uint, w io.Writer) error {
+func RunDay(day uint, w io.Writer) (time.Duration, error) {
 	entrypoint, err := entryPoint(day)
 	if err != nil {
-		return fmt.Errorf("day %2d: %v", day, err)
+		return 0, fmt.Errorf("day %2d: %v", day, err)
 	}
 
 	fmt.Fprintf(w, "DAY %d\n", day)
 	defer fmt.Fprintln(w)
-	return entrypoint(w)
+	return 0, entrypoint(w)
 }
 
 func entryPoint(day uint) (func(io.Writer) error, error) {
