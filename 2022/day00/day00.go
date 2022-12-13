@@ -53,7 +53,7 @@ func Part2(inp []uint) (uint, error) {
 	}
 
 	count := uint(0)
-	curr := array.Reduce(inp[0:3], fun.Add[uint])
+	curr := array.Reduce(inp[0:3], fun.Add[uint], 0)
 	for i := 3; i < len(inp); i++ {
 		prev := curr
 		curr = prev - inp[i-3] + inp[i]

@@ -2,6 +2,9 @@ package fun
 
 import "github.com/EduardGomezEscandell/AdventOfCode/2022/utils/generics"
 
+// Predicate is a function that takes one value and returns a boolean.
+type Predicate[T any] func(T) bool
+
 // Sign returns +1 or -1, with the same sign as `a`.
 // Returns 0 if a is 0.
 func Sign[T generics.Signed](a T) int {

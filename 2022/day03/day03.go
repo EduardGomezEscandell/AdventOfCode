@@ -114,7 +114,7 @@ func readElf(dataChannel <-chan input.Line) ([]rune, bool, error) {
 func helperElvesToString(elves [][]rune) string {
 	return array.Reduce(elves, func(acc string, elf []rune) string {
 		return fmt.Sprintf("%s\n    %s", acc, string(elf))
-	})
+	}, "")
 }
 
 // ------------- Here be boilerplate ------------------
