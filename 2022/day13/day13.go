@@ -73,7 +73,7 @@ func Part2(in <-chan node) (int, error) {
 	return (countSmaller[0] + 1) * (countSmaller[1] + 1), nil
 }
 
-// ------------- Implementation ------------------.
+// ------------- Implementation ------------------
 
 // A node of the abstract syntax tree. Can be either
 // a list of nodes, or an integer (a leaf).
