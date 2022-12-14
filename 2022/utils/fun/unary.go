@@ -22,3 +22,8 @@ func Sign[T generics.Signed](a T) int {
 func Abs[T generics.Signed](a T) T {
 	return T(Sign(a)) * a
 }
+
+// Identity does not mutate the object.
+func Identity[T any](a T) T {
+	return a
+}

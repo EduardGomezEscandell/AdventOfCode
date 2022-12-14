@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
 )
 
@@ -113,6 +114,12 @@ type Monkey struct {
 	Inspections uint64   // Number of objects inspected
 }
 
+func (old Monkey) copy() Monkey {
+	m := old
+	m.Inventory = array.Map(old.Inventory, fun.Identity[uint64])
+	return m
+}
+
 // NewMonkey creates a new monkey.
 func NewMonkey(id int) Monkey {
 	return Monkey{
@@ -131,14 +138,16 @@ type problemResult struct {
 
 // Main is the entry point to today's problem solution.
 func Main(stdout io.Writer) error {
+	input1, err := ParseInput()
+	input2 := array.Map(input1, (Monkey).copy)
+
 	resultCh := make(chan problemResult)
 	go func() {
-		input, err := ParseInput()
 		if err != nil {
 			resultCh <- problemResult{0, "", err}
 			return
 		}
-		result, err := Part1(input)
+		result, err := Part1(input1)
 		if err != nil {
 			resultCh <- problemResult{0, "", err}
 		}
@@ -146,12 +155,11 @@ func Main(stdout io.Writer) error {
 	}()
 
 	go func() {
-		input, err := ParseInput()
 		if err != nil {
 			resultCh <- problemResult{0, "", err}
 			return
 		}
-		result, err := Part2(input)
+		result, err := Part2(input2)
 		if err != nil {
 			resultCh <- problemResult{1, "", err}
 			return
