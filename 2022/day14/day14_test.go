@@ -173,11 +173,17 @@ func TestPart2(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		world  [][]Cell
-		offset int
-		want   int
+		input    [][2]Location
+		precount int
+		want     int
 	}{
-		// "empty": {world: [][]Cell{}, offset: Box{0, 0, 0, 0}, want: 0},
+		"example": {input: [][2]Location{
+			{{498, 4}, {498, 6}},
+			{{496, 6}, {498, 6}},
+			{{502, 4}, {503, 4}},
+			{{502, 4}, {502, 9}},
+			{{494, 9}, {502, 9}},
+		}, precount: -1, want: 93},
 	}
 
 	for name, tc := range testCases {
@@ -185,7 +191,8 @@ func TestPart2(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := day14.Part2(tc.world, tc.offset)
+			world, offset := day14.AssembleWorld(tc.input, day14.SourceX)
+			got, err := day14.Part2(world, offset, tc.precount)
 
 			require.NoError(t, err)
 			require.Equal(t, tc.want, got)
@@ -195,7 +202,7 @@ func TestPart2(t *testing.T) {
 
 func TestRealData(t *testing.T) {
 	expected := `Result of part 1: 618
-Result of part 2: 0
+Result of part 2: 26358
 `
 	buff := new(bytes.Buffer)
 

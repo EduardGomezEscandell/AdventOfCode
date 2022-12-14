@@ -27,24 +27,33 @@ const (
 func Part1(world [][]Cell, offset int) (int, error) {
 	pouring := Location{X: 500 - offset, Y: 0}
 
-	for count := 0; ; count++ {
+	for count := 1; ; count++ {
 		p, err := simulate(world, pouring)
 		if err != nil {
 			return 0, err
 		}
-		// fmt.Printf("---------- STEP %d --------------------\n%s\n", count, StrWorld(world))
 		if p.Y == len(world)-1 {
-			return count, nil
+			return count - 1, nil // -1 because we don't write this one on the map
 		}
-		if p.Y == -1 {
-			return 0, errors.New("fell off the world in part 1")
+		if p.Y == 0 {
+			return 0, errors.New("clogged source in part 1")
 		}
 	}
 }
 
 // Part2 solves the second half of the problem.
-func Part2(world [][]Cell, offset int) (int, error) {
-	return 0, nil
+func Part2(world [][]Cell, offset, precount int) (int, error) {
+	pouring := Location{X: 500 - offset, Y: 0}
+
+	for count := precount + 1; ; count++ {
+		p, err := simulate(world, pouring)
+		if err != nil {
+			return 0, err
+		}
+		if p.Y == 0 {
+			return count + 1, nil
+		}
+	}
 }
 
 // ------------- Implementation ------------------
@@ -63,8 +72,11 @@ type Location struct {
 func simulate(world [][]Cell, p Location) (Location, error) {
 	for {
 		// Fall down
-		if p.Y+1 >= len(world) {
+		if p.Y+1 == len(world) {
 			break // Touched the bottom
+		}
+		if p.Y+1 > len(world) {
+			return Location{}, errors.New("went bellow the bottom level")
 		}
 		if world[p.Y+1][p.X] == Air {
 			p.Y++
@@ -73,7 +85,7 @@ func simulate(world [][]Cell, p Location) (Location, error) {
 
 		// Slide left
 		if p.X <= 0 {
-			return Location{-1, -1}, nil
+			return Location{}, errors.New("fell off left side of the world")
 		}
 		if world[p.Y+1][p.X-1] == Air {
 			p.Y++
@@ -83,7 +95,7 @@ func simulate(world [][]Cell, p Location) (Location, error) {
 
 		// Slide right
 		if p.X+1 >= len(world[0]) {
-			return Location{+1, -1}, nil
+			return Location{}, errors.New("fell off right side of the world")
 		}
 		if world[p.Y+1][p.X+1] == Air {
 			p.Y++
@@ -182,14 +194,14 @@ func Main(stdout io.Writer) error {
 
 	world, boundingBox := AssembleWorld(input, SourceX)
 
-	result, err := Part1(world, boundingBox)
+	count1, err := Part1(world, boundingBox)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(stdout, "Result of part 1: %d\n", result)
+	fmt.Fprintf(stdout, "Result of part 1: %d\n", count1)
 
-	result, err = Part2(world, boundingBox)
-	fmt.Fprintf(stdout, "Result of part 2: %d\n", result)
+	count2, err := Part2(world, boundingBox, count1)
+	fmt.Fprintf(stdout, "Result of part 2: %d\n", count2)
 
 	return nil
 }
