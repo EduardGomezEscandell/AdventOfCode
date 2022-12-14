@@ -29,9 +29,18 @@ func TestReadInput(t *testing.T) {
 		data []string
 		want [][2]Location
 	}{
-		"single":        {data: []string{"3,5 -> 3,8"}, want: [][2]Location{{{3, 5}, {3, 8}}}},
-		"two":           {data: []string{"3,5 -> 3,8", "1,3 -> 1,1"}, want: [][2]Location{{{3, 5}, {3, 8}}, {{1, 1}, {1, 3}}}},
-		"double-decker": {data: []string{"2,6 -> 2,9 -> 1,9"}, want: [][2]Location{{{2, 6}, {2, 9}}, {{1, 9}, {2, 9}}}},
+		"single":        {data: []string{"3,5 -> 3,8"}, want: [][2]Location{{{3, -8}, {3, -5}}}},
+		"two":           {data: []string{"3,5 -> 3,8", "1,3 -> 1,1"}, want: [][2]Location{{{3, -8}, {3, -5}}, {{1, -3}, {1, -1}}}},
+		"double-decker": {data: []string{"2,6 -> 2,9 -> 1,9"}, want: [][2]Location{{{2, -9}, {2, -6}}, {{1, -9}, {2, -9}}}},
+		"example": {data: []string{"498,4 -> 498,6 -> 496,6", "503,4 -> 502,4 -> 502,9 -> 494,9"},
+			want: [][2]Location{
+				{{498, -6}, {498, -4}},
+				{{496, -6}, {498, -6}},
+				{{502, -4}, {503, -4}},
+				{{502, -9}, {502, -4}},
+				{{494, -9}, {502, -9}},
+			},
+		},
 	}
 
 	for name, tc := range testCases {
@@ -65,10 +74,10 @@ func TestAssembleWorld(t *testing.T) {
 		wantWorld  [][]Cell
 		wantOffset Location
 	}{
-		"horizontal": {data: [][2]Location{{{0, 0}, {2, 0}}}, wantOffset: Location{0, 0}, wantWorld: [][]Cell{{Rock, Rock, Rock}}},
-		"vertical":   {data: [][2]Location{{{0, 0}, {0, 2}}}, wantOffset: Location{0, 0}, wantWorld: [][]Cell{{Rock}, {Rock}, {Rock}}},
-		"L":          {data: [][2]Location{{{0, 0}, {1, 0}}, {{0, 0}, {0, 1}}}, wantOffset: Location{0, 0}, wantWorld: [][]Cell{{Rock, Rock}, {Rock, Air}}},
-		"offset L":   {data: [][2]Location{{{10, 20}, {11, 20}}, {{10, 20}, {10, 21}}}, wantOffset: Location{10, 20}, wantWorld: [][]Cell{{Rock, Rock}, {Rock, Air}}},
+		"horizontal": {data: [][2]Location{{{0, 0}, {2, 0}}}, wantOffset: Location{-1, 0}, wantWorld: [][]Cell{{Air, Rock, Rock, Rock, Air}}},
+		"vertical":   {data: [][2]Location{{{0, -2}, {0, 0}}}, wantOffset: Location{-1, -2}, wantWorld: [][]Cell{{Air, Rock, Air}, {Air, Rock, Air}, {Air, Rock, Air}}},
+		"L":          {data: [][2]Location{{{0, 0}, {1, 0}}, {{0, -1}, {0, 0}}}, wantOffset: Location{-1, -1}, wantWorld: [][]Cell{{Air, Rock, Air, Air}, {Air, Rock, Rock, Air}}},
+		"offset L":   {data: [][2]Location{{{10, -20}, {11, -20}}, {{10, -21}, {10, -20}}}, wantOffset: Location{9, -21}, wantWorld: [][]Cell{{Air, Rock, Air, Air}, {Air, Rock, Rock, Air}}},
 	}
 
 	for name, tc := range testCases {
@@ -88,11 +97,16 @@ func TestPart1(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		world  [][]Cell
-		offset Location
-		want   uint
+		input [][2]Location
+		want  uint
 	}{
-		"empty": {world: [][]Cell{}, offset: Location{0, 0}, want: 0},
+		"example": {input: [][2]Location{
+			{{498, -6}, {498, -4}},
+			{{496, -6}, {498, -6}},
+			{{502, -4}, {503, -4}},
+			{{502, -9}, {502, -4}},
+			{{494, -9}, {502, -9}},
+		}, want: 24},
 	}
 
 	for name, tc := range testCases {
@@ -100,7 +114,8 @@ func TestPart1(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := day14.Part1(tc.world, tc.offset)
+			world, offset := day14.AssembleWorld(tc.input)
+			got, err := day14.Part1(world, offset)
 
 			require.NoError(t, err)
 			require.Equal(t, tc.want, got)
@@ -133,7 +148,7 @@ func TestPart2(t *testing.T) {
 }
 
 func TestRealData(t *testing.T) {
-	expected := `Result of part 1: 0
+	expected := `Result of part 1: 618
 Result of part 2: 0
 `
 	buff := new(bytes.Buffer)

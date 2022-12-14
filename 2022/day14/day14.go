@@ -21,7 +21,14 @@ const (
 
 // Part1 solves the first half of the problem.
 func Part1(world [][]Cell, offset Location) (uint, error) {
-	return 0, nil
+
+	var count uint
+	for done := false; !done; count++ {
+		pouring := Location{X: 500 - offset.X, Y: len(world)}
+		done = simulate(&world, pouring)
+	}
+
+	return count - 1, nil
 }
 
 // Part2 solves the second half of the problem.
@@ -30,10 +37,54 @@ func Part2(world [][]Cell, offset Location) (uint, error) {
 }
 
 // ------------- Implementation ------------------
+
+func simulate(world *[][]Cell, p Location) (infinity bool) {
+	for {
+		// Attemp to fall
+		for {
+			// Fall off the world
+			if p.Y-1 < 0 {
+				return true
+			}
+			// Cannot fall any longer
+			if (*world)[p.Y-1][p.X] != Air {
+				break
+			}
+			// Continue falling
+			p.Y--
+		}
+		// Slide left
+		if (*world)[p.Y-1][p.X-1] == Air {
+			p.Y--
+			p.X--
+			continue
+		}
+		// Slide right
+		if (*world)[p.Y-1][p.X+1] == Air {
+			p.Y--
+			p.X++
+			continue
+		}
+		//Nowhere to go
+		break
+	}
+	// Stack of sand piled up to the source!
+	if p.Y >= cap(*world) {
+		panic("Stack of sand piled up to the source!")
+	}
+	// Stack of sand piled up to the top, making more room.
+	if p.Y >= len(*world) {
+		*world = append(*world, make([]Cell, len((*world)[0])))
+	}
+	(*world)[p.Y][p.X] = Sand
+
+	return false
+}
+
 type Cell int
 
 const (
-	Air Cell = iota
+	Air Cell = iota // Air must be default value
 	Rock
 	Sand
 )
@@ -43,6 +94,10 @@ type Location struct {
 }
 
 func AssembleWorld(segments [][2]Location) (world [][]Cell, offset Location) {
+	if len(segments) == 0 {
+		return [][]Cell{{Air, Air, Air}}, Location{-1, 0}
+	}
+
 	// Finding extrema
 	type extrema struct {
 		minX, minY, maxX, maxY int
@@ -56,11 +111,17 @@ func AssembleWorld(segments [][2]Location) (world [][]Cell, offset Location) {
 		return ex
 	}, extrema{math.MaxInt, math.MaxInt, math.MinInt, math.MinInt})
 
-	// Generating world
-	width := fun.Max(0, int64(ex.maxX)-int64(ex.minX)+1) // RELU and int64 protect from empty inputs
-	height := fun.Max(0, int64(ex.maxY)-int64(ex.minY)+1)
+	// Making room to let sand fall off the sides
+	ex.minX--
+	ex.maxX++
 
-	world = array.Generate(int(height), func() []Cell { return array.Generate(int(width), func() Cell { return Air }) })
+	// Generating world
+	height := int64(ex.maxY) - int64(ex.minY) + 1
+	width := int64(ex.maxX) - int64(ex.minX) + 1
+
+	world = make([][]Cell, height, 1-ex.minY) // (World is upside down)
+	array.Foreach(world, func(row *[]Cell) { *row = make([]Cell, width) })
+
 	offset = Location{ex.minX, ex.minY}
 
 	// Filling world
@@ -171,6 +232,7 @@ func ReadData() ([][2]Location, error) {
 		if err != nil {
 			return nil, fmt.Errorf("Failed to parse point %q in line %q: %v", tokens[0], sc.Text(), err)
 		}
+		prev.Y *= -1 // We store the world upside down
 
 		for _, tok := range tokens[1:] {
 			var new Location
@@ -178,6 +240,7 @@ func ReadData() ([][2]Location, error) {
 			if err != nil {
 				return nil, fmt.Errorf("Failed to parse point %q in line %q: %v", tokens[0], sc.Text(), err)
 			}
+			new.Y *= -1 // We store the world upside down
 
 			localSegments = append(localSegments, [2]Location{prev, new})
 			latest := &localSegments[len(localSegments)-1]
