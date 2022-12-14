@@ -20,7 +20,7 @@ const (
 )
 
 const (
-	SourceX = 500
+	SourceX = 500 // SourceX is the X coordinate of the location where the source is.
 )
 
 // Part1 solves the first half of the problem.
@@ -56,15 +56,19 @@ func Part2(world [][]Cell, offset, precount int) (int, error) {
 	}
 }
 
-// ------------- Implementation ------------------
-type Cell int
+// ------------- Implementation ------------------.
 
+// Cell are the contents of a certain location in the world.
+type Cell uint8
+
+// Types of cell.
 const (
 	Air Cell = iota // Air must be default value
 	Rock
 	Sand
 )
 
+// Location is a position in space.
 type Location struct {
 	X, Y int
 }
@@ -109,6 +113,7 @@ func simulate(world [][]Cell, p Location) (Location, error) {
 	return p, nil
 }
 
+// StrWorld displays the world as a string.
 func StrWorld(world [][]Cell) string {
 	str := fmt.Sprintf("Map(height: %d, width: %d):\n", len(world), len(world[0]))
 	for i, row := range world {
@@ -128,6 +133,10 @@ func StrWorld(world [][]Cell) string {
 	return str
 }
 
+// AssembleWorld generates an array with the relevant part of the world.
+// Xoffset indicates the X-value of the first column
+//
+//	-> i.e. world[0][0] corresponds to (x,y)=(Xoffset, 0).
 func AssembleWorld(segments [][2]Location, sourceX int) (world [][]Cell, Xoffset int) {
 	if len(segments) == 0 {
 		return [][]Cell{{Air, Air, Air}}, 1
@@ -179,12 +188,6 @@ func AssembleWorld(segments [][2]Location, sourceX int) (world [][]Cell, Xoffset
 
 // ---------- Here be boilerplate ------------------
 
-type problemResult struct {
-	id  int
-	res string
-	err error
-}
-
 // Main is the entry point to today's problem solution.
 func Main(stdout io.Writer) error {
 	input, err := ReadData()
@@ -201,6 +204,9 @@ func Main(stdout io.Writer) error {
 	fmt.Fprintf(stdout, "Result of part 1: %d\n", count1)
 
 	count2, err := Part2(world, boundingBox, count1)
+	if err != nil {
+		return err
+	}
 	fmt.Fprintf(stdout, "Result of part 2: %d\n", count2)
 
 	return nil
