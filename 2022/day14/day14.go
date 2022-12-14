@@ -4,9 +4,9 @@ package day14
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
-	"math"
 	"strings"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
@@ -19,68 +19,35 @@ const (
 	fileName = "input.txt"
 )
 
+const (
+	SourceX = 500
+)
+
 // Part1 solves the first half of the problem.
-func Part1(world [][]Cell, offset Location) (uint, error) {
+func Part1(world [][]Cell, offset int) (int, error) {
+	pouring := Location{X: 500 - offset, Y: 0}
 
-	var count uint
-	for done := false; !done; count++ {
-		pouring := Location{X: 500 - offset.X, Y: len(world)}
-		done = simulate(&world, pouring)
+	for count := 0; ; count++ {
+		p, err := simulate(world, pouring)
+		if err != nil {
+			return 0, err
+		}
+		// fmt.Printf("---------- STEP %d --------------------\n%s\n", count, StrWorld(world))
+		if p.Y == len(world)-1 {
+			return count, nil
+		}
+		if p.Y == -1 {
+			return 0, errors.New("fell off the world in part 1")
+		}
 	}
-
-	return count - 1, nil
 }
 
 // Part2 solves the second half of the problem.
-func Part2(world [][]Cell, offset Location) (uint, error) {
+func Part2(world [][]Cell, offset int) (int, error) {
 	return 0, nil
 }
 
 // ------------- Implementation ------------------
-
-func simulate(world *[][]Cell, p Location) (infinity bool) {
-	for {
-		// Attemp to fall
-		for {
-			// Fall off the world
-			if p.Y-1 < 0 {
-				return true
-			}
-			// Cannot fall any longer
-			if (*world)[p.Y-1][p.X] != Air {
-				break
-			}
-			// Continue falling
-			p.Y--
-		}
-		// Slide left
-		if (*world)[p.Y-1][p.X-1] == Air {
-			p.Y--
-			p.X--
-			continue
-		}
-		// Slide right
-		if (*world)[p.Y-1][p.X+1] == Air {
-			p.Y--
-			p.X++
-			continue
-		}
-		//Nowhere to go
-		break
-	}
-	// Stack of sand piled up to the source!
-	if p.Y >= cap(*world) {
-		panic("Stack of sand piled up to the source!")
-	}
-	// Stack of sand piled up to the top, making more room.
-	if p.Y >= len(*world) {
-		*world = append(*world, make([]Cell, len((*world)[0])))
-	}
-	(*world)[p.Y][p.X] = Sand
-
-	return false
-}
-
 type Cell int
 
 const (
@@ -93,44 +60,98 @@ type Location struct {
 	X, Y int
 }
 
-func AssembleWorld(segments [][2]Location) (world [][]Cell, offset Location) {
+func simulate(world [][]Cell, p Location) (Location, error) {
+	for {
+		// Fall down
+		if p.Y+1 >= len(world) {
+			break // Touched the bottom
+		}
+		if world[p.Y+1][p.X] == Air {
+			p.Y++
+			continue
+		}
+
+		// Slide left
+		if p.X <= 0 {
+			return Location{-1, -1}, nil
+		}
+		if world[p.Y+1][p.X-1] == Air {
+			p.Y++
+			p.X--
+			continue
+		}
+
+		// Slide right
+		if p.X+1 >= len(world[0]) {
+			return Location{+1, -1}, nil
+		}
+		if world[p.Y+1][p.X+1] == Air {
+			p.Y++
+			p.X++
+			continue
+		}
+		//Nowhere to go
+		break
+	}
+	world[p.Y][p.X] = Sand
+	return p, nil
+}
+
+func StrWorld(world [][]Cell) string {
+	str := fmt.Sprintf("Map(height: %d, width: %d):\n", len(world), len(world[0]))
+	for i, row := range world {
+		str += fmt.Sprintf("%3d | ", i)
+		for _, cell := range row {
+			switch cell {
+			case Air:
+				str += "."
+			case Sand:
+				str += "O"
+			case Rock:
+				str += "#"
+			}
+		}
+		str += "\n"
+	}
+	return str
+}
+
+func AssembleWorld(segments [][2]Location, sourceX int) (world [][]Cell, Xoffset int) {
 	if len(segments) == 0 {
-		return [][]Cell{{Air, Air, Air}}, Location{-1, 0}
+		return [][]Cell{{Air, Air, Air}}, 1
+	}
+
+	type box struct {
+		MinX, MaxX, MinY, MaxY int
 	}
 
 	// Finding extrema
-	type extrema struct {
-		minX, minY, maxX, maxY int
-	}
-	ex := array.Reduce(segments, func(ex extrema, s [2]Location) extrema {
+	b := array.Reduce(segments, func(b box, segment [2]Location) box {
 		// Exploiting fact that segments go from small to big
-		ex.minX = fun.Min(ex.minX, s[0].X)
-		ex.minY = fun.Min(ex.minY, s[0].Y)
-		ex.maxX = fun.Max(ex.maxX, s[1].X)
-		ex.maxY = fun.Max(ex.maxY, s[1].Y)
-		return ex
-	}, extrema{math.MaxInt, math.MaxInt, math.MinInt, math.MinInt})
+		b.MinX = fun.Min(b.MinX, segment[0].X)
+		b.MinY = fun.Min(b.MinY, segment[0].Y)
+		b.MaxX = fun.Max(b.MaxX, segment[1].X)
+		b.MaxY = fun.Max(b.MaxY, segment[1].Y)
+		return b
+	}, box{MinX: sourceX, MaxX: sourceX, MinY: 0, MaxY: 0}) // {sourceX, 0} must be contained
+
+	b.MaxY++ // Making room to fit the bottom in part 2
+	height := int64(b.MaxY) - int64(b.MinY) + 1
 
 	// Making room to let sand fall off the sides
-	ex.minX--
-	ex.maxX++
+	b.MinX -= int(height - 1)
+	b.MaxX += int(height - 1)
+	width := int64(b.MaxX) - int64(b.MinX) + 1
 
-	// Generating world
-	height := int64(ex.maxY) - int64(ex.minY) + 1
-	width := int64(ex.maxX) - int64(ex.minX) + 1
-
-	world = make([][]Cell, height, 1-ex.minY) // (World is upside down)
+	world = make([][]Cell, height)
 	array.Foreach(world, func(row *[]Cell) { *row = make([]Cell, width) })
 
-	offset = Location{ex.minX, ex.minY}
-
 	// Filling world
+	offset := b.MinX
 	array.Foreach(segments, func(s *[2]Location) {
 		// Exploiting fact that segments go from small to big
-		s[0].X -= offset.X
-		s[0].Y -= offset.Y
-		s[1].X -= offset.X
-		s[1].Y -= offset.Y
+		s[0].X -= offset
+		s[1].X -= offset
 		dx := fun.Sign(s[1].X - s[0].X)
 		dy := fun.Sign(s[1].Y - s[0].Y)
 		l := s[0]
@@ -144,10 +165,6 @@ func AssembleWorld(segments [][2]Location) (world [][]Cell, offset Location) {
 	return world, offset
 }
 
-func copyWorld(w [][]Cell) [][]Cell {
-	return array.Map(w, func(r []Cell) []Cell { return array.Map(r, fun.Identity[Cell]) })
-}
-
 // ---------- Here be boilerplate ------------------
 
 type problemResult struct {
@@ -159,47 +176,20 @@ type problemResult struct {
 // Main is the entry point to today's problem solution.
 func Main(stdout io.Writer) error {
 	input, err := ReadData()
-	world1, offset := AssembleWorld(input)
-	world2 := copyWorld(world1)
-
-	resultCh := make(chan problemResult)
-	go func() {
-		if err != nil {
-			resultCh <- problemResult{0, "", err}
-			return
-		}
-		result, err := Part1(world1, offset)
-		if err != nil {
-			resultCh <- problemResult{0, "", err}
-		}
-		resultCh <- problemResult{0, fmt.Sprintf("Result of part 1: %d", result), nil}
-	}()
-
-	go func() {
-		if err != nil {
-			resultCh <- problemResult{0, "", err}
-			return
-		}
-		result, err := Part2(world2, offset)
-		if err != nil {
-			resultCh <- problemResult{1, "", err}
-			return
-		}
-		resultCh <- problemResult{1, fmt.Sprintf("Result of part 2: %d", result), nil}
-	}()
-
-	var results [2]problemResult
-	for i := 0; i < 2; i++ {
-		r := <-resultCh
-		results[r.id] = r
+	if err != nil {
+		return err
 	}
 
-	for _, v := range results {
-		if v.err != nil {
-			return v.err
-		}
-		fmt.Fprintln(stdout, v.res)
+	world, boundingBox := AssembleWorld(input, SourceX)
+
+	result, err := Part1(world, boundingBox)
+	if err != nil {
+		return err
 	}
+	fmt.Fprintf(stdout, "Result of part 1: %d\n", result)
+
+	result, err = Part2(world, boundingBox)
+	fmt.Fprintf(stdout, "Result of part 2: %d\n", result)
 
 	return nil
 }
@@ -232,7 +222,6 @@ func ReadData() ([][2]Location, error) {
 		if err != nil {
 			return nil, fmt.Errorf("Failed to parse point %q in line %q: %v", tokens[0], sc.Text(), err)
 		}
-		prev.Y *= -1 // We store the world upside down
 
 		for _, tok := range tokens[1:] {
 			var new Location
@@ -240,7 +229,6 @@ func ReadData() ([][2]Location, error) {
 			if err != nil {
 				return nil, fmt.Errorf("Failed to parse point %q in line %q: %v", tokens[0], sc.Text(), err)
 			}
-			new.Y *= -1 // We store the world upside down
 
 			localSegments = append(localSegments, [2]Location{prev, new})
 			latest := &localSegments[len(localSegments)-1]
