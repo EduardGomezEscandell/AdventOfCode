@@ -4,10 +4,13 @@ package day15
 import (
 	"bufio"
 	"bytes"
+	"context"
+	"errors"
 	"fmt"
 	"io"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
 )
@@ -17,51 +20,121 @@ const (
 	fileName = "input.txt"
 )
 
-// Part1 solves the first half of the problem.
+// Part1 solves the first half of the problem. The result is the
+// sum of the size of unavailable ranges, minus the number of
+// beacons in these ranges.
 func Part1(sensors []Sensor, beacons []Beacon, target Long) Long {
 	ranges, beaconsX := findExcludedRanges(sensors, beacons, target)
-
 	return array.MapReduce(ranges, (Range).length, fun.Add[Long], Long(-len(beaconsX)))
 }
 
-// Part2 solves the second half of the problem.
-func Part2(sensors []Sensor, beacons []Beacon, world Range) Long {
-	var x Long
-	var y Long
-	for y = world.Begin; y < world.End; y++ {
-		ranges, beaconsX := findExcludedRanges(sensors, beacons, y)
-		for _, x := range beaconsX { // beaconsX will be empty most of the time
+// Part2 solves the second half of the problem. It is mostly a wrapper
+// for the parallelisation, so look at part2Worker to see the logic in
+// how to solve the problem.
+func Part2(sensors []Sensor, beacons []Beacon, world Range) (Long, error) {
+	// Communication
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	chResult := make(chan Point)
+	defer close(chResult)
+
+	chSuccess := make(chan bool)
+	defer close(chSuccess)
+
+	// Partitioning the world
+	nworkers := int(fun.Min(64, world.length()))
+	wsize := world.length() / Long(nworkers)
+
+	for w := 0; w < nworkers; w++ {
+		w := w
+		go func() {
+			yRange := Range{
+				Begin: world.Begin + Long(w)*wsize,
+				End:   fun.Min(world.End, world.Begin+Long(w+1)*wsize),
+			}
+			position, found := part2Worker(ctx, sensors, beacons, world, yRange)
+			chSuccess <- found
+			if !found {
+				return
+			}
+			chResult <- position
+			cancel() // Cancelling all other workers: we've found a solution
+		}()
+	}
+
+	// Wait for all workers to cancel, otherwise we leak them.
+	found := charray.Reduce(charray.Take(chSuccess, nworkers), fun.Or, false)
+	if !found {
+		return 0, errors.New("failed to find distress beacon")
+	}
+	position := <-chResult
+	return (P2RangeEnd-1)*position.X + position.Y, nil
+}
+
+// part2Worker solves part 2 of the problem in a reduced section
+// of the world, with the option of being interrupted from outside.
+func part2Worker(ctx context.Context, sensors []Sensor, beacons []Beacon, worldX Range, worldY Range) (Point, bool) {
+	var p Point
+	var i Long
+	for p.Y = worldY.Begin; p.Y < worldY.End; p.Y++ {
+		// scanning row of the world
+		ranges, beaconsX := findExcludedRanges(sensors, beacons, p.Y)
+
+		for _, x := range beaconsX {
+			// beaconsX will be empty most of the time, so not much cost added here
 			ranges = AddRange(ranges, Range{x, x + 1})
 		}
 
 		endLead, gaps, beginTail := extractGaps(ranges)
-		if endLead > world.Begin {
-			x = world.Begin
-			break
+
+		// Free spaces to the left of the world
+		if endLead > worldX.Begin {
+			p.X = worldX.Begin
+			return p, true
 		}
 
-		if beginTail < world.End {
-			x = beginTail
-			break
+		// Free spaces to the right of the world
+		if beginTail < worldX.End {
+			p.X = beginTail
+			return p, true
 		}
 
+		// Free spaces in the middle of the world
 		if len(gaps) != 0 {
-			x = gaps[0].Begin
-			break
+			p.X = gaps[0].Begin
+			return p, true
+		}
+
+		// No free spots, we poll the interruptor
+		// and contiue with the next row.
+		i++
+		if i%100 == 0 { // (We only actually poll every 100 rows)
+			select {
+			default:
+				continue // No interruption
+			case <-ctx.Done():
+				return p, false // Interrupted from outside, aborting
+			}
 		}
 	}
-
-	return (P2RangeEnd-1)*x + y
+	return p, false
 }
 
-func extractGaps(r []Range) (endLead Long, between []Range, beginTail Long) {
-	if len(r) == 0 {
+// extractGaps takes a set of ranges and returns its complimentary set S.
+// Note that this complimentary set is unbounded to the left and right,
+// so the mathematical expression would be:
+//
+//   S = (-∞, endLead) U central[0] U central[1] U ... U  [beginTail, +∞)
+//
+func extractGaps(A []Range) (endLead Long, central []Range, beginTail Long) {
+	if len(A) == 0 {
 		return 0, []Range{}, 0
 	}
 
-	endLead = r[0].Begin
-	between = array.AdjacentMap(r, func(r1, r2 Range) Range { return Range{r1.End, r2.Begin} })
-	beginTail = r[len(r)-1].End
+	endLead = A[0].Begin
+	central = array.AdjacentMap(A, func(r1, r2 Range) Range { return Range{r1.End, r2.Begin} })
+	beginTail = A[len(A)-1].End
 
 	return
 }
@@ -234,7 +307,10 @@ func Main(stdout io.Writer) error {
 	p1 := Part1(sensors, beacons, P1Target)
 	fmt.Fprintf(stdout, "Result of part 1: %d\n", p1)
 
-	p2 := Part2(sensors, beacons, Range{P2RangeBegin, P2RangeEnd})
+	p2, err := Part2(sensors, beacons, Range{P2RangeBegin, P2RangeEnd})
+	if err != nil {
+		return err
+	}
 	fmt.Fprintf(stdout, "Result of part 2: %d\n", p2)
 
 	return nil

@@ -227,7 +227,8 @@ func TestPart2(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			got := day15.Part2(tc.sensors, tc.beacons, tc.world)
+			got, err := day15.Part2(tc.sensors, tc.beacons, tc.world)
+			require.NoError(t, err)
 			require.Equal(t, tc.want, got)
 		})
 	}

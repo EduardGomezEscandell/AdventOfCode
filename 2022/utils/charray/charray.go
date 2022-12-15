@@ -266,3 +266,18 @@ func Concat[T any](a <-chan T, b <-chan T) <-chan T {
 	}()
 	return out
 }
+
+func Take[T any](in <-chan T, n int) <-chan T {
+	out := make(chan T, cap(in))
+	go func() {
+		defer close(out)
+		for i := 0; i < n; i++ {
+			v, ok := <-in
+			if !ok {
+				break
+			}
+			out <- v
+		}
+	}()
+	return out
+}
