@@ -3,13 +3,11 @@
 package array
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/generics"
 )
-
-type number generics.Number
 
 // Map applies function f:T->O element-wise to generate another
 // array []O of the same size.
@@ -118,7 +116,7 @@ func ZipReduce[L, R, M, O any](first []L, second []R, zip func(L, R) M, fold fun
 
 // AdjacentMap slides a window of size 2 across the array arr applying operator 'f'
 // to produce an array of size len(arr)-1.
-func AdjacentMap[T, M number](arr []T, f func(T, T) M) []M {
+func AdjacentMap[T, M any](arr []T, f func(T, T) M) []M {
 	if len(arr) < 1 {
 		return []M{}
 	}
@@ -326,9 +324,9 @@ func Find[T any](arr []T, val T, eq fun.Comparator[T]) int {
 
 // FindIf traverses array arr searching for an element that makes
 // f return true, and returs its index. If none match, -1 is returned.
-func FindIf[T any](arr []T, eq fun.Predicate[T]) int {
+func FindIf[T any](arr []T, pred fun.Predicate[T]) int {
 	for i, v := range arr {
-		if eq(v) {
+		if pred(v) {
 			return i
 		}
 	}
@@ -373,4 +371,21 @@ func Partition[T any](arr []T, pred fun.Predicate[T]) int {
 		j++
 	}
 	return j
+}
+
+// Insert returns an array {arr[:position], value, arr[position:]}.
+// Original array becomes invalidated. Usage:
+//
+//	arr = Insert(arr, "hello", 5)
+func Insert[T any](arr []T, value T, position int) []T {
+	if position < 0 || position > len(arr) {
+		panic(fmt.Errorf("index %d out of range [0, %d)", position, len(arr)+1))
+	}
+	var t T
+	arr = append(arr, t) // Dummy entry, will be overwritten
+	for i := len(arr) - 1; i > position; i-- {
+		arr[i] = arr[i-1]
+	}
+	arr[position] = value
+	return arr
 }
