@@ -174,8 +174,7 @@ func TestPart1(t *testing.T) {
 			{3, Point{2, 10}},
 			{4, Point{25, 17}},
 			{5, Point{21, 22}},
-		},
-		},
+		}},
 	}
 
 	for name, tc := range testCases {
@@ -183,9 +182,7 @@ func TestPart1(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := day15.Part1(tc.sensors, tc.beacons, tc.target)
-
-			require.NoError(t, err)
+			got := day15.Part1(tc.sensors, tc.beacons, tc.target)
 			require.Equal(t, tc.want, got)
 		})
 	}
@@ -197,9 +194,32 @@ func TestPart2(t *testing.T) {
 	testCases := map[string]struct {
 		sensors []Sensor
 		beacons []Beacon
-		want    int
+		world   Range
+		want    Long
 	}{
-		"empty": {sensors: []Sensor{}, beacons: []Beacon{}, want: 0},
+		"example": {world: Range{0, 21}, want: 56000011, sensors: []Sensor{
+			{Point{2, 18}, 0},
+			{Point{9, 16}, 1},
+			{Point{13, 2}, 2},
+			{Point{12, 14}, 1},
+			{Point{10, 20}, 1},
+			{Point{14, 17}, 1},
+			{Point{8, 7}, 3},
+			{Point{2, 0}, 3},
+			{Point{0, 11}, 3},
+			{Point{20, 14}, 4},
+			{Point{17, 20}, 5},
+			{Point{16, 7}, 2},
+			{Point{14, 3}, 2},
+			{Point{20, 1}, 2},
+		}, beacons: []Beacon{
+			{0, Point{-2, 15}},
+			{1, Point{10, 16}},
+			{2, Point{15, 3}},
+			{3, Point{2, 10}},
+			{4, Point{25, 17}},
+			{5, Point{21, 22}},
+		}},
 	}
 
 	for name, tc := range testCases {
@@ -207,9 +227,7 @@ func TestPart2(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := day15.Part2(tc.sensors, tc.beacons)
-
-			require.NoError(t, err)
+			got := day15.Part2(tc.sensors, tc.beacons, tc.world)
 			require.Equal(t, tc.want, got)
 		})
 	}
@@ -217,7 +235,7 @@ func TestPart2(t *testing.T) {
 
 func TestRealData(t *testing.T) {
 	expected := `Result of part 1: 5511201
-Result of part 2: 0
+Result of part 2: 11318723411840
 `
 	buff := new(bytes.Buffer)
 

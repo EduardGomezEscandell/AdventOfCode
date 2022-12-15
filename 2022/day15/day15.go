@@ -18,12 +18,17 @@ const (
 )
 
 // Part1 solves the first half of the problem.
-func Part1(sensors []Sensor, beacons []Beacon, target Long) (Long, error) {
-	ranges := []Range{}
+func Part1(sensors []Sensor, beacons []Beacon, target Long) Long {
+	ranges, beaconsX := solveLine(sensors, beacons, target)
 
+	return array.MapReduce(ranges, (Range).length, fun.Add[Long], Long(-len(beaconsX)))
+}
+
+func solveLine(sensors []Sensor, beacons []Beacon, targetY Long) ([]Range, []Long) {
+	ranges := []Range{}
 	for _, s := range sensors {
 		radius := manhattan(s.Point, beacons[s.Detects].Point)
-		dist := fun.Abs(s.Y - target)
+		dist := fun.Abs(s.Y - targetY)
 		if dist > radius {
 			continue // Sensor is too far away
 		}
@@ -34,10 +39,9 @@ func Part1(sensors []Sensor, beacons []Beacon, target Long) (Long, error) {
 		}
 		ranges = AddRange(ranges, r)
 	}
-
 	beaconOverlaps := map[Long]struct{}{}
 	for _, b := range beacons {
-		if b.Y != target {
+		if b.Y != targetY {
 			continue
 		}
 		_, inRange := locatePoint(ranges, b.X)
@@ -46,13 +50,53 @@ func Part1(sensors []Sensor, beacons []Beacon, target Long) (Long, error) {
 		}
 		beaconOverlaps[b.X] = struct{}{}
 	}
-
-	return array.MapReduce(ranges, (Range).length, fun.Add[Long], Long(-len(beaconOverlaps))), nil
+	beaconsX := make([]Long, 0, len(beaconOverlaps))
+	for x := range beaconOverlaps {
+		beaconsX = append(beaconsX, x)
+	}
+	return ranges, beaconsX
 }
 
 // Part2 solves the second half of the problem.
-func Part2([]Sensor, []Beacon) (int, error) {
-	return 0, nil
+func Part2(sensors []Sensor, beacons []Beacon, world Range) Long {
+	var x Long
+	var y Long
+	for y = world.Begin; y < world.End; y++ {
+		exclusion, beaconsX := solveLine(sensors, beacons, y)
+		for _, x := range beaconsX { // beaconsX will be empty most of the time
+			exclusion = AddRange(exclusion, Range{x, x + 1})
+		}
+
+		endLead, gaps, beginTail := extractGaps(exclusion, beaconsX)
+		if endLead > world.Begin {
+			x = world.Begin
+			break
+		}
+
+		if beginTail < world.End {
+			x = beginTail
+			break
+		}
+
+		if len(gaps) != 0 {
+			x = gaps[0].Begin
+			break
+		}
+	}
+
+	return (P2RangeEnd-1)*x + y
+}
+
+func extractGaps(r []Range, excludedX []Long) (endLead Long, between []Range, beginTail Long) {
+	if len(r) == 0 {
+		return 0, []Range{}, 0
+	}
+
+	endLead = r[0].Begin
+	between = array.AdjacentMap(r, func(r1, r2 Range) Range { return Range{r1.End, r2.Begin} })
+	beginTail = r[len(r)-1].End
+
+	return
 }
 
 // ------------- Implementation ------------------.
@@ -165,7 +209,9 @@ func locatePoint(ranges []Range, x Long) (firstGap, firstRange int) {
 }
 
 const (
-	P1Target = 2_000_000 // P1Target is the Y to mesure in part 1
+	P1Target     Long = 2_000_000 // P1Target is the Y to measure in part 1.
+	P2RangeBegin Long = 0         // P2RangeBegin is the inclusive lower bound for Y to measure in part 2.
+	P2RangeEnd   Long = 4_000_001 // P2RangeEnd is the exclusive upper bound for Y to measure in part 2.
 )
 
 // manhattan is the manhattan distance between points p and q.
@@ -183,16 +229,10 @@ func Main(stdout io.Writer) error {
 		return err
 	}
 
-	p1, err := Part1(sensors, beacons, P1Target)
-	if err != nil {
-		return err
-	}
+	p1 := Part1(sensors, beacons, P1Target)
 	fmt.Fprintf(stdout, "Result of part 1: %d\n", p1)
 
-	p2, err := Part2(sensors, beacons)
-	if err != nil {
-		return err
-	}
+	p2 := Part2(sensors, beacons, Range{P2RangeBegin, P2RangeEnd})
 	fmt.Fprintf(stdout, "Result of part 2: %d\n", p2)
 
 	return nil

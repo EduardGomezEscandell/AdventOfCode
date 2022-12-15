@@ -119,7 +119,7 @@ func ZipReduce[L, R, M, O any](first []L, second []R, zip func(L, R) M, fold fun
 
 // AdjacentMap slides a window of size 2 across the array arr applying operator 'f'
 // to produce an array of size len(arr)-1.
-func AdjacentMap[T, M number](arr []T, f func(T, T) M) []M {
+func AdjacentMap[T, M any](arr []T, f func(T, T) M) []M {
 	if len(arr) < 1 {
 		return []M{}
 	}
