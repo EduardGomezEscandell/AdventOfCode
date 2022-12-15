@@ -1,0 +1,339 @@
+?   	github.com/EduardGomezEscandell/AdventOfCode/2022	[no test files]
+2022/12/14 19:27:00 Setup: Environment variable AOC_2022_ROOT not set. It should point to the root of the 2022 AoC project
+FAIL	github.com/EduardGomezEscandell/AdventOfCode/2022/day00	0.030s
+2022/12/14 19:27:00 Setup: Environment variable AOC_2022_ROOT not set. It should point to the root of the 2022 AoC project
+--- FAIL: TestRealData (0.00s)
+    day01_test.go:103: 
+        	Error Trace:	/home/edu/AdventOfCode/2022/day01/day01_test.go:103
+        	Error:      	Received unexpected error:
+        	            	open /home/edu/AdventOfCode/2022/day01/data/01/input.txt: no such file or directory
+        	Test:       	TestRealData
+FAIL
+FAIL	github.com/EduardGomezEscandell/AdventOfCode/2022/day01	0.020s
+2022/12/14 19:27:00 Setup: Environment variable AOC_2022_ROOT not set. It should point to the root of the 2022 AoC project
+--- FAIL: TestRealData (0.00s)
+    day02_test.go:119: 
+        	Error Trace:	/home/edu/AdventOfCode/2022/day02/day02_test.go:119
+        	Error:      	Received unexpected error:
+        	            	open /home/edu/AdventOfCode/2022/day02/data/02/input.txt: no such file or directory
+        	Test:       	TestRealData
+FAIL
+FAIL	github.com/EduardGomezEscandell/AdventOfCode/2022/day02	0.024s
+2022/12/14 19:27:00 Setup: Environment variable AOC_2022_ROOT not set. It should point to the root of the 2022 AoC project
+--- FAIL: TestRealData (0.00s)
+    day03_test.go:98: 
+        	Error Trace:	/home/edu/AdventOfCode/2022/day03/day03_test.go:98
+        	Error:      	Received unexpected error:
+        	            	open /home/edu/AdventOfCode/2022/day03/data/03/input.txt: no such file or directory
+        	Test:       	TestRealData
+FAIL
+FAIL	github.com/EduardGomezEscandell/AdventOfCode/2022/day03	0.029s
+2022/12/14 19:27:00 Setup: Environment variable AOC_2022_ROOT not set. It should point to the root of the 2022 AoC project
+--- FAIL: TestRealData (0.00s)
+    day04_test.go:110: 
+        	Error Trace:	/home/edu/AdventOfCode/2022/day04/day04_test.go:110
+        	Error:      	Received unexpected error:
+        	            	open /home/edu/AdventOfCode/2022/day04/data/04/input.txt: no such file or directory
+        	Test:       	TestRealData
+FAIL
+FAIL	github.com/EduardGomezEscandell/AdventOfCode/2022/day04	0.042s
+2022/12/14 19:27:00 Setup: Environment variable AOC_2022_ROOT not set. It should point to the root of the 2022 AoC project
+--- FAIL: TestRealData (0.00s)
+    day05_test.go:108: 
+        	Error Trace:	/home/edu/AdventOfCode/2022/day05/day05_test.go:108
+        	Error:      	Received unexpected error:
+        	            	open /home/edu/AdventOfCode/2022/day05/data/05/input.txt: no such file or directory
+        	Test:       	TestRealData
+FAIL
+FAIL	github.com/EduardGomezEscandell/AdventOfCode/2022/day05	0.019s
+2022/12/14 19:27:00 Setup: Environment variable AOC_2022_ROOT not set. It should point to the root of the 2022 AoC project
+--- FAIL: TestRealData (0.00s)
+    day06_test.go:78: 
+        	Error Trace:	/home/edu/AdventOfCode/2022/day06/day06_test.go:78
+        	Error:      	Received unexpected error:
+        	            	open /home/edu/AdventOfCode/2022/day06/data/06/input.txt: no such file or directory
+        	Test:       	TestRealData
+FAIL
+FAIL	github.com/EduardGomezEscandell/AdventOfCode/2022/day06	0.026s
+2022/12/14 19:27:01 Setup: Environment variable AOC_2022_ROOT not set. It should point to the root of the 2022 AoC project
+--- FAIL: TestRealData (0.00s)
+    day07_test.go:161: 
+        	Error Trace:	/home/edu/AdventOfCode/2022/day07/day07_test.go:161
+        	Error:      	Received unexpected error:
+        	            	open /home/edu/AdventOfCode/2022/day07/data/07/input.txt: no such file or directory
+        	Test:       	TestRealData
+FAIL
+FAIL	github.com/EduardGomezEscandell/AdventOfCode/2022/day07	0.059s
+2022/12/14 19:27:00 Setup: Environment variable AOC_2022_ROOT not set. It should point to the root of the 2022 AoC project
+--- FAIL: TestRealData (0.00s)
+    day08_test.go:201: 
+        	Error Trace:	/home/edu/AdventOfCode/2022/day08/day08_test.go:201
+        	Error:      	Received unexpected error:
+        	            	open /home/edu/AdventOfCode/2022/day08/data/08/input.txt: no such file or directory
+        	Test:       	TestRealData
+FAIL
+FAIL	github.com/EduardGomezEscandell/AdventOfCode/2022/day08	0.044s
+2022/12/14 19:27:01 Setup: Environment variable AOC_2022_ROOT not set. It should point to the root of the 2022 AoC project
+--- FAIL: TestRealData (0.00s)
+    day09_test.go:98: 
+        	Error Trace:	/home/edu/AdventOfCode/2022/day09/day09_test.go:98
+        	Error:      	Received unexpected error:
+        	            	open /home/edu/AdventOfCode/2022/day09/data/09/input.txt: no such file or directory
+        	Test:       	TestRealData
+FAIL
+FAIL	github.com/EduardGomezEscandell/AdventOfCode/2022/day09	0.043s
+2022/12/14 19:27:01 Setup: Environment variable AOC_2022_ROOT not set. It should point to the root of the 2022 AoC project
+--- FAIL: TestRealData (0.00s)
+    day10_test.go:109: 
+        	Error Trace:	/home/edu/AdventOfCode/2022/day10/day10_test.go:109
+        	Error:      	Received unexpected error:
+        	            	open /home/edu/AdventOfCode/2022/day10/data/10/input.txt: no such file or directory
+        	Test:       	TestRealData
+FAIL
+FAIL	github.com/EduardGomezEscandell/AdventOfCode/2022/day10	0.017s
+2022/12/14 19:27:01 Setup: Environment variable AOC_2022_ROOT not set. It should point to the root of the 2022 AoC project
+--- FAIL: TestRealData (0.00s)
+    day11_test.go:146: 
+        	Error Trace:	/home/edu/AdventOfCode/2022/day11/day11_test.go:146
+        	Error:      	Received unexpected error:
+        	            	open /home/edu/AdventOfCode/2022/day11/data/11/input.txt: no such file or directory
+        	Test:       	TestRealData
+FAIL
+FAIL	github.com/EduardGomezEscandell/AdventOfCode/2022/day11	0.074s
+2022/12/14 19:27:01 Setup: Environment variable AOC_2022_ROOT not set. It should point to the root of the 2022 AoC project
+--- FAIL: TestRealData (0.00s)
+    day12_test.go:85: 
+        	Error Trace:	/home/edu/AdventOfCode/2022/day12/day12_test.go:85
+        	Error:      	Received unexpected error:
+        	            	open /home/edu/AdventOfCode/2022/day12/data/12/input.txt: no such file or directory
+        	Test:       	TestRealData
+FAIL
+FAIL	github.com/EduardGomezEscandell/AdventOfCode/2022/day12	0.012s
+2022/12/14 19:27:01 Setup: Environment variable AOC_2022_ROOT not set. It should point to the root of the 2022 AoC project
+--- FAIL: TestRealData (0.00s)
+    day13_test.go:170: 
+        	Error Trace:	/home/edu/AdventOfCode/2022/day13/day13_test.go:170
+        	Error:      	Received unexpected error:
+        	            	open /home/edu/AdventOfCode/2022/day13/data/13/input.txt: no such file or directory
+        	Test:       	TestRealData
+FAIL
+FAIL	github.com/EduardGomezEscandell/AdventOfCode/2022/day13	0.013s
+2022/12/14 19:27:01 Setup: Environment variable AOC_2022_ROOT not set. It should point to the root of the 2022 AoC project
+--- FAIL: TestRealData (0.00s)
+    day14_test.go:158: 
+        	Error Trace:	/home/edu/AdventOfCode/2022/day14/day14_test.go:158
+        	Error:      	Received unexpected error:
+        	            	open /home/edu/AdventOfCode/2022/day14/data/14/input.txt: no such file or directory
+        	Test:       	TestRealData
+10
+011111111100
+1
+22
+3
+000000020100
+000000000100
+000111000100
+2
+000001000100
+000001000110
+------------------
+011111111100
+000000220100
+000000000100
+000111000100
+000001000100
+000001000110
+------------------
+011111111100
+000000222100
+000000000100
+000111000100
+000001000100
+000001000110
+------------------
+011111111100
+000000222100
+000000020100
+000111000100
+000001000100
+000001000110
+------------------
+011111111100
+000002222100
+000000020100
+000111000100
+000001000100
+000001000110
+------------------
+011111111100
+000002222100
+000000220100
+000111000100
+000001000100
+000001000110
+------------------
+011111111100
+000002222100
+000000222100
+000111000100
+000001000100
+000001000110
+------------------
+011111111100
+000002222100
+000000222100
+000111020100
+000001000100
+000001000110
+------------------
+011111111100
+000022222100
+000000222100
+000111020100
+000001000100
+000001000110
+------------------
+011111111100
+000022222100
+000002222100
+000111020100
+000001000100
+000001000110
+------------------
+011111111100
+000022222100
+000002222100
+000111220100
+000001000100
+000001000110
+------------------
+011111111100
+000022222100
+000002222100
+000111222100
+000001000100
+000001000110
+------------------
+011111111100
+000022222100
+000002222100
+000111222100
+000001020100
+000001000110
+------------------
+011111111100
+000022222100
+000002222100
+000111222100
+000001220100
+000001000110
+------------------
+011111111100
+000022222100
+000002222100
+000111222100
+000001222100
+000001000110
+------------------
+011111111100
+000022222100
+000002222100
+000111222100
+000001222100
+000001020110
+------------------
+011111111100
+000022222100
+000002222100
+000111222100
+000001222100
+000001220110
+------------------
+011111111100
+000022222100
+000002222100
+000111222100
+000001222100
+000001222110
+------------------
+011111111100
+000022222100
+000002222100
+000111222100
+000001222100
+000001222110
+000000020000
+------------------
+011111111100
+000022222100
+000002222100
+000111222100
+000001222100
+000001222110
+000000220000
+------------------
+011111111100
+000022222100
+000002222100
+000111222100
+000001222100
+000001222110
+000000222000
+------------------
+011111111100
+000022222100
+000002222100
+000111222100
+000001222100
+000001222110
+000000222000
+000000020000
+------------------
+011111111100
+000022222100
+000002222100
+000111222100
+000021222100
+000001222110
+000000222000
+000000020000
+------------------
+011111111100
+002022222100
+000002222100
+000111222100
+000021222100
+000001222110
+000000222000
+000000020000
+------------------
+011111111100
+002022222100
+000002222100
+000111222100
+000021222100
+000001222110
+000000222000
+000000020000
+------------------
+--- FAIL: TestPart1 (0.00s)
+    --- FAIL: TestPart1/example (0.01s)
+        day14_test.go:121: 
+            	Error Trace:	/home/edu/AdventOfCode/2022/day14/day14_test.go:121
+            	Error:      	Not equal: 
+            	            	expected: 0x18
+            	            	actual  : 0x19
+            	Test:       	TestPart1/example
+FAIL
+FAIL	github.com/EduardGomezEscandell/AdventOfCode/2022/day14	0.019s
+ok  	github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array	(cached)
+ok  	github.com/EduardGomezEscandell/AdventOfCode/2022/utils/channel	(cached)
+ok  	github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray	(cached)
+ok  	github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun	(cached)
+?   	github.com/EduardGomezEscandell/AdventOfCode/2022/utils/generics	[no test files]
+ok  	github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input	(cached)
+?   	github.com/EduardGomezEscandell/AdventOfCode/2022/utils/myheap	[no test files]
+ok  	github.com/EduardGomezEscandell/AdventOfCode/2022/utils/stack	(cached)
+ok  	github.com/EduardGomezEscandell/AdventOfCode/2022/utils/testutils	(cached)
+?   	github.com/EduardGomezEscandell/AdventOfCode/2022/utils/tree	[no test files]
+FAIL
