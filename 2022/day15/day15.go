@@ -19,42 +19,9 @@ const (
 
 // Part1 solves the first half of the problem.
 func Part1(sensors []Sensor, beacons []Beacon, target Long) Long {
-	ranges, beaconsX := solveLine(sensors, beacons, target)
+	ranges, beaconsX := findExcludedRanges(sensors, beacons, target)
 
 	return array.MapReduce(ranges, (Range).length, fun.Add[Long], Long(-len(beaconsX)))
-}
-
-func solveLine(sensors []Sensor, beacons []Beacon, targetY Long) ([]Range, []Long) {
-	ranges := []Range{}
-	for _, s := range sensors {
-		radius := manhattan(s.Point, beacons[s.Detects].Point)
-		dist := fun.Abs(s.Y - targetY)
-		if dist > radius {
-			continue // Sensor is too far away
-		}
-		slack := radius - dist
-		r := Range{
-			Begin: s.X - slack,
-			End:   s.X + slack + 1,
-		}
-		ranges = AddRange(ranges, r)
-	}
-	beaconOverlaps := map[Long]struct{}{}
-	for _, b := range beacons {
-		if b.Y != targetY {
-			continue
-		}
-		_, inRange := locatePoint(ranges, b.X)
-		if inRange == -1 {
-			continue
-		}
-		beaconOverlaps[b.X] = struct{}{}
-	}
-	beaconsX := make([]Long, 0, len(beaconOverlaps))
-	for x := range beaconOverlaps {
-		beaconsX = append(beaconsX, x)
-	}
-	return ranges, beaconsX
 }
 
 // Part2 solves the second half of the problem.
@@ -62,7 +29,7 @@ func Part2(sensors []Sensor, beacons []Beacon, world Range) Long {
 	var x Long
 	var y Long
 	for y = world.Begin; y < world.End; y++ {
-		ranges, beaconsX := solveLine(sensors, beacons, y)
+		ranges, beaconsX := findExcludedRanges(sensors, beacons, y)
 		for _, x := range beaconsX { // beaconsX will be empty most of the time
 			ranges = AddRange(ranges, Range{x, x + 1})
 		}
@@ -171,11 +138,46 @@ func AddRange(ranges []Range, new Range) []Range {
 	ranges[lastRange].Begin = ranges[firstRange].Begin
 
 	// removing elements in [first, last)
-	return removeRanges(ranges, firstRange, lastRange)
+	return removeSubarray(ranges, firstRange, lastRange)
 }
 
-// removeRanges removes all ranges in arr[begin:end].
-func removeRanges(arr []Range, begin, end int) []Range {
+// findExcludedRanges finds all the ranges for a particular Y
+// where a beacon cannot be bound.
+func findExcludedRanges(sensors []Sensor, beacons []Beacon, targetY Long) ([]Range, []Long) {
+	ranges := []Range{}
+	for _, s := range sensors {
+		radius := manhattan(s.Point, beacons[s.Detects].Point)
+		dist := fun.Abs(s.Y - targetY)
+		if dist > radius {
+			continue // Sensor is too far away
+		}
+		slack := radius - dist
+		r := Range{
+			Begin: s.X - slack,
+			End:   s.X + slack + 1,
+		}
+		ranges = AddRange(ranges, r)
+	}
+	beaconOverlaps := map[Long]struct{}{}
+	for _, b := range beacons {
+		if b.Y != targetY {
+			continue
+		}
+		_, inRange := locatePoint(ranges, b.X)
+		if inRange == -1 {
+			continue
+		}
+		beaconOverlaps[b.X] = struct{}{}
+	}
+	beaconsX := make([]Long, 0, len(beaconOverlaps))
+	for x := range beaconOverlaps {
+		beaconsX = append(beaconsX, x)
+	}
+	return ranges, beaconsX
+}
+
+// removeSubarray removes all items in arr[begin:end].
+func removeSubarray(arr []Range, begin, end int) []Range {
 	if begin < 0 || begin > len(arr) {
 		panic(fmt.Errorf("begin %d out of range [0, %d)", begin, len(arr)+1))
 	}
