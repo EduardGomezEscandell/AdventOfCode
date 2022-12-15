@@ -7,10 +7,7 @@ import (
 	"sort"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/generics"
 )
-
-type number generics.Number
 
 // Map applies function f:T->O element-wise to generate another
 // array []O of the same size.

@@ -62,12 +62,12 @@ func Part2(sensors []Sensor, beacons []Beacon, world Range) Long {
 	var x Long
 	var y Long
 	for y = world.Begin; y < world.End; y++ {
-		exclusion, beaconsX := solveLine(sensors, beacons, y)
+		ranges, beaconsX := solveLine(sensors, beacons, y)
 		for _, x := range beaconsX { // beaconsX will be empty most of the time
-			exclusion = AddRange(exclusion, Range{x, x + 1})
+			ranges = AddRange(ranges, Range{x, x + 1})
 		}
 
-		endLead, gaps, beginTail := extractGaps(exclusion, beaconsX)
+		endLead, gaps, beginTail := extractGaps(ranges)
 		if endLead > world.Begin {
 			x = world.Begin
 			break
@@ -87,7 +87,7 @@ func Part2(sensors []Sensor, beacons []Beacon, world Range) Long {
 	return (P2RangeEnd-1)*x + y
 }
 
-func extractGaps(r []Range, excludedX []Long) (endLead Long, between []Range, beginTail Long) {
+func extractGaps(r []Range) (endLead Long, between []Range, beginTail Long) {
 	if len(r) == 0 {
 		return 0, []Range{}, 0
 	}
