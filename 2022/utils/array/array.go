@@ -3,6 +3,7 @@
 package array
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
@@ -326,9 +327,9 @@ func Find[T any](arr []T, val T, eq fun.Comparator[T]) int {
 
 // FindIf traverses array arr searching for an element that makes
 // f return true, and returs its index. If none match, -1 is returned.
-func FindIf[T any](arr []T, eq fun.Predicate[T]) int {
+func FindIf[T any](arr []T, pred fun.Predicate[T]) int {
 	for i, v := range arr {
-		if eq(v) {
+		if pred(v) {
 			return i
 		}
 	}
@@ -373,4 +374,21 @@ func Partition[T any](arr []T, pred fun.Predicate[T]) int {
 		j++
 	}
 	return j
+}
+
+// Insert returns an array {arr[:position], value, arr[position:]}.
+// Original array becomes invalidated. Usage:
+//
+//	arr = Insert(arr, "hello", 5)
+func Insert[T any](arr []T, value T, position int) []T {
+	if position < 0 || position > len(arr) {
+		panic(fmt.Errorf("index %d out of range [0, %d)", position, len(arr)+1))
+	}
+	var t T
+	arr = append(arr, t) // Dummy entry, will be overwritten
+	for i := len(arr) - 1; i > position; i-- {
+		arr[i] = arr[i-1]
+	}
+	arr[position] = value
+	return arr
 }

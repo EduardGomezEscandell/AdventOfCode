@@ -105,6 +105,14 @@ func TestPartition(t *testing.T) {
 	t.Run("int64", testPartition[int64])
 }
 
+func TestInsert(t *testing.T) {
+	t.Parallel()
+	t.Run("int", testInsert[int])
+	t.Run("int8", testInsert[int8])
+	t.Run("int32", testInsert[int32])
+	t.Run("int64", testInsert[int64])
+}
+
 func testMap[T generics.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 
@@ -426,6 +434,32 @@ func testPartition[T generics.Number](t *testing.T) { // nolint: thelper
 			for i, v := range input[got:] {
 				require.GreaterOrEqual(t, v, tc.search, "Item %d is smaller than the partition: %d < %d. Array: %v", i, v, tc.search, input)
 			}
+		})
+	}
+}
+
+func testInsert[T generics.Signed](t *testing.T) { // nolint: thelper
+	t.Parallel()
+
+	testCases := map[string]struct {
+		input []T
+		pos   int
+		val   T
+		want  []T
+	}{
+		"empty":  {input: []T{}, val: 5, pos: 0, want: []T{5}},
+		"lead":   {input: []T{12, 8, 6}, val: 11, pos: 0, want: []T{11, 12, 8, 6}},
+		"tail":   {input: []T{12, 8, 6}, val: 11, pos: 3, want: []T{12, 8, 6, 11}},
+		"middle": {input: []T{12, 8, 6}, val: 11, pos: 1, want: []T{12, 11, 8, 6}},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			in := make([]T, len(tc.input))
+			copy(in, tc.input)
+			got := array.Insert(in, tc.val, tc.pos)
+			require.Equal(t, tc.want, got)
 		})
 	}
 }
