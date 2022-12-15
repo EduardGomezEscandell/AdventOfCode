@@ -267,6 +267,9 @@ func Concat[T any](a <-chan T, b <-chan T) <-chan T {
 	return out
 }
 
+// Take takes the first 20 entries from channel array in.
+// The rest is not discarded, it's the caller's responsibility
+// to exhaust the in channel.
 func Take[T any](in <-chan T, n int) <-chan T {
 	out := make(chan T, cap(in))
 	go func() {

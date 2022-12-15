@@ -125,8 +125,7 @@ func part2Worker(ctx context.Context, sensors []Sensor, beacons []Beacon, worldX
 // Note that this complimentary set is unbounded to the left and right,
 // so the mathematical expression would be:
 //
-//   S = (-∞, endLead) U central[0] U central[1] U ... U  [beginTail, +∞)
-//
+//	S = (-∞, endLead) U central[0] U central[1] U ... U  [beginTail, +∞)
 func extractGaps(A []Range) (endLead Long, central []Range, beginTail Long) {
 	if len(A) == 0 {
 		return 0, []Range{}, 0
