@@ -22,61 +22,17 @@ const (
 	fileName = "input.txt"
 )
 
-type PrunningInfo struct {
-	bestRemaining []Score
-	bestScore     Score
-	mu            sync.Mutex
-}
-
-func (pi *PrunningInfo) CanPrune(score Score, timeLeft int) bool {
-	maxAttainable := score + pi.bestRemaining[timeLeft]
-	return maxAttainable < pi.BestScore()
-}
-
-func (pi *PrunningInfo) UpdateBestScore(current Score) {
-	pi.mu.Lock()
-	defer pi.mu.Unlock()
-
-	if current > pi.bestScore {
-		pi.bestScore = current
-	}
-}
-
-func (pi *PrunningInfo) BestScore() Score {
-	pi.mu.Lock()
-	defer pi.mu.Unlock()
-	return pi.bestScore
-}
-
-// bestRemainingScore computes the score that woud be obtained if at a certain point of time, all
-// valves became connected to one another. Therefore, bestRemainingScore[15], is the maximum score
-// that can be collected in 15 moves assuming you can move freely and all valves are open. Let's
-// call it BRS (Best Remaining Score).
-//
-// This is useful because if you're X moves from finishing, and your current score + the BRF[X] is
-// less that the best score you have recorded, then you don't need to continue, as it is impossible
-// to set a new record. This allows for prunning bad branches in the DFS.
-func bestRemainingScore(world []Valve, n int) []Score {
-	brs := make([]Score, n+1)
-	for i := 0; i <= n; i++ {
-		var s Score
-		var id int
-		for tLeft := i; tLeft > 0; tLeft -= 2 {
-			s += Score(tLeft-1) * world[id].Flowrate
-			id++
-			if id >= len(world) {
-				break
-			}
-		}
-		brs[i] = s
-	}
-	return brs
-}
-
 // Part1 solves the first half of the problem.
 func Part1(world []Valve, startPoint ID) (Score, error) {
 	return Solve(world, startPoint, 30)
 }
+
+// Part2 solves the second half of the problem.
+func Part2([]Valve) (int, error) {
+	return 1, nil
+}
+
+// ------------- Implementation ------------------.
 
 func Solve(world []Valve, startPoint ID, time int) (Score, error) {
 	if len(world) == 0 {
@@ -157,13 +113,6 @@ func greedyDFS(world []Valve, curr ID, open Checklist, timeLeft int, score Score
 	}
 }
 
-// Part2 solves the second half of the problem.
-func Part2([]Valve) (int, error) {
-	return 1, nil
-}
-
-// ------------- Implementation ------------------.
-
 type ID uint8
 
 type Score int32
@@ -185,6 +134,57 @@ func (cl Checklist) WithSet(i ID) Checklist {
 
 func (cl Checklist) Get(i ID) bool {
 	return cl&(Checklist(1)<<i) != 0
+}
+
+type PrunningInfo struct {
+	bestRemaining []Score
+	bestScore     Score
+	mu            sync.Mutex
+}
+
+func (pi *PrunningInfo) CanPrune(score Score, timeLeft int) bool {
+	maxAttainable := score + pi.bestRemaining[timeLeft]
+	return maxAttainable < pi.BestScore()
+}
+
+func (pi *PrunningInfo) UpdateBestScore(current Score) {
+	pi.mu.Lock()
+	defer pi.mu.Unlock()
+
+	if current > pi.bestScore {
+		pi.bestScore = current
+	}
+}
+
+func (pi *PrunningInfo) BestScore() Score {
+	pi.mu.Lock()
+	defer pi.mu.Unlock()
+	return pi.bestScore
+}
+
+// bestRemainingScore computes the score that woud be obtained if at a certain point of time, all
+// valves became connected to one another. Therefore, bestRemainingScore[15], is the maximum score
+// that can be collected in 15 moves assuming you can move freely and all valves are open. Let's
+// call it BRS (Best Remaining Score).
+//
+// This is useful because if you're X moves from finishing, and your current score + the BRF[X] is
+// less that the best score you have recorded, then you don't need to continue, as it is impossible
+// to set a new record. This allows for prunning bad branches in the DFS.
+func bestRemainingScore(world []Valve, n int) []Score {
+	brs := make([]Score, n+1)
+	for i := 0; i <= n; i++ {
+		var s Score
+		var id int
+		for tLeft := i; tLeft > 0; tLeft -= 2 {
+			s += Score(tLeft-1) * world[id].Flowrate
+			id++
+			if id >= len(world) {
+				break
+			}
+		}
+		brs[i] = s
+	}
+	return brs
 }
 
 // ---------- Here be boilerplate ------------------
