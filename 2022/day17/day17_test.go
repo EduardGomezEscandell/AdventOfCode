@@ -53,8 +53,8 @@ func TestSolvePart1(t *testing.T) { // nolint: dupl
 
 	testCases := map[string]struct {
 		input  []int8
-		nrocks int
-		want   int
+		nrocks day17.Long
+		want   day17.Long
 	}{
 		"example, one":   {want: 1, nrocks: 1, input: []int8{1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1}},
 		"example, two":   {want: 4, nrocks: 2, input: []int8{1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1}},
@@ -67,6 +67,7 @@ func TestSolvePart1(t *testing.T) { // nolint: dupl
 		"example, nine":  {want: 17, nrocks: 9, input: []int8{1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1}},
 		"example, ten":   {want: 17, nrocks: 10, input: []int8{1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1}},
 		"example P1":     {want: 3068, nrocks: 2022, input: []int8{1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1}},
+		// "example P2":     {want: 1514285714288, nrocks: 1000000000000, input: []int8{1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1}},
 	}
 
 	for name, tc := range testCases {
@@ -75,29 +76,6 @@ func TestSolvePart1(t *testing.T) { // nolint: dupl
 			t.Parallel()
 
 			got, err := day17.Solve(tc.input, tc.nrocks)
-
-			require.NoError(t, err)
-			require.Equal(t, tc.want, got)
-		})
-	}
-}
-
-func TestPart2(t *testing.T) { // nolint: dupl
-	t.Parallel()
-
-	testCases := map[string]struct {
-		input []int8
-		want  int
-	}{
-		"empty": {input: []int8{}, want: 1},
-	}
-
-	for name, tc := range testCases {
-		tc := tc
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-
-			got, err := day17.Part2(tc.input)
 
 			require.NoError(t, err)
 			require.Equal(t, tc.want, got)
