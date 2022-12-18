@@ -46,6 +46,12 @@ func Generate2D[T any](n, m int, f func() T) [][]T {
 	return Generate(n, func() []T { return Generate(m, f) })
 }
 
+// Generate3D generates a 3D array of lengths n x m x p, where arr[i][j][k] = f()
+// The function will be called in sequential order.
+func Generate3D[T any](n, m, p int, f func() T) [][][]T {
+	return Generate(n, func() [][]T { return Generate2D(m, p, f) })
+}
+
 // Reduce []T->O applies the function fold:MxT->M cummulatively,
 // starting with the default value for M. The end result is
 // equivalent to:
