@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 }
 
 type Valve = day16.Valve
-type ID = day16.ID
+type ID = day16.VID
 type Score = day16.Score
 
 func TestReadData(t *testing.T) {
@@ -96,7 +96,7 @@ func TestReadData(t *testing.T) {
 
 }
 
-func TestSolve(t *testing.T) {
+func TestSolvePart1(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
@@ -115,7 +115,7 @@ func TestSolve(t *testing.T) {
 		// 1: Do whatever
 		// 0: Do whatever
 		},
-		"choose": {
+		"loop": {
 			world: []Valve{
 				{Flowrate: 100, Paths: []ID{1, 2}},
 				{Flowrate: 1, Paths: []ID{0, 2}},
@@ -163,7 +163,7 @@ func TestSolve(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := day16.Solve(tc.world, tc.start, tc.time)
+			got, err := day16.Solve(tc.world, tc.start, tc.time, false)
 
 			require.NoError(t, err)
 			require.Equal(t, tc.want, got)
@@ -171,14 +171,61 @@ func TestSolve(t *testing.T) {
 	}
 }
 
-func TestPart2(t *testing.T) {
+func TestSolvePart2(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		input []Valve
-		want  int
+		world []Valve
+		start ID
+		time  int
+		want  Score
 	}{
-		"empty": {input: []Valve{}, want: 1},
+		"two": {world: []Valve{
+			0: {Flowrate: 10, Paths: []ID{1}},
+			1: {Flowrate: 0, Paths: []ID{0}},
+		}, start: 1, time: 3, want: Score(10 * 1),
+		// 3: Goto 0	|	Goto 1	|
+		// 2: Open 0	|	...		|
+		// 1: ...		| 	...		| valve 0 starts
+		// 0: ...		| 	...		|
+		},
+		"loop": {
+			world: []Valve{
+				{Flowrate: 100, Paths: []ID{1, 2}},
+				{Flowrate: 1, Paths: []ID{0, 2}},
+				{Flowrate: 0, Paths: []ID{0, 1}},
+			}, start: 2, time: 3, want: Score(100*1 + 1*1),
+			// 3: Goto 0	|	Goto 1	|
+			// 2: Open 0	|	Open 1	|
+			// 1: ...		| 	...		| valves 0,1 start
+			// 0: ...		| 	...		|
+		},
+		"bypass": {
+			world: []Valve{
+				{Flowrate: 100, Paths: []ID{1}},
+				{Flowrate: 1, Paths: []ID{0, 2}},
+				{Flowrate: 0, Paths: []ID{1}},
+			}, start: 2, time: 4, want: Score(100*1 + 1*2),
+			// 4: Goto 1	|	Goto 1	|
+			// 3: Goto 0 	|	Open 1	|
+			// 2: Open 0	| 	...		| valve 1 starts
+			// 1: ...		| 	...		| valve 0 starts
+			// 0: ...		| 	...		|
+		},
+		"example": {
+			world: []Valve{
+				{Flowrate: 22, Paths: []ID{8}},
+				{Flowrate: 21, Paths: []ID{9}},
+				{Flowrate: 20, Paths: []ID{4, 5, 6}},
+				{Flowrate: 13, Paths: []ID{5, 6}},
+				{Flowrate: 3, Paths: []ID{2, 7}},
+				{Flowrate: 2, Paths: []ID{2, 3}},
+				{Flowrate: 0, Paths: []ID{2, 3, 9}},
+				{Flowrate: 0, Paths: []ID{4, 8}},
+				{Flowrate: 0, Paths: []ID{0, 7}},
+				{Flowrate: 0, Paths: []ID{1, 6}},
+			}, start: 6, time: 26, want: 1707,
+		},
 	}
 
 	for name, tc := range testCases {
@@ -186,7 +233,7 @@ func TestPart2(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := day16.Part2(tc.input)
+			got, err := day16.Solve(tc.world, tc.start, tc.time, true)
 
 			require.NoError(t, err)
 			require.Equal(t, tc.want, got)

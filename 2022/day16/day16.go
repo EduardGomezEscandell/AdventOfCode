@@ -10,7 +10,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
@@ -23,34 +22,41 @@ const (
 )
 
 // Part1 solves the first half of the problem.
-func Part1(world []Valve, startPoint ID) (Score, error) {
-	return Solve(world, startPoint, 30)
+func Part1(world []Valve, startPoint VID) (Score, error) {
+	return Solve(world, startPoint, 30, false)
 }
 
 // Part2 solves the second half of the problem.
-func Part2([]Valve) (int, error) {
-	return 1, nil
+func Part2(world []Valve, startPoint VID) (Score, error) {
+	return Solve(world, startPoint, 26, true)
 }
 
 // ------------- Implementation ------------------.
 
-func Solve(world []Valve, startPoint ID, time int) (Score, error) {
+func Solve(world []Valve, startPoint VID, time int, elephantsAllowed bool) (Score, error) {
 	if len(world) == 0 {
 		return 0, errors.New("world map is empty")
 	}
 
-	pi := NewPrunningInfo(world, time)
+	pi := NewPrunningInfo(world, time, elephantsAllowed)
 
 	ws := worldState{
-		location: startPoint,
+		location: [2]VID{startPoint, startPoint},
 		opened:   Checklist(0),
 		timeLeft: time,
 	}
-	greedyDFS(world, ws, 0, pi)
-	return pi.BestScore(), nil
+	greedyDFS(world, ws, 0, elephantsAllowed, pi)
+	return pi.bestScore, nil
 }
 
-func greedyDFS(world []Valve, ws worldState, score Score, pi *PrunningInfo) (addedScore Score) {
+// An action can either be to move or to open a valve
+type action struct {
+	priority Score
+	newState worldState
+	eval     func() Score
+}
+
+func greedyDFS(world []Valve, ws worldState, score Score, elephantsAllowed bool, pi *PrunningInfo) (addedScore Score) {
 	if ws.timeLeft < 2 {
 		return 0
 	}
@@ -58,120 +64,134 @@ func greedyDFS(world []Valve, ws worldState, score Score, pi *PrunningInfo) (add
 		return 0
 	}
 
-	defer func() { pi.UpdateBestScore(score + addedScore) }()
+	defer func() { pi.bestScore = fun.Max(pi.bestScore, score+addedScore) }()
 
+	// Checking if we have the solution in cache
 	if s, ok := pi.lru.Check(ws); ok {
 		return s
 	}
-	defer func() { pi.lru.Update(ws, addedScore) }()
+	defer func() { pi.lru.Update(ws, addedScore) }() // Will update the cache on function exit
 
-	valve := world[ws.location]
-
-	// Function that explores via DFS
-	explorePath := func(destination ID) func() Score {
-		return func() Score {
-			ws := ws
-			ws.location = destination
-			ws.timeLeft--
-			return greedyDFS(world, ws, score, pi)
-		}
-	}
-	// Funcion that opens the valve at the current location
-	openSelf := func() Score {
+	// Checking if we have the simetrical solution in cache
+	if elephantsAllowed {
 		ws := ws
-		ws.opened.Set(ws.location)
-		ws.timeLeft--
-		extraScore := Score(ws.timeLeft) * valve.Flowrate
-		return extraScore + greedyDFS(world, ws, score+extraScore, pi)
-	}
-
-	// An action can either be to move or to open a valve
-	type action struct {
-		priority Score
-		eval     func() Score
-	}
-
-	// All possible actions to take are put into an array
-	actions := array.Map(valve.Paths, func(id ID) action {
-		var priority Score      // Heuristic: the score of an action is the flowrate of the destination
-		if !ws.opened.Get(id) { // If the destination valve is already open, its score is 0.
-			priority = world[id].Flowrate * (Score(ws.timeLeft - 2))
+		ws.location[player], ws.location[elephant] = ws.location[elephant], ws.location[player]
+		if s, ok := pi.lru.Check(ws); ok {
+			return s
 		}
-		return action{priority: priority, eval: explorePath(id)}
-	})
-	if !ws.opened.Get(ws.location) && valve.Flowrate != 0 {
-		actions = append(actions, action{priority: valve.Flowrate*Score(ws.timeLeft) - 1, eval: openSelf})
+		defer func() { pi.lru.Update(ws, addedScore) }() // Will update the cache on function exit
 	}
 
-	// Greedy search: we perform the actions with best score first.
-	array.Sort(actions, func(a, b action) bool {
-		return a.priority > b.priority
-	})
+	/*
+	 * Compiling all possible continuations
+	 */
+	playerAt := world[ws.location[player]]
+	elephantAt := world[ws.location[elephant]]
 
+	// Movements
+	playerMoves := array.Map(playerAt.Paths, fun.Identity[VID])
+	elephantMoves := array.Map(elephantAt.Paths, fun.Identity[VID])
+
+	// Adding valve openings
+	playerMoves = append(playerMoves, ws.location[player])
+	if !elephantsAllowed {
+		elephantMoves = []VID{0}
+	} else {
+		elephantMoves = append(elephantMoves, ws.location[elephant])
+	}
+
+	actions := make([]action, 0, len(elephantMoves)*len(playerMoves))
+	for _, pm := range playerMoves {
+		for _, em := range elephantMoves {
+			a := NewAction(world, ws, score, elephantsAllowed, pi, pm, em)
+			if a == nil {
+				continue
+			}
+			actions = append(actions, *a)
+		}
+	}
+	// The player and the elephant are equivalent, we can prune
+	if elephantsAllowed && ws.location[player] == ws.location[elephant] {
+		actions = PurgeDuplicateActions(actions)
+	}
+	/*
+	 * Greedy search: we perform the actions with best score first.
+	 */
+	array.Sort(actions, func(a, b action) bool { return a.priority > b.priority })
 	return array.MapReduce(actions, func(a action) Score { return a.eval() }, fun.Max[Score], 0)
 }
 
-type ID uint8
+func PurgeDuplicateActions(actions []action) []action {
+	array.Sort(actions, func(a, b action) bool {
+		ka0 := uint16(a.newState.location[0])
+		ka1 := uint16(a.newState.location[1])
+		ka := fun.Min(ka0, ka1)<<8 + fun.Max(ka0, ka1)
+
+		kb0 := uint16(b.newState.location[0])
+		kb1 := uint16(b.newState.location[1])
+		kb := fun.Min(kb0, kb1)<<8 + fun.Max(kb0, kb1)
+		return ka < kb
+	})
+	return actions[:array.Unique(actions, func(a, b action) bool {
+		if a.newState.location == b.newState.location {
+			return true
+		}
+		a.newState.location[0], a.newState.location[1] = a.newState.location[1], a.newState.location[0]
+		return a.newState.location == b.newState.location
+	})]
+}
+
+type VID uint8 // Valve ID
+type PID uint8 // Player ID
 
 type Score int32
 
 type Valve struct {
 	Flowrate Score
-	Paths    []ID
+	Paths    []VID
 }
 
 type Checklist uint64
 
-func (cl *Checklist) Set(i ID) {
+const (
+	player   PID = 0
+	elephant PID = 1
+)
+
+func (cl *Checklist) Set(i VID) {
 	*cl = cl.WithSet(i)
 }
 
-func (cl Checklist) WithSet(i ID) Checklist {
+func (cl Checklist) WithSet(i VID) Checklist {
 	return cl | Checklist(1)<<i
 }
 
-func (cl Checklist) Get(i ID) bool {
+func (cl Checklist) Get(i VID) bool {
 	return cl&(Checklist(1)<<i) != 0
 }
 
 type PrunningInfo struct {
 	bestRemaining []Score
 	bestScore     Score
-	mu            sync.Mutex
 	lru           *lruCache[worldState, Score]
 }
 
 type worldState struct {
-	location ID
+	location [2]VID
 	opened   Checklist
 	timeLeft int
 }
 
-func NewPrunningInfo(world []Valve, time int) *PrunningInfo {
+func NewPrunningInfo(world []Valve, time int, elephantsAllowed bool) *PrunningInfo {
 	return &PrunningInfo{
-		bestRemaining: bestRemainingScore(world, time),
-		lru:           NewLRUCache[worldState, Score](1_000_000),
+		bestRemaining: bestRemainingScore(world, time, elephantsAllowed),
+		lru:           NewLRUCache[worldState, Score](10_000_000),
 	}
 }
 
 func (pi *PrunningInfo) CanPrune(score Score, timeLeft int) bool {
 	maxAttainable := score + pi.bestRemaining[timeLeft]
-	return maxAttainable < pi.BestScore()
-}
-
-func (pi *PrunningInfo) UpdateBestScore(current Score) {
-	pi.mu.Lock()
-	defer pi.mu.Unlock()
-
-	if current > pi.bestScore {
-		pi.bestScore = current
-	}
-}
-
-func (pi *PrunningInfo) BestScore() Score {
-	pi.mu.Lock()
-	defer pi.mu.Unlock()
-	return pi.bestScore
+	return maxAttainable < pi.bestScore
 }
 
 // bestRemainingScore computes the score that woud be obtained if at a certain point of time, all
@@ -182,7 +202,14 @@ func (pi *PrunningInfo) BestScore() Score {
 // This is useful because if you're X moves from finishing, and your current score + the BRF[X] is
 // less that the best score you have recorded, then you don't need to continue, as it is impossible
 // to set a new record. This allows for prunning bad branches in the DFS.
-func bestRemainingScore(world []Valve, n int) []Score {
+func bestRemainingScore(world []Valve, n int, elephantsAllowed bool) []Score {
+	if !elephantsAllowed {
+		return bestRemainingScoreSinglePlayer(world, n)
+	}
+	return bestRemainingScoreCoop(world, n)
+}
+
+func bestRemainingScoreSinglePlayer(world []Valve, n int) []Score {
 	brs := make([]Score, n+1)
 	for i := 0; i <= n; i++ {
 		var s Score
@@ -197,6 +224,74 @@ func bestRemainingScore(world []Valve, n int) []Score {
 		brs[i] = s
 	}
 	return brs
+}
+
+func bestRemainingScoreCoop(world []Valve, n int) []Score {
+	brs := make([]Score, n+1)
+	for i := 0; i <= n; i++ {
+		var s Score
+		var id int
+		for tLeft := i; tLeft > 0; tLeft -= 2 {
+			s += Score(tLeft-1) * world[id].Flowrate
+			id++
+			if id >= len(world) {
+				break
+			}
+			s += Score(tLeft-1) * world[id].Flowrate
+			id++
+			if id >= len(world) {
+				break
+			}
+		}
+		brs[i] = s
+	}
+	return brs
+}
+
+func NewAction(world []Valve, ws worldState, score Score, elephantsAllowed bool, pi *PrunningInfo, playerT, elephantT VID) *action {
+	var priority Score
+	var newScore Score
+
+	timeLeft := ws.timeLeft - 1
+	opened := ws.opened
+
+	if ws.location[player] == playerT {
+		// Player opens a valve
+		if opened.Get(playerT) || world[playerT].Flowrate == 0 {
+			return nil // already opened
+		}
+		opened.Set(playerT)
+		newScore += world[playerT].Flowrate * Score(timeLeft)
+		priority += newScore
+	} else if !ws.opened.Get(playerT) {
+		priority += world[playerT].Flowrate * Score(timeLeft-1)
+	}
+
+	if elephantsAllowed {
+		if ws.location[elephant] == elephantT {
+			// Elephant opens a valve
+			if opened.Get(elephantT) || world[elephantT].Flowrate == 0 {
+				return nil // already opened
+			}
+			opened.Set(elephantT)
+			newScore += world[elephantT].Flowrate * Score(timeLeft)
+			priority += newScore
+		} else if !opened.Get(elephantT) && elephantT != playerT {
+			priority += world[elephantT].Flowrate * Score(timeLeft-1)
+		}
+	}
+
+	new := ws
+	new.location[player] = playerT
+	new.location[elephant] = elephantT
+	new.timeLeft = timeLeft
+	new.opened = opened
+
+	return &action{
+		priority: priority,
+		newState: new,
+		eval:     func() Score { return newScore + greedyDFS(world, new, score+newScore, elephantsAllowed, pi) },
+	}
 }
 
 // ---------- Here be boilerplate ------------------
@@ -214,7 +309,7 @@ func Main(stdout io.Writer) error {
 	}
 	fmt.Fprintf(stdout, "Result of part 1: %d\n", p1)
 
-	p2, err := Part2(world)
+	p2, err := Part2(world, startPoint)
 	if err != nil {
 		return err
 	}
@@ -230,7 +325,7 @@ var ReadDataFile = func() ([]byte, error) {
 }
 
 // ReadData reads the data file and returns a map of the valves.
-func ReadData() ([]Valve, ID, error) {
+func ReadData() ([]Valve, VID, error) {
 	b, err := ReadDataFile()
 	if err != nil {
 		return nil, 0, err
@@ -279,9 +374,9 @@ func ReadData() ([]Valve, ID, error) {
 	}
 
 	// Assigning a numerical ID to each valve
-	ids := map[string]ID{}
+	ids := map[string]VID{}
 	for i, p := range pv {
-		ids[p.name] = ID(i)
+		ids[p.name] = VID(i)
 	}
 	if len(ids) > 63 {
 		return nil, 0, fmt.Errorf("systems with greater than %d valves are not supported. Got: %d", 63, len(ids))
@@ -290,11 +385,11 @@ func ReadData() ([]Valve, ID, error) {
 	// Generating world map
 	world := make([]Valve, len(pv))
 	for i := range pv {
-		i := ID(i)
+		i := VID(i)
 		var err error
 		world[i] = Valve{
 			Flowrate: Score(pv[i].flowrate),
-			Paths: array.Map(pv[i].paths, func(name string) ID {
+			Paths: array.Map(pv[i].paths, func(name string) VID {
 				id, ok := ids[name]
 				if !ok && err == nil {
 					err = fmt.Errorf("Entry %d references inexistent valve %q", i, name)
@@ -306,8 +401,8 @@ func ReadData() ([]Valve, ID, error) {
 			return nil, 0, err
 		}
 		// Sorting paths by flowrate
-		array.Sort(world[i].Paths, fun.Lt[ID])
+		array.Sort(world[i].Paths, fun.Lt[VID])
 	}
 
-	return world, ID(startPoint), nil
+	return world, VID(startPoint), nil
 }
