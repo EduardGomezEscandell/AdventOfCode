@@ -322,7 +322,7 @@ var ReadDataFile = func() ([]byte, error) {
 }
 
 // ReadData reads the data file and returns the list of
-// reindeers and their calories.
+// sensors and beacons.
 func ReadData() ([]Sensor, []Beacon, error) {
 	b, err := ReadDataFile()
 	if err != nil {
