@@ -53,7 +53,7 @@ func Part2(cubeList []Cube) (int, error) {
 	yspan := box.max.Y - box.min.Y + 1
 	zspan := box.max.Z - box.min.Z + 1
 
-	// Generate fomain: bounding box +1 unit in all directions.
+	// Generate domain: bounding box +1 unit in all directions.
 	origin := box.min
 	world := array.Generate3D(xspan, yspan, zspan, func() colour { return unpainted })
 
@@ -68,13 +68,13 @@ func Part2(cubeList []Cube) (int, error) {
 	})
 
 	// Paint all cubes that connect to the outside with "outside" colour.
-	// We start with {0,0,0} is outside because we know it is outside the
-	// bounding box, because it that +1 unit of slack.
+	// We start with {0,0,0} because we know it is outside the bounding box,
+	// since we included that +1 unit of slack.
 	paintDFS(world, Point{})
 
-	// Bubble cubes will be painted as "undef".
-	// Inside cubes will be painted as "inside".
-	// Outside cubes will be painted as "outside".
+	// Bubble cubes are painted as "unpainted".
+	// Inside cubes are painted as "inside".
+	// Outside cubes are painted as "outside".
 	var count int
 	for _, cube := range cubeList {
 		if world[cube.X+1][cube.Y][cube.Z] == outside {
@@ -147,8 +147,8 @@ func countFaceAppearances(world []Cube) [3]map[Point]int {
 }
 
 // paintDFS explores the world painting all accessible cubes with the
-// "outside" colour. It will only visit "undef" cubes. It will only paint
-// visited cubes.
+// "outside" colour. It will only visit "unpainted" cubes. It will only
+// paint visited cubes.
 func paintDFS(world [][][]colour, root Point) {
 	world[root.X][root.Y][root.Z] = outside
 	xspan := len(world)
