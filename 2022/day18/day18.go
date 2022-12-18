@@ -55,7 +55,7 @@ func Part2(cubeList []Cube) (int, error) {
 
 	// Generate fomain: bounding box +1 unit in all directions.
 	origin := box.min
-	world := array.Generate3D(xspan, yspan, zspan, func() colour { return undef })
+	world := array.Generate3D(xspan, yspan, zspan, func() colour { return unpainted })
 
 	// Two jobs:
 	// - Change of coordinates so domain starts at (0,0,0)
@@ -110,14 +110,26 @@ type Point struct {
 // Cube contains the coordinate at the center of a cube.
 type Cube Point
 
+// colour is used to paint every cube according to their location.
 type colour int8
 
 const (
-	undef colour = iota
+	unpainted colour = iota
 	inside
 	outside
 )
 
+// countFaceAppearances counts how many times each face
+// appears. It returns three dicts:
+//
+//   - Each dict contains all the faces in a particular
+//     axis (normal pointing to X, Y, and Z respectively).
+//
+//   - The key is the location of that face. Note that the
+//     coordinates for faces are shifted +{.5,.5,.5} from
+//     those of the cubes. This avoids decimals.
+//
+//   - The value is the count of faces in that location.
 func countFaceAppearances(world []Cube) [3]map[Point]int {
 	ufaces := map[Point]int{}
 	vfaces := map[Point]int{}
@@ -143,29 +155,29 @@ func paintDFS(world [][][]colour, root Point) {
 	yspan := len(world[0])
 	zspan := len(world[0][0])
 
-	if root.X > 0 && world[root.X-1][root.Y][root.Z] == undef {
+	if root.X > 0 && world[root.X-1][root.Y][root.Z] == unpainted {
 		paintDFS(world, Point{root.X - 1, root.Y, root.Z})
 	}
-	if root.X+1 < xspan && world[root.X+1][root.Y][root.Z] == undef {
+	if root.X+1 < xspan && world[root.X+1][root.Y][root.Z] == unpainted {
 		paintDFS(world, Point{root.X + 1, root.Y, root.Z})
 	}
 
-	if root.Y > 0 && world[root.X][root.Y-1][root.Z] == undef {
+	if root.Y > 0 && world[root.X][root.Y-1][root.Z] == unpainted {
 		paintDFS(world, Point{root.X, root.Y - 1, root.Z})
 	}
-	if root.Y+1 < yspan && world[root.X][root.Y+1][root.Z] == undef {
+	if root.Y+1 < yspan && world[root.X][root.Y+1][root.Z] == unpainted {
 		paintDFS(world, Point{root.X, root.Y + 1, root.Z})
 	}
 
-	if root.Z > 0 && world[root.X][root.Y][root.Z-1] == undef {
+	if root.Z > 0 && world[root.X][root.Y][root.Z-1] == unpainted {
 		paintDFS(world, Point{root.X, root.Y, root.Z - 1})
 	}
-	if root.Z+1 < zspan && world[root.X][root.Y][root.Z+1] == undef {
+	if root.Z+1 < zspan && world[root.X][root.Y][root.Z+1] == unpainted {
 		paintDFS(world, Point{root.X, root.Y, root.Z + 1})
 	}
 }
 
-// extrema contains a 3D cube determined by its maximum and
+// extrema expresses a 3D cube determined by its maximum and
 // minimum coordinates.
 type extrema struct {
 	min Point
@@ -222,8 +234,7 @@ var ReadDataFile = func() ([]byte, error) {
 	return input.ReadDataFile(today, fileName)
 }
 
-// ReadData reads the data file and returns a bitmask of the
-// world's rocks.
+// ReadData reads the data file and a list of all cubes.
 func ReadData() ([]Cube, error) {
 	b, err := ReadDataFile()
 	if err != nil {
