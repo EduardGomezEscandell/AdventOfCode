@@ -76,7 +76,7 @@ func TestReadData(t *testing.T) {
 	}
 }
 
-func TestPart1(t *testing.T) {
+func TestPart1(t *testing.T) { // nolint: dupl
 	t.Parallel()
 
 	testCases := map[string]struct {
@@ -115,7 +115,7 @@ func TestPart1(t *testing.T) {
 	}
 }
 
-func TestPart2(t *testing.T) {
+func TestPart2(t *testing.T) { // nolint: dupl
 	t.Parallel()
 
 	testCases := map[string]struct {
