@@ -40,7 +40,7 @@ func Generate[T any](len int, f func() T) []T {
 	return arr
 }
 
-// Generate generates an array of length len, where arr[i][j] = f()
+// Generate2D generates a 2D array of lengths n x m, where arr[i][j] = f()
 // The function will be called in sequential order.
 func Generate2D[T any](n, m int, f func() T) [][]T {
 	return Generate(n, func() []T { return Generate(m, f) })
@@ -394,30 +394,4 @@ func Insert[T any](arr []T, value T, position int) []T {
 	}
 	arr[position] = value
 	return arr
-}
-
-func InclusiveScan[I, O any](in []I, fold func(O, I) O, init O) []O {
-	out := make([]O, len(in))
-	out[0] = fold(init, in[0])
-	for i := 1; i < len(in); i++ {
-		out[i] = fold(out[i-1], in[i])
-	}
-	return out
-}
-
-func ExclusiveScan[I, O any](in []I, fold func(O, I) O, init O) []O {
-	out := make([]O, len(in))
-	out[0] = init
-	for i := 1; i < len(in); i++ {
-		out[i] = fold(out[i-1], in[i-1])
-	}
-	return out
-}
-
-func Iota(n int) []int {
-	out := make([]int, n)
-	for i := range out {
-		out[i] = i
-	}
-	return out
 }

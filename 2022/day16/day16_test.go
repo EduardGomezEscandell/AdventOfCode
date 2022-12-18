@@ -93,10 +93,9 @@ func TestReadData(t *testing.T) {
 			require.Equal(t, tc.wantStart, gotStart)
 		})
 	}
-
 }
 
-func TestSolvePart1(t *testing.T) {
+func TestSolvePart1(t *testing.T) { // nolint: dupl
 	t.Parallel()
 
 	testCases := map[string]struct {
@@ -171,7 +170,7 @@ func TestSolvePart1(t *testing.T) {
 	}
 }
 
-func TestSolvePart2(t *testing.T) {
+func TestSolvePart2(t *testing.T) { // nolint: dupl
 	t.Parallel()
 
 	testCases := map[string]struct {
@@ -243,7 +242,7 @@ func TestSolvePart2(t *testing.T) {
 
 func TestRealData(t *testing.T) {
 	expected := `Result of part 1: 1820
-Result of part 2: 1
+Result of part 2: 2602
 `
 	buff := new(bytes.Buffer)
 

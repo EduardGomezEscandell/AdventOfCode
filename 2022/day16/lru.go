@@ -6,16 +6,22 @@ import (
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/myheap"
 )
 
-type lruCache[K comparable, V any] struct {
-	byAge    *myheap.Heap[*lruEntry[K, V]]
-	byKey    map[K]*lruEntry[K, V]
-	data     []lruEntry[K, V]
-	capacity int
-	epoch    lruEpoch
+// LruCache is a naive implementation of a Least Recently Used cache.
+// It acts as a dictionary of keys and values, with a maximum number of
+// entries. When this maximum is surpassed, the least recently used item
+// is dropped.
+type LruCache[K comparable, V any] struct {
+	byAge    *myheap.Heap[*lruEntry[K, V]] // Heap to quickly acces items by age.
+	byKey    map[K]*lruEntry[K, V]         // Map to quickly access to items by key.
+	data     []lruEntry[K, V]              // Raw data.
+	capacity int                           // Max amount of items.
+	epoch    lruEpoch                      // A timestamp. Updated every read and write.
 }
 
-func NewLRUCache[K comparable, V any](cap int) *lruCache[K, V] {
-	return &lruCache[K, V]{
+// NewLRUCache creates new lru cache with the specified capacity,
+// measured in number of key-value paires stored.
+func NewLRUCache[K comparable, V any](cap int) *LruCache[K, V] {
+	return &LruCache[K, V]{
 		byKey:    map[K]*lruEntry[K, V]{},
 		byAge:    myheap.New(func(x, y *lruEntry[K, V]) bool { return x.epoch < y.epoch }),
 		data:     make([]lruEntry[K, V], cap),
@@ -24,24 +30,27 @@ func NewLRUCache[K comparable, V any](cap int) *lruCache[K, V] {
 	}
 }
 
-func (lru lruCache[K, V]) Len() int {
+// Len is the number of stored items.
+func (lru LruCache[K, V]) Len() int {
 	return len(lru.byKey)
 }
 
-// Check looks into the cache to see if the given key is
-// is registered. If so, the value is returned.
-func (lru lruCache[K, V]) Check(key K) (v V, ok bool) {
+// Get looks into the cache to see if the given key is
+// is registered. If so, the value is returned and its
+// epoch updated.
+func (lru *LruCache[K, V]) Get(key K) (v V, ok bool) {
 	entry, ok := lru.byKey[key]
 	if !ok {
 		return v, false
 	}
-	v = entry.data
-	return
+	lru.epoch++
+	entry.epoch = lru.epoch
+	return entry.data, true
 }
 
-// Update checks if an entry was in the cache. If it was,
+// Set checks if an entry was in the cache. If it was,
 // it updates its epoch. Otherwise, it adds it anew.
-func (lru lruCache[K, V]) Update(k K, v V) {
+func (lru LruCache[K, V]) Set(k K, v V) {
 	lru.epoch++
 	entry, ok := lru.byKey[k]
 	if ok {
@@ -51,7 +60,7 @@ func (lru lruCache[K, V]) Update(k K, v V) {
 	}
 	var ptr *lruEntry[K, V]
 	if lru.Len() >= lru.capacity {
-		ptr = heap.Pop(lru.byAge).(*lruEntry[K, V])
+		ptr = heap.Pop(lru.byAge).(*lruEntry[K, V]) // nolint: forcetypeassert
 		delete(lru.byKey, ptr.key)
 	} else {
 		ptr = &lru.data[lru.Len()]
