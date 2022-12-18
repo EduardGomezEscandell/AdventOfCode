@@ -177,8 +177,15 @@ func timedRun(f func(io.Writer) error) (time.Duration, error) {
 	}
 
 	var acc time.Duration
-	n := 100
-	for i := 0; i < n; i++ {
+	maxn := 100
+	maxt := 2 * time.Minute
+	var n int
+	t0 := time.Now()
+	for ; n < maxn; n++ {
+		if time.Since(t0) > maxt {
+			break
+		}
+
 		start := time.Now()
 		err = f(w)
 		acc += time.Since(start)
