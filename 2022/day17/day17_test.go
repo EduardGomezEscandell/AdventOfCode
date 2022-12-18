@@ -24,9 +24,12 @@ func TestMain(m *testing.M) {
 func TestReadData(t *testing.T) {
 	tc := map[string]struct {
 		input []string
-		want  int
+		want  []int8
 	}{
-		"empty": {input: []string{}, want: 1},
+		"three": {input: []string{"<<>"}, want: []int8{-1, -1, 1}},
+		"example": {input: []string{">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>"},
+			want: []int8{1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1},
+		},
 	}
 
 	for name, tc := range tc {
@@ -45,13 +48,25 @@ func TestReadData(t *testing.T) {
 	}
 }
 
-func TestPart1(t *testing.T) { // nolint: dupl
+func TestSolvePart1(t *testing.T) { // nolint: dupl
 	t.Parallel()
 
 	testCases := map[string]struct {
-		want int
+		input  []int8
+		nrocks int
+		want   int
 	}{
-		"empty": {want: 1},
+		"example, one":   {want: 1, nrocks: 1, input: []int8{1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1}},
+		"example, two":   {want: 4, nrocks: 2, input: []int8{1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1}},
+		"example, three": {want: 6, nrocks: 3, input: []int8{1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1}},
+		"example, four":  {want: 7, nrocks: 4, input: []int8{1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1}},
+		"example, five":  {want: 9, nrocks: 5, input: []int8{1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1}},
+		"example, six":   {want: 10, nrocks: 6, input: []int8{1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1}},
+		"example, seven": {want: 13, nrocks: 7, input: []int8{1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1}},
+		"example, eight": {want: 15, nrocks: 8, input: []int8{1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1}},
+		"example, nine":  {want: 17, nrocks: 9, input: []int8{1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1}},
+		"example, ten":   {want: 17, nrocks: 10, input: []int8{1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1}},
+		"example P1":     {want: 3068, nrocks: 2022, input: []int8{1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1, 1, 1}},
 	}
 
 	for name, tc := range testCases {
@@ -59,7 +74,7 @@ func TestPart1(t *testing.T) { // nolint: dupl
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := day17.Part1()
+			got, err := day17.Solve(tc.input, tc.nrocks)
 
 			require.NoError(t, err)
 			require.Equal(t, tc.want, got)
@@ -71,9 +86,10 @@ func TestPart2(t *testing.T) { // nolint: dupl
 	t.Parallel()
 
 	testCases := map[string]struct {
-		want int
+		input []int8
+		want  int
 	}{
-		"empty": {want: 1},
+		"empty": {input: []int8{}, want: 1},
 	}
 
 	for name, tc := range testCases {
@@ -81,7 +97,7 @@ func TestPart2(t *testing.T) { // nolint: dupl
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := day17.Part2()
+			got, err := day17.Part2(tc.input)
 
 			require.NoError(t, err)
 			require.Equal(t, tc.want, got)
@@ -90,7 +106,7 @@ func TestPart2(t *testing.T) { // nolint: dupl
 }
 
 func TestRealData(t *testing.T) {
-	expected := `Result of part 1: 1
+	expected := `Result of part 1: 3071
 Result of part 2: 1
 `
 	buff := new(bytes.Buffer)
