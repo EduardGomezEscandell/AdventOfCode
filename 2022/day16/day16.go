@@ -39,78 +39,76 @@ func Solve(world []Valve, startPoint ID, time int) (Score, error) {
 		return 0, errors.New("world map is empty")
 	}
 
-	pi := PrunningInfo{
-		bestRemaining: bestRemainingScore(world, time),
-	}
+	pi := NewPrunningInfo(world, time)
 
-	opened := Checklist(0)
-
-	var wg sync.WaitGroup
-	for _, id := range world[startPoint].Paths {
-		id := id
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			greedyDFS(world, id, opened, time-1, 0, &pi)
-		}()
+	ws := worldState{
+		location: startPoint,
+		opened:   Checklist(0),
+		timeLeft: time,
 	}
-	wg.Wait()
+	greedyDFS(world, ws, 0, pi)
 	return pi.BestScore(), nil
 }
 
-func greedyDFS(world []Valve, curr ID, open Checklist, timeLeft int, score Score, pi *PrunningInfo) {
-	defer func() {
-		pi.UpdateBestScore(score)
-	}()
-
-	if timeLeft < 2 {
-		return
+func greedyDFS(world []Valve, ws worldState, score Score, pi *PrunningInfo) (addedScore Score) {
+	if ws.timeLeft < 2 {
+		return 0
+	}
+	if pi.CanPrune(score, ws.timeLeft) {
+		return 0
 	}
 
-	if pi.CanPrune(score, timeLeft) {
-		return
-	}
+	defer func() { pi.UpdateBestScore(score + addedScore) }()
 
-	valve := world[curr]
+	if s, ok := pi.lru.Check(ws); ok {
+		return s
+	}
+	defer func() { pi.lru.Update(ws, addedScore) }()
+
+	valve := world[ws.location]
 
 	// Function that explores via DFS
-	explorePath := func(where ID) func() {
-		return func() {
-			greedyDFS(world, where, open, timeLeft-1, score, pi)
+	explorePath := func(destination ID) func() Score {
+		return func() Score {
+			ws := ws
+			ws.location = destination
+			ws.timeLeft--
+			return greedyDFS(world, ws, score, pi)
 		}
 	}
 	// Funcion that opens the valve at the current location
-	openSelf := func() {
-		score := score + Score(timeLeft-1)*valve.Flowrate
-		greedyDFS(world, curr, open.WithSet(curr), timeLeft-1, score, pi)
+	openSelf := func() Score {
+		ws := ws
+		ws.opened.Set(ws.location)
+		ws.timeLeft--
+		extraScore := Score(ws.timeLeft) * valve.Flowrate
+		return extraScore + greedyDFS(world, ws, score+extraScore, pi)
 	}
 
 	// An action can either be to move or to open a valve
 	type action struct {
-		score Score
-		eval  func()
+		priority Score
+		eval     func() Score
 	}
 
 	// All possible actions to take are put into an array
 	actions := array.Map(valve.Paths, func(id ID) action {
-		var s Score        // Heuristic: the score of an action is the flowrate of the destination
-		if !open.Get(id) { // If the destination valve is already open, its score is 0.
-			s = world[id].Flowrate
+		var priority Score      // Heuristic: the score of an action is the flowrate of the destination
+		if !ws.opened.Get(id) { // If the destination valve is already open, its score is 0.
+			priority = world[id].Flowrate * (Score(ws.timeLeft - 2))
 		}
-		return action{score: s, eval: explorePath(id)}
+		return action{priority: priority, eval: explorePath(id)}
 	})
-	if !open.Get(curr) && valve.Flowrate != 0 {
-		actions = append(actions, action{score: valve.Flowrate, eval: openSelf})
+	if !ws.opened.Get(ws.location) && valve.Flowrate != 0 {
+		actions = append(actions, action{priority: valve.Flowrate*Score(ws.timeLeft) - 1, eval: openSelf})
 	}
 
 	// Greedy search: we perform the actions with best score first.
 	array.Sort(actions, func(a, b action) bool {
-		return a.score > b.score
+		return a.priority > b.priority
 	})
 
-	for _, a := range actions {
-		a.eval()
-	}
+	return array.MapReduce(actions, func(a action) Score { return a.eval() }, fun.Max[Score], 0)
 }
 
 type ID uint8
@@ -140,6 +138,20 @@ type PrunningInfo struct {
 	bestRemaining []Score
 	bestScore     Score
 	mu            sync.Mutex
+	lru           *lruCache[worldState, Score]
+}
+
+type worldState struct {
+	location ID
+	opened   Checklist
+	timeLeft int
+}
+
+func NewPrunningInfo(world []Valve, time int) *PrunningInfo {
+	return &PrunningInfo{
+		bestRemaining: bestRemainingScore(world, time),
+		lru:           NewLRUCache[worldState, Score](1_000_000),
+	}
 }
 
 func (pi *PrunningInfo) CanPrune(score Score, timeLeft int) bool {
