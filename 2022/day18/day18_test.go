@@ -21,11 +21,44 @@ func TestMain(m *testing.M) {
 	os.Exit(r)
 }
 
+type Cube = day18.Cube
+
 func TestReadData(t *testing.T) {
 	tc := map[string]struct {
 		input []string
-		want  []int8
-	}{}
+		want  []Cube
+	}{
+		"single": {input: []string{"1,2,3"}, want: []Cube{{1, 2, 3}}},
+		"example": {input: []string{
+			"2,2,2",
+			"1,2,2",
+			"3,2,2",
+			"2,1,2",
+			"2,3,2",
+			"2,2,1",
+			"2,2,3",
+			"2,2,4",
+			"2,2,6",
+			"1,2,5",
+			"3,2,5",
+			"2,1,5",
+			"2,3,5",
+		}, want: []Cube{
+			{2, 2, 2},
+			{1, 2, 2},
+			{3, 2, 2},
+			{2, 1, 2},
+			{2, 3, 2},
+			{2, 2, 1},
+			{2, 2, 3},
+			{2, 2, 4},
+			{2, 2, 6},
+			{1, 2, 5},
+			{3, 2, 5},
+			{2, 1, 5},
+			{2, 3, 5},
+		}},
+	}
 
 	for name, tc := range tc {
 		tc := tc
@@ -43,13 +76,30 @@ func TestReadData(t *testing.T) {
 	}
 }
 
-func TestPart1(t *testing.T) { // nolint: dupl
+func TestPart1(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		want int
+		input []Cube
+		want  int
 	}{
-		"empty": {want: 1},
+		"single": {want: 6, input: []Cube{{0, 0, 0}}},
+		"two":    {want: 10, input: []Cube{{0, 0, 0}, {0, 0, 1}}},
+		"example": {want: 64, input: []Cube{
+			{2, 2, 2},
+			{1, 2, 2},
+			{3, 2, 2},
+			{2, 1, 2},
+			{2, 3, 2},
+			{2, 2, 1},
+			{2, 2, 3},
+			{2, 2, 4},
+			{2, 2, 6},
+			{1, 2, 5},
+			{3, 2, 5},
+			{2, 1, 5},
+			{2, 3, 5},
+		}},
 	}
 
 	for name, tc := range testCases {
@@ -57,7 +107,7 @@ func TestPart1(t *testing.T) { // nolint: dupl
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := day18.Part1()
+			got, err := day18.Part1(tc.input)
 
 			require.NoError(t, err)
 			require.Equal(t, tc.want, got)
@@ -65,7 +115,7 @@ func TestPart1(t *testing.T) { // nolint: dupl
 	}
 }
 
-func TestPart2(t *testing.T) { // nolint: dupl
+func TestPart2(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
@@ -88,7 +138,7 @@ func TestPart2(t *testing.T) { // nolint: dupl
 }
 
 func TestRealData(t *testing.T) {
-	expected := `Result of part 1: 1
+	expected := `Result of part 1: 3470
 Result of part 2: 1
 `
 	buff := new(bytes.Buffer)
