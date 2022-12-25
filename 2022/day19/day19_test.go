@@ -45,7 +45,7 @@ func TestReadData(t *testing.T) {
 			want: []Blueprint{
 				{
 					ID: 1,
-					Costs: [4][3]int{
+					Costs: [4][3]uint{
 						Ore:      {4, 0, 0},
 						Clay:     {2, 0, 0},
 						Obsidian: {3, 14, 0},
@@ -53,7 +53,7 @@ func TestReadData(t *testing.T) {
 					},
 				}, {
 					ID: 2,
-					Costs: [4][3]int{
+					Costs: [4][3]uint{
 						Ore:      {2, 0, 0},
 						Clay:     {3, 0, 0},
 						Obsidian: {3, 8, 0},
@@ -85,20 +85,39 @@ func TestSolveBlueprint(t *testing.T) { // nolint: dupl
 
 	testCases := map[string]struct {
 		input Blueprint
-		want  int
+		time  uint
+		want  uint
 	}{
-		"example 1": {want: 9, input: Blueprint{
+		"example 1.1": {want: 9, time: 24, input: Blueprint{
 			ID: 1,
-			Costs: [4][3]int{
+			Costs: [4][3]uint{
 				Ore:      {4, 0, 0},
 				Clay:     {2, 0, 0},
 				Obsidian: {3, 14, 0},
 				Geode:    {2, 0, 7},
 			},
 		}},
-		"example 2": {want: 12, input: Blueprint{
+		"example 1.2": {want: 12, time: 24, input: Blueprint{
 			ID: 2,
-			Costs: [4][3]int{
+			Costs: [4][3]uint{
+				Ore:      {2, 0, 0},
+				Clay:     {3, 0, 0},
+				Obsidian: {3, 8, 0},
+				Geode:    {3, 0, 12},
+			},
+		}},
+		"example 2.1": {want: 56, time: 32, input: Blueprint{
+			ID: 1,
+			Costs: [4][3]uint{
+				Ore:      {4, 0, 0},
+				Clay:     {2, 0, 0},
+				Obsidian: {3, 14, 0},
+				Geode:    {2, 0, 7},
+			},
+		}},
+		"example 2.2": {want: 62, time: 32, input: Blueprint{
+			ID: 2,
+			Costs: [4][3]uint{
 				Ore:      {2, 0, 0},
 				Clay:     {3, 0, 0},
 				Obsidian: {3, 8, 0},
@@ -112,9 +131,47 @@ func TestSolveBlueprint(t *testing.T) { // nolint: dupl
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := day19.SolveBlueprint(tc.input)
+			got := day19.SolveBlueprint(tc.input, tc.time)
 
-			require.NoError(t, err)
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestPart1(t *testing.T) { // nolint: dupl
+	t.Parallel()
+
+	testCases := map[string]struct {
+		input []Blueprint
+		want  uint
+	}{
+		"example": {want: 33, input: []Blueprint{
+			{
+				ID: 1,
+				Costs: [4][3]uint{
+					Ore:      {4, 0, 0},
+					Clay:     {2, 0, 0},
+					Obsidian: {3, 14, 0},
+					Geode:    {2, 0, 7},
+				},
+			}, {
+				ID: 2,
+				Costs: [4][3]uint{
+					Ore:      {2, 0, 0},
+					Clay:     {3, 0, 0},
+					Obsidian: {3, 8, 0},
+					Geode:    {3, 0, 12},
+				},
+			}}},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			got := day19.Part1(tc.input)
+
 			require.Equal(t, tc.want, got)
 		})
 	}
@@ -125,9 +182,26 @@ func TestPart2(t *testing.T) { // nolint: dupl
 
 	testCases := map[string]struct {
 		input []Blueprint
-		want  int
+		want  uint
 	}{
-		"empty": {want: 1, input: []Blueprint{}},
+		"example": {want: 33, input: []Blueprint{
+			{
+				ID: 1,
+				Costs: [4][3]uint{
+					Ore:      {4, 0, 0},
+					Clay:     {2, 0, 0},
+					Obsidian: {3, 14, 0},
+					Geode:    {2, 0, 7},
+				},
+			}, {
+				ID: 2,
+				Costs: [4][3]uint{
+					Ore:      {2, 0, 0},
+					Clay:     {3, 0, 0},
+					Obsidian: {3, 8, 0},
+					Geode:    {3, 0, 12},
+				},
+			}}},
 	}
 
 	for name, tc := range testCases {
@@ -135,16 +209,15 @@ func TestPart2(t *testing.T) { // nolint: dupl
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := day19.Part2(tc.input)
+			got := day19.Part2(tc.input)
 
-			require.NoError(t, err)
 			require.Equal(t, tc.want, got)
 		})
 	}
 }
 
 func TestRealData(t *testing.T) {
-	expected := `Result of part 1: 1
+	expected := `Result of part 1: 1147
 Result of part 2: 1
 `
 	buff := new(bytes.Buffer)

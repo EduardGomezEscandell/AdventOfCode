@@ -10,8 +10,10 @@ import (
 	"math"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/lrucache"
 )
 
 const (
@@ -20,21 +22,35 @@ const (
 )
 
 // Part1 solves the first half of today's problem.
-func Part1(blueprints []Blueprint) (int, error) {
-	var acc int
-	for _, b := range blueprints {
-		v, err := SolveBlueprint(b)
-		if err != nil {
-			return 0, err
-		}
-		acc += v * b.ID
+func Part1(blueprints []Blueprint) uint {
+	ch := make(chan uint)
+	defer close(ch)
+
+	for _, bp := range blueprints {
+		bp := bp
+		go func() {
+			ch <- SolveBlueprint(bp, 24) * bp.ID
+		}()
 	}
-	return acc, nil
+	r := charray.Take(ch, len(blueprints))
+	return charray.Reduce(r, fun.Add[uint], 0)
 }
 
 // Part2 solves the second half of today's problem.
-func Part2([]Blueprint) (int, error) {
-	return 1, nil
+func Part2(blueprints []Blueprint) uint {
+	blueprints = blueprints[:3]
+
+	ch := make(chan uint)
+	defer close(ch)
+
+	for _, bp := range blueprints {
+		bp := bp
+		go func() {
+			ch <- SolveBlueprint(bp, 32)
+		}()
+	}
+	r := charray.Take(ch, len(blueprints))
+	return charray.Reduce(r, fun.Mul[uint], 1)
 }
 
 // ------------ Implementation ---------------------
@@ -55,140 +71,131 @@ var (
 )
 
 type Blueprint struct {
-	ID    int
-	Costs [4][3]int
+	ID    uint
+	Costs [4][3]uint
 }
 
 type inventory struct {
-	currency  [4]int
-	harvester [4]int
+	currency  [4]uint
+	harvester [4]uint
 }
 
-func SolveBlueprint(bp Blueprint) (int, error) {
-	inv := inventory{}
-	inv.harvester[Ore] = 1
-
-	best := dfs(bp, inv, 24)
-
-	return best, nil
+type state struct {
+	inv  inventory
+	time uint
 }
 
-func dfs(bp Blueprint, inv inventory, time int) int {
-	if time == 0 {
-		return inv.currency[Geode]
+func SolveBlueprint(bp Blueprint, time uint) uint {
+	s := state{
+		inv:  inventory{},
+		time: time,
 	}
+	s.inv.harvester[Ore] = 1
 
-	best := -1
-	for _, mach := range array.Reverse(machines[:]) {
-		missing := shortage(bp, inv, mach)
-		d := shortageDuration(inv, missing)
-		if time-d < 0 {
-			continue
-		}
-		d++ // It takes one minute to build the machine
-		newInv := wait(inv, d)
-		purchase(bp, &newInv, mach)
-		v := dfs(bp, newInv, time-d)
-		best = fun.Max(best, v)
-	}
-
-	if best == -1 {
-		// If you can do nothing, then wait for the clock to run out
-		return dfs(bp, wait(inv, time), 0)
-	}
-
+	var best uint
+	cache := lrucache.New[state, struct{}](100_000)
+	dfs(bp, s, &best, cache)
 	return best
 }
 
-func wait(inv inventory, time int) inventory {
-	for _, o := range ores {
-		inv.currency[o] += inv.harvester[o] * time
+func dfs(bp Blueprint, s state, best *uint, cache *lrucache.LruCache[state, struct{}]) {
+	if s.time == 0 {
+		*best = fun.Max(*best, s.inv.currency[Geode])
+		return
 	}
-	return inv
-}
 
-func shortage(bp Blueprint, inv inventory, machine Machine) []int {
-	return array.ZipWith(inv.currency[:], bp.Costs[machine][:], func(have, need int) int {
-		return fun.Max(0, need-have)
+	// Prunning: max possible yield if geode machines were free
+	maxPossibleYield := s.inv.currency[Geode] + s.time*s.inv.harvester[Geode] + triangular(s.time)
+	if maxPossibleYield <= *best {
+		return
+	}
+
+	// Prunning: already been here
+	if s.time > 5 {
+		if _, found := cache.Get(s); found {
+			return
+		}
+	}
+
+	// Exploring continuations
+	cont := []state{}
+	for _, mach := range array.Reverse(machines[:]) {
+		w := waitNeeded(bp, s.inv, mach) + 1 // It takes one minute to build the machine
+		if s.time < w {
+			continue
+		}
+		cont = append(cont, s)
+		cont[len(cont)-1].wait(w).purchase(bp, mach)
+	}
+
+	// If you can do nothing, then wait for the clock to run out
+	if len(cont) == 0 {
+		s.wait(s.time)
+		dfs(bp, s, best, cache)
+		return
+	}
+
+	// We are greedy with resources to establish a high "best" ASAP. We want to rush the
+	// end of the problem to establish a "best" and start prunning ASAP.
+	array.Sort(cont, func(a, b state) bool {
+		for material := Geode; material >= 0; material-- {
+			if a.inv.harvester[material] != b.inv.harvester[material] {
+				return a.inv.harvester[material] > b.inv.harvester[material]
+			}
+			if a.inv.currency[material] != b.inv.currency[material] {
+				return a.inv.currency[material] > b.inv.currency[material]
+			}
+		}
+		return a.time <= b.time
 	})
+
+	array.Foreach(cont, func(s *state) {
+		dfs(bp, *s, best, cache)
+	})
+
+	if s.time > 5 {
+		cache.Set(s, struct{}{})
+	}
 }
 
-const Forever = math.MaxInt
+func waitNeeded(bp Blueprint, inv inventory, machine Machine) uint {
+	shortage := array.ZipWith(inv.currency[:], bp.Costs[machine][:], func(have, need uint) uint {
+		if need < have {
+			return 0
+		}
+		return need - have
+	})
 
-func shortageDuration(inv inventory, shortage []int) int {
-	return array.ZipReduce(inv.harvester[:], shortage, func(growth, target int) int {
+	return array.ZipReduce(inv.harvester[:], shortage, func(growth, target uint) uint {
 		if target == 0 {
 			return 0
 		}
 		if growth == 0 {
-			return Forever
+			return math.MaxInt // aka forever
 		}
 		return (target-1)/growth + 1 // Rounded up
-	}, fun.Max[int], 0)
+	}, fun.Max[uint], 0)
 }
 
-func purchase(bp Blueprint, inv *inventory, machine Machine) {
-	for ore, cost := range bp.Costs[machine] {
-		inv.currency[ore] -= cost
+func (s *state) wait(w uint) *state {
+	s.time -= w
+	for _, o := range ores {
+		s.inv.currency[o] += s.inv.harvester[o] * w
 	}
-	inv.harvester[machine]++
+	return s
 }
 
-// func dfs(bp Blueprint, inv inventory, waited bool, time int) int {
-// 	if time == 0 {
-// 		return inv.currency[Obsidian]
-// 	}
+func (s *state) purchase(bp Blueprint, machine Machine) *state {
+	for ore, cost := range bp.Costs[machine] {
+		s.inv.currency[ore] -= cost
+	}
+	s.inv.harvester[machine]++
+	return s
+}
 
-// 	var best int
-// 	// Each continuation contains the updated inventory with a newly
-// 	// built machine.
-// 	continuations := actions(bp, inv, waited)
-// 	for _, newInv := range continuations {
-// 		v := dfs(bp, newInv, false, time-1)
-// 		best = fun.Max(v, best)
-// 	}
-
-// 	// If there is some machine that we cannot yet afford, it may make
-// 	// sense to wait and accumulate resources until we can pay for it.
-// 	if len(continuations) < len(machines) {
-// 		for _, o := range ores {
-// 			inv.currency[o] += inv.harvester[o]
-// 		}
-// 		v := dfs(bp, inv, true, time-1)
-// 		best = fun.Max(v, best)
-// 	}
-
-// 	return best
-
-// }
-
-// func actions(bp Blueprint, inv inventory, waited bool) []inventory {
-// 	newInv := inv
-// 	for _, o := range ores {
-// 		newInv.currency[o] += newInv.harvester[o]
-// 	}
-
-// 	continuations := []inventory{}
-
-// 	for _, m := range machines {
-// 		if !affordable(bp, newInv, m) {
-// 			// Cannot afford to buy this machine
-// 			continue
-// 		}
-// 		if waited && affordable(bp, inv, m) {
-// 			// Could afford to buy this machine last turn, so it made no sense to wait
-// 			continue
-// 		}
-// 		continuations = append(continuations, newInv)
-// 		continuations[len(continuations)-1].harvester[m]++
-// 	}
-
-// 	return continuations
-// }
-
-// func affordable(bp Blueprint, inv inventory, machine Machine) bool {
-// 	return array.ZipReduce(inv.currency[:], bp.Costs[machine][:], fun.Ge[int], fun.And, true)
-// }
+func triangular(n uint) uint {
+	return n*(n+1)/2 + 1
+}
 
 // ---------- Here be boilerplate ------------------
 
@@ -199,17 +206,20 @@ func Main(stdout io.Writer) error {
 		return fmt.Errorf("error reading data: %v", err)
 	}
 
-	p1, err := Part1(input)
-	if err != nil {
-		return fmt.Errorf("error in part 1: %v", err)
-	}
-	fmt.Fprintf(stdout, "Result of part 1: %d\n", p1)
+	r1 := make(chan uint)
+	r2 := make(chan uint)
 
-	p2, err := Part2(input)
-	if err != nil {
-		return fmt.Errorf("error in part 2: %v", err)
-	}
-	fmt.Fprintf(stdout, "Result of part 2: %d\n", p2)
+	go func() {
+		r1 <- Part1(input)
+		close(r1)
+	}()
+	go func() {
+		r2 <- Part2(input)
+		close(r2)
+	}()
+
+	fmt.Fprintf(stdout, "Result of part 1: %d\n", <-r1)
+	fmt.Fprintf(stdout, "Result of part 2: %d\n", <-r2)
 
 	return nil
 }
