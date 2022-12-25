@@ -113,6 +113,14 @@ func TestInsert(t *testing.T) {
 	t.Run("int64", testInsert[int64])
 }
 
+func TestRotate(t *testing.T) {
+	t.Parallel()
+	t.Run("int", testRotate[int])
+	t.Run("int8", testRotate[int8])
+	t.Run("int32", testRotate[int32])
+	t.Run("int64", testRotate[int64])
+}
+
 func testMap[T generics.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 
@@ -460,6 +468,32 @@ func testInsert[T generics.Signed](t *testing.T) { // nolint: thelper
 			copy(in, tc.input)
 			got := array.Insert(in, tc.val, tc.pos)
 			require.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func testRotate[T generics.Signed](t *testing.T) { // nolint: thelper
+	t.Parallel()
+
+	testCases := map[string]struct {
+		input   []T
+		n       int
+		wantArr []T
+		wantIdx int
+	}{
+		// "single": {input: []T{5}, n: 0, wantArr: []T{5}, wantIdx: 0},
+		// "left": {input: []T{1, 3, 5, 7, 9}, n: 2, wantArr: []T{5, 7, 9, 1, 3}, wantIdx: 3},
+		"right": {input: []T{1, 3, 5, 7, 9}, n: -2, wantArr: []T{7, 9, 1, 3, 5}, wantIdx: 2},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			arr := make([]T, len(tc.input))
+			copy(arr, tc.input)
+			got := array.Rotate(arr, tc.n)
+			require.Equal(t, tc.wantArr, arr)
+			require.Equal(t, tc.wantIdx, got)
 		})
 	}
 }
