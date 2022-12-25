@@ -105,7 +105,7 @@ func ZipWith[L, R, O any](first []L, second []R, f func(L, R) O) []O {
 // ZipReduce takes two arrays of type []L and []R, and applies zip:LxR->M
 // elementwise to produce an intermediate array of type []M and length
 // equal to the length of the shortest input. This array is then reduced
-// with fold expression fold:OxM->O
+// with fold expression fold:OxM->O with initial value 'init'.
 //
 // Equivalent to:
 //
@@ -116,14 +116,19 @@ func ZipWith[L, R, O any](first []L, second []R, f func(L, R) O) []O {
 // Example: compute the inner product (u, v):
 //
 //	ZipReduce(u, v, func.Mul, func.Add)
-func ZipReduce[L, R, M, O any](first []L, second []R, zip func(L, R) M, fold func(O, M) O) O {
+func ZipReduce[L, R, M, O any](
+	first []L,
+	second []R,
+	zip func(L, R) M,
+	fold func(O, M) O,
+	init O,
+) O {
 	ln := fun.Min(len(first), len(second))
 
-	var o O
 	for i := 0; i < ln; i++ {
-		o = fold(o, zip(first[i], second[i]))
+		init = fold(init, zip(first[i], second[i]))
 	}
-	return o
+	return init
 }
 
 // AdjacentMap slides a window of size 2 across the array arr applying operator 'f'

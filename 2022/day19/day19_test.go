@@ -21,7 +21,17 @@ func TestMain(m *testing.M) {
 	os.Exit(r)
 }
 
-type Blueprint = day19.Blueprint
+type (
+	Blueprint = day19.Blueprint
+	Material  = day19.Material
+)
+
+const (
+	Ore      = day19.Ore
+	Clay     = day19.Clay
+	Obsidian = day19.Obsidian
+	Geode    = day19.Geode
+)
 
 func TestReadData(t *testing.T) {
 	tc := map[string]struct {
@@ -34,17 +44,21 @@ func TestReadData(t *testing.T) {
 		},
 			want: []Blueprint{
 				{
-					ID:                1,
-					OreRobotCost:      [3]int{4, 0, 0},
-					ClayRobotCost:     [3]int{2, 0, 0},
-					ObsidianRobotCost: [3]int{3, 14, 0},
-					GeodeRobotCost:    [3]int{2, 0, 7},
+					ID: 1,
+					Costs: [4][3]int{
+						Ore:      {4, 0, 0},
+						Clay:     {2, 0, 0},
+						Obsidian: {3, 14, 0},
+						Geode:    {2, 0, 7},
+					},
 				}, {
-					ID:                2,
-					OreRobotCost:      [3]int{2, 0, 0},
-					ClayRobotCost:     [3]int{3, 0, 0},
-					ObsidianRobotCost: [3]int{3, 8, 0},
-					GeodeRobotCost:    [3]int{3, 0, 12},
+					ID: 2,
+					Costs: [4][3]int{
+						Ore:      {2, 0, 0},
+						Clay:     {3, 0, 0},
+						Obsidian: {3, 8, 0},
+						Geode:    {3, 0, 12},
+					},
 				},
 			},
 		},
@@ -66,14 +80,31 @@ func TestReadData(t *testing.T) {
 	}
 }
 
-func TestPart1(t *testing.T) { // nolint: dupl
+func TestSolveBlueprint(t *testing.T) { // nolint: dupl
 	t.Parallel()
 
 	testCases := map[string]struct {
-		input []Blueprint
+		input Blueprint
 		want  int
 	}{
-		"empty": {want: 1, input: []Blueprint{}},
+		"example 1": {want: 9, input: Blueprint{
+			ID: 1,
+			Costs: [4][3]int{
+				Ore:      {4, 0, 0},
+				Clay:     {2, 0, 0},
+				Obsidian: {3, 14, 0},
+				Geode:    {2, 0, 7},
+			},
+		}},
+		"example 2": {want: 12, input: Blueprint{
+			ID: 2,
+			Costs: [4][3]int{
+				Ore:      {2, 0, 0},
+				Clay:     {3, 0, 0},
+				Obsidian: {3, 8, 0},
+				Geode:    {3, 0, 12},
+			},
+		}},
 	}
 
 	for name, tc := range testCases {
@@ -81,7 +112,7 @@ func TestPart1(t *testing.T) { // nolint: dupl
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := day19.Part1(tc.input)
+			got, err := day19.SolveBlueprint(tc.input)
 
 			require.NoError(t, err)
 			require.Equal(t, tc.want, got)
