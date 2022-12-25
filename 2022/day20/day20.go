@@ -70,25 +70,22 @@ func solve(data []entry, nmixes int) (int64, error) {
 func mix(data []entry) {
 	N := len(data)
 	for i := 0; i < N; i++ {
-		value := data[i].value
 		first := data[i].position
+		last := int(positiveMod(data[i].value+int64(data[i].position), int64(N-1)))
 
-		last := int((int64(first) + value) % int64(N-1))
-		if last <= 0 {
-			last += (N - 1)
-		}
-
+		// No changes to array: continuing
 		if first == last%(N-1) {
 			continue
 		}
 
+		// Rotating. Instead of actually performing the rotation,
+		// we only change the 'position' field. The array stays
+		// sorted in the original order.
 		direction := -1 // Rotate left
 		if first > last {
 			direction = +1 // Rotate right
 			first, last = last, first
 		}
-
-		// Rotating
 		array.Foreach(data, func(e *entry) {
 			if first <= e.position && e.position <= last {
 				e.position += direction
@@ -99,6 +96,14 @@ func mix(data []entry) {
 			data[i].position = first
 		}
 	}
+}
+
+func positiveMod(x int64, n int64) int64 {
+	v := x % n
+	if v <= 0 {
+		v += n
+	}
+	return v
 }
 
 func pretty(data []entry) string { // nolint: unused
