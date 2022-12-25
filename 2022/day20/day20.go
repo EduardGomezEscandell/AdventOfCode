@@ -44,14 +44,10 @@ func Part2(input []int) (int64, error) {
 type entry struct {
 	value    int64
 	position int
-	visited  bool
 }
 
 func solve(data []entry, nmixes int) (int64, error) {
 	for i := 0; i < nmixes; i++ {
-		if i != 0 {
-			array.Foreach(data, func(e *entry) { e.visited = false })
-		}
 		mix(data)
 		// fmt.Println(pretty(data))
 	}
@@ -70,6 +66,7 @@ func solve(data []entry, nmixes int) (int64, error) {
 	return acc, nil
 }
 
+// mix performs the mixing operation as explained in the problem statement.
 func mix(data []entry) {
 	N := len(data)
 	for i := 0; i < N; i++ {
@@ -104,7 +101,7 @@ func mix(data []entry) {
 	}
 }
 
-func pretty(data []entry) string {
+func pretty(data []entry) string { // nolint: unused
 	d := array.Map(data, fun.Identity[entry])
 	array.Sort(d, func(a, b entry) bool { return a.position < b.position })
 	return strings.Join(array.Map(d, func(e entry) string {
