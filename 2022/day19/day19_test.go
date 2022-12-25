@@ -21,10 +21,7 @@ func TestMain(m *testing.M) {
 	os.Exit(r)
 }
 
-type (
-	Blueprint = day19.Blueprint
-	Material  = day19.Material
-)
+type Blueprint = day19.Blueprint
 
 const (
 	Ore      = day19.Ore
@@ -74,7 +71,6 @@ func TestReadData(t *testing.T) {
 
 			got, err := day19.ReadData()
 			require.NoError(t, err)
-
 			require.Equal(t, tc.want, got)
 		})
 	}
@@ -132,7 +128,6 @@ func TestSolveBlueprint(t *testing.T) { // nolint: dupl
 			t.Parallel()
 
 			got := day19.SolveBlueprint(tc.input, tc.time)
-
 			require.Equal(t, tc.want, got)
 		})
 	}
@@ -171,7 +166,6 @@ func TestPart1(t *testing.T) { // nolint: dupl
 			t.Parallel()
 
 			got := day19.Part1(tc.input)
-
 			require.Equal(t, tc.want, got)
 		})
 	}
@@ -184,7 +178,7 @@ func TestPart2(t *testing.T) { // nolint: dupl
 		input []Blueprint
 		want  uint
 	}{
-		"example": {want: 33, input: []Blueprint{
+		"example": {want: 3472, input: []Blueprint{
 			{
 				ID: 1,
 				Costs: [4][3]uint{
@@ -210,7 +204,6 @@ func TestPart2(t *testing.T) { // nolint: dupl
 			t.Parallel()
 
 			got := day19.Part2(tc.input)
-
 			require.Equal(t, tc.want, got)
 		})
 	}

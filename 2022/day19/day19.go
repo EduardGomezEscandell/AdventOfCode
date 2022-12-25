@@ -38,7 +38,8 @@ func Part1(blueprints []Blueprint) uint {
 
 // Part2 solves the second half of today's problem.
 func Part2(blueprints []Blueprint) uint {
-	blueprints = blueprints[:3]
+	N := fun.Min(3, len(blueprints))
+	blueprints = blueprints[:N]
 
 	ch := make(chan uint)
 	defer close(ch)
@@ -49,15 +50,20 @@ func Part2(blueprints []Blueprint) uint {
 			ch <- SolveBlueprint(bp, 32)
 		}()
 	}
-	r := charray.Take(ch, len(blueprints))
+	r := charray.Take(ch, N)
 	return charray.Reduce(r, fun.Mul[uint], 1)
 }
 
 // ------------ Implementation ---------------------
 
+// Material is an enum describing each of the resources.
 type Material int
+
+// Machine is an enum describing what resource a machine harvests.
 type Machine Material
 
+// The materials that can be harvested and consumed. These also
+// identify the machines that harvest each of them.
 const (
 	Ore Material = iota
 	Clay
@@ -70,21 +76,30 @@ var (
 	machines = [4]Machine{Machine(Ore), Machine(Clay), Machine(Obsidian), Machine(Geode)} // Syntax sugar
 )
 
+// Blueprint as in the blueprints in the problem statement.
+// The amount of currency needed for a certain machine is Costs[Machine][Currency].
 type Blueprint struct {
 	ID    uint
 	Costs [4][3]uint
 }
 
+// inventory is the amount of resources (aka currency) and robots (aka harvester)
+// available at a point in time.
 type inventory struct {
 	currency  [4]uint
 	harvester [4]uint
 }
 
+// state is the union of the inventory and the time left. It, together
+// with the blueprint, uniquely determines the following moves, and hence can
+// be used as a cache key.
 type state struct {
 	inv  inventory
 	time uint
 }
 
+// SolveBlueprint finds the maximum possible geode yield for a given blueprint
+// in a given amount of time.
 func SolveBlueprint(bp Blueprint, time uint) uint {
 	s := state{
 		inv:  inventory{},
@@ -98,9 +113,13 @@ func SolveBlueprint(bp Blueprint, time uint) uint {
 	return best
 }
 
+// dfs is a greedy depth-first search that explores all possible actions with a given
+// blueprint, inventory and time. It prunes based on caching results and on impossibility
+// of improving over the current best result.
 func dfs(bp Blueprint, s state, best *uint, cache *lrucache.LruCache[state, struct{}]) {
+	*best = fun.Max(*best, s.inv.currency[Geode])
+
 	if s.time == 0 {
-		*best = fun.Max(*best, s.inv.currency[Geode])
 		return
 	}
 
@@ -111,7 +130,7 @@ func dfs(bp Blueprint, s state, best *uint, cache *lrucache.LruCache[state, stru
 	}
 
 	// Prunning: already been here
-	if s.time > 5 {
+	if s.time > 5 { // Keeping cache small by only considering big branches.
 		if _, found := cache.Get(s); found {
 			return
 		}
@@ -135,8 +154,7 @@ func dfs(bp Blueprint, s state, best *uint, cache *lrucache.LruCache[state, stru
 		return
 	}
 
-	// We are greedy with resources to establish a high "best" ASAP. We want to rush the
-	// end of the problem to establish a "best" and start prunning ASAP.
+	// We are greedy with resources to establish a high "best" in order to prune better.
 	array.Sort(cont, func(a, b state) bool {
 		for material := Geode; material >= 0; material-- {
 			if a.inv.harvester[material] != b.inv.harvester[material] {
@@ -146,18 +164,21 @@ func dfs(bp Blueprint, s state, best *uint, cache *lrucache.LruCache[state, stru
 				return a.inv.currency[material] > b.inv.currency[material]
 			}
 		}
-		return a.time <= b.time
+		return a.time > b.time
 	})
 
+	// Recursing
 	array.Foreach(cont, func(s *state) {
 		dfs(bp, *s, best, cache)
 	})
 
+	// Keeping cache small by only considering big branches.
 	if s.time > 5 {
 		cache.Set(s, struct{}{})
 	}
 }
 
+// waitNeeded computes how much time is needed to be able to afford a machine.
 func waitNeeded(bp Blueprint, inv inventory, machine Machine) uint {
 	shortage := array.ZipWith(inv.currency[:], bp.Costs[machine][:], func(have, need uint) uint {
 		if need < have {
@@ -177,6 +198,7 @@ func waitNeeded(bp Blueprint, inv inventory, machine Machine) uint {
 	}, fun.Max[uint], 0)
 }
 
+// wait reduces the time left and increases the resources accordingly.
 func (s *state) wait(w uint) *state {
 	s.time -= w
 	for _, o := range ores {
@@ -185,6 +207,8 @@ func (s *state) wait(w uint) *state {
 	return s
 }
 
+// purchase increments the specified machine's count by one, and subtracts its
+// resources.
 func (s *state) purchase(bp Blueprint, machine Machine) *state {
 	for ore, cost := range bp.Costs[machine] {
 		s.inv.currency[ore] -= cost
@@ -193,8 +217,10 @@ func (s *state) purchase(bp Blueprint, machine Machine) *state {
 	return s
 }
 
+// triangular computes the nth triangular number. This happens to be the amount
+// of geodes that could be cracked in n minutes if machines were free.
 func triangular(n uint) uint {
-	return n*(n+1)/2 + 1
+	return n * (n + 1) / 2
 }
 
 // ---------- Here be boilerplate ------------------
@@ -230,7 +256,7 @@ var ReadDataFile = func() ([]byte, error) {
 	return input.ReadDataFile(today, fileName)
 }
 
-// ReadData reads the data file and a list of all cubes.
+// ReadData reads the data file and a list of all the blueprints.
 func ReadData() ([]Blueprint, error) {
 	b, err := ReadDataFile()
 	if err != nil {
