@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
 )
 
@@ -19,14 +21,20 @@ const (
 
 // Part1 solves the first half of today's problem.
 func Part1(input []int) (int64, error) {
-	in := array.Map(input, func(x int) entry { return entry{value: int64(x)} })
+	var i int
+	in := array.Map(input, func(x int) entry {
+		defer func() { i++ }()
+		return entry{value: int64(x), position: i}
+	})
 	return solve(in, 1)
 }
 
 // Part2 solves the second half of today's problem.
 func Part2(input []int) (int64, error) {
+	var i int
 	in := array.Map(input, func(x int) entry {
-		return entry{value: 811589153 * int64(x)}
+		defer func() { i++ }()
+		return entry{value: 811589153 * int64(x), position: i}
 	})
 	return solve(in, 10)
 }
@@ -34,8 +42,9 @@ func Part2(input []int) (int64, error) {
 // ------------ Implementation ---------------------
 
 type entry struct {
-	value   int64
-	visited bool
+	value    int64
+	position int
+	visited  bool
 }
 
 func solve(data []entry, nmixes int) (int64, error) {
@@ -44,7 +53,9 @@ func solve(data []entry, nmixes int) (int64, error) {
 			array.Foreach(data, func(e *entry) { e.visited = false })
 		}
 		mix(data)
+		// fmt.Println(pretty(data))
 	}
+	array.Sort(data, func(a, b entry) bool { return a.position < b.position })
 
 	zero := array.FindIf(data, func(n entry) bool { return n.value == 0 })
 	if zero == -1 {
@@ -60,34 +71,45 @@ func solve(data []entry, nmixes int) (int64, error) {
 }
 
 func mix(data []entry) {
-	var i int64
-	N := int64(len(data))
-	for i < N {
-		if data[i].visited {
-			i++
-			continue
-		}
-		data[i].visited = true
-
+	N := len(data)
+	for i := 0; i < N; i++ {
 		value := data[i].value
-		source := int64(i)
+		first := data[i].position
 
-		destination := (source + value) % (N - 1)
-		if destination <= 0 {
-			destination += (N - 1)
+		last := int((int64(first) + value) % int64(N-1))
+		if last <= 0 {
+			last += (N - 1)
 		}
 
-		if source == destination%(N-1) {
+		if first == last%(N-1) {
 			continue
 		}
 
-		direction := 1
-		if source > destination {
-			direction = -1
-			source, destination = destination, source
+		direction := -1 // Rotate left
+		if first > last {
+			direction = +1 // Rotate right
+			first, last = last, first
 		}
-		array.Rotate(data[source:destination+1], direction)
+
+		// Rotating
+		array.Foreach(data, func(e *entry) {
+			if first <= e.position && e.position <= last {
+				e.position += direction
+			}
+		})
+		data[i].position = last
+		if direction == 1 {
+			data[i].position = first
+		}
 	}
+}
+
+func pretty(data []entry) string {
+	d := array.Map(data, fun.Identity[entry])
+	array.Sort(d, func(a, b entry) bool { return a.position < b.position })
+	return strings.Join(array.Map(d, func(e entry) string {
+		return fmt.Sprintf("%d: %d", e.position, e.value)
+	}), ", ")
 }
 
 // ---------- Here be boilerplate ------------------
