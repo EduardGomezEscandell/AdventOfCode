@@ -74,7 +74,7 @@ func mix(data []entry) {
 		last := int(positiveMod(data[i].value+int64(data[i].position), int64(N-1)))
 
 		// No changes to array: continuing
-		if first == last%(N-1) {
+		if first%(N-1) == last%(N-1) {
 			continue
 		}
 
