@@ -218,7 +218,7 @@ func TestPart2(t *testing.T) { // nolint: dupl
 
 func TestRealData(t *testing.T) {
 	expected := `Result of part 1: 1147
-Result of part 2: 1
+Result of part 2: 3080
 `
 	buff := new(bytes.Buffer)
 
