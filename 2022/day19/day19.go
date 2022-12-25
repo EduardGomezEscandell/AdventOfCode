@@ -108,7 +108,7 @@ func SolveBlueprint(bp Blueprint, time uint) uint {
 	s.inv.harvester[Ore] = 1
 
 	var best uint
-	cache := lrucache.New[state, struct{}](10_000 * int(time))
+	cache := lrucache.New[state, struct{}](3_000 * int(time))
 	dfs(bp, s, &best, cache)
 	return best
 }
