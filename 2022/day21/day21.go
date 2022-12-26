@@ -18,11 +18,44 @@ const (
 
 // Part1 solves the first half of today's problem.
 func Part1(monkeys map[string]monkey) (int64, error) {
-	for _, monkey := range monkeys {
-		go monkey.eval()
+	return dfs(monkeys, "root")
+}
+
+func dfs(jungle map[string]monkey, name string) (int64, error) {
+	monkey, found := jungle[name]
+	if !found {
+		return 0, fmt.Errorf("monkey not found: %s", name)
+	}
+	if monkey.done {
+		return monkey.result, nil
 	}
 
-	return <-monkeys["root"].ch, nil
+	p1, e := dfs(jungle, monkey.parents[0])
+	if e != nil {
+		return 0, fmt.Errorf("called from %s:\n%v", name, e)
+	}
+	p2, e := dfs(jungle, monkey.parents[1])
+	if e != nil {
+		return 0, fmt.Errorf("called from %s:\n%v", name, e)
+	}
+
+	monkey.result = operate(p1, p2, monkey.op)
+	monkey.done = true
+	return monkey.result, nil
+}
+
+func operate(operand1, operand2 int64, operator operator) int64 {
+	switch operator {
+	case add:
+		return operand1 + operand2
+	case sub:
+		return operand1 - operand2
+	case mul:
+		return operand1 * operand2
+	case div:
+		return operand1 / operand2
+	}
+	panic("unreachable")
 }
 
 // Part2 solves the second half of today's problem.
@@ -32,9 +65,20 @@ func Part2(monkeys map[string]monkey) (int, error) {
 
 // ------------ Implementation ---------------------
 
+type operator int
+
+const (
+	add operator = iota
+	sub
+	mul
+	div
+)
+
 type monkey struct {
-	eval func()
-	ch   chan int64
+	parents [2]string
+	op      operator
+	result  int64
+	done    bool
 }
 
 // ---------- Here be boilerplate ------------------
@@ -67,16 +111,15 @@ var ReadDataFile = func() ([]byte, error) {
 	return input.ReadDataFile(today, fileName)
 }
 
+var operators = map[rune]operator{
+	'+': add,
+	'-': sub,
+	'*': mul,
+	'/': div,
+}
+
 // ReadData reads the data file and a list of all cubes.
 func ReadData() (monkeys map[string]monkey, err error) { // nolint: revive
-	defer func() {
-		if err == nil {
-			return
-		}
-		for _, m := range monkeys {
-			close(m.ch)
-		}
-	}()
 
 	b, err := ReadDataFile()
 	if err != nil {
@@ -100,13 +143,9 @@ func ReadData() (monkeys map[string]monkey, err error) { // nolint: revive
 				return errors.New("lead name is not followed by colon")
 			}
 
-			ch := make(chan int64)
 			monkeys[name[:len(name)-1]] = monkey{
-				ch: ch,
-				eval: func() {
-					ch <- num
-					close(ch)
-				},
+				done:   true,
+				result: num,
 			}
 			return nil
 		}()
@@ -125,47 +164,15 @@ func ReadData() (monkeys map[string]monkey, err error) { // nolint: revive
 				return errors.New("lead name is not followed by colon")
 			}
 			name := namePre[:len(namePre)-1]
-
-			ch := make(chan int64)
-			m := monkey{}
-			m.ch = ch
-			switch op {
-			case '+':
-				m.eval = func() {
-					v := <-monkeys[parentL].ch + <-monkeys[parentR].ch
-					ch <- v
-					close(ch)
-				}
-				monkeys[name] = m
-				return nil
-			case '-':
-				m.eval = func() {
-					v := <-monkeys[parentL].ch - <-monkeys[parentR].ch
-					ch <- v
-					close(ch)
-				}
-				monkeys[name] = m
-				return nil
-			case '*':
-				m.eval = func() {
-					v := <-monkeys[parentL].ch * <-monkeys[parentR].ch
-					ch <- v
-					close(ch)
-				}
-				monkeys[name] = m
-				return nil
-			case '/':
-				m.eval = func() {
-					v := <-monkeys[parentL].ch / <-monkeys[parentR].ch
-					ch <- v
-					close(ch)
-				}
-				monkeys[name] = m
-				return nil
-			default:
-				close(ch)
+			operator, ok := operators[op]
+			if !ok {
 				return fmt.Errorf("Failed to parse line %q: invalid operator", line)
 			}
+			monkeys[name] = monkey{
+				parents: [2]string{parentL, parentR},
+				op:      operator,
+			}
+			return nil
 		}()
 		if err2 == nil {
 			continue
