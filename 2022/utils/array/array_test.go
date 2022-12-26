@@ -415,6 +415,7 @@ func testPartition[T generics.Number](t *testing.T) { // nolint: thelper
 		"single, before": {data: []T{5}, search: 3, want: 0},
 		"single, after":  {data: []T{3}, search: 9, want: 1},
 		"standard":       {data: []T{3, 13, 84, 6, 3}, search: 9, want: 3},
+		"bug":            {data: []T{1, 2, 15}, search: 9, want: 2},
 	}
 
 	for name, tc := range testCases {
