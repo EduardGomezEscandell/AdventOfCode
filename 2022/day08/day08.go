@@ -28,8 +28,8 @@ func Part1(forest [][]Height) (uint, error) {
 
 	// A tree is visible if it is taller than the minimum height in its location
 	visible := array.ZipReduce(forest, minHeights, func(fRow []Height, mhRow []Height) uint {
-		return array.ZipReduce(fRow, mhRow, fun.Gt[Height], fun.Count[uint])
-	}, fun.Add[uint])
+		return array.ZipReduce(fRow, mhRow, fun.Gt[Height], fun.Count[uint], 0)
+	}, fun.Add[uint], 0)
 
 	return visible, nil
 }

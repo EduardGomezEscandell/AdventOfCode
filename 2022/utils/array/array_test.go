@@ -250,7 +250,7 @@ func testZipReduce[T generics.Signed](t *testing.T) { // nolint: thelper
 		tc := tc
 		t.Run(name, func(t *testing.T) {
 			// Testing by computing inner product.
-			got := array.ZipReduce(tc.input1, tc.input2, fun.Mul[T], fun.Add[T])
+			got := array.ZipReduce(tc.input1, tc.input2, fun.Mul[T], fun.Add[T], 0)
 			require.Equal(t, tc.want, got)
 		})
 	}

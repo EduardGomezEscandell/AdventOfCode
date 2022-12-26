@@ -30,7 +30,7 @@ jobs:
       - name: Test
         working-directory: ${{ github.workspace }}/2022
         run: |
-          go test ./... --race
+          go test ./...
       - name: Coverage
         working-directory: ${{ github.workspace }}/2022
         run: |
