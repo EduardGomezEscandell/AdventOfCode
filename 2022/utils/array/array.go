@@ -381,6 +381,7 @@ func Partition[T any](arr []T, pred fun.Predicate[T]) int {
 			continue
 		}
 		if i == j {
+			j++
 			continue
 		}
 		//Swap
