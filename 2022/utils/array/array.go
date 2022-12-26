@@ -407,3 +407,41 @@ func Insert[T any](arr []T, value T, position int) []T {
 	arr[position] = value
 	return arr
 }
+
+// Rotate rotates an array to the left when n>0, and to the right
+// otherwise; such that all elements are shifted left/right by n
+// positions. Items that would be shifted out of the range are
+// shifted back in from the other side. Hence, rotating.
+//
+// Returns the position where the former first item is now located.
+func Rotate[T any](arr []T, n int) int {
+	if fun.Abs(n) >= len(arr) {
+		panic(fmt.Errorf("abs(n) must be less than the length of the array (n=%d, len=%d)", n, len(arr)))
+	}
+	switch {
+	case n < 0:
+		return rotateRight(arr, uint(-n))
+	case n > 0:
+		return rotateLeft(arr, uint(n))
+	case n == 0:
+	}
+	return 0
+}
+
+func rotateLeft[T any](arr []T, n uint) int {
+	aux := make([]T, n)
+	k := int(uint(len(arr)) - n)
+	copy(aux, arr[:n])
+	copy(arr[:k], arr[n:])
+	copy(arr[k:], aux)
+	return k
+}
+
+func rotateRight[T any](arr []T, n uint) int {
+	k := int(uint(len(arr)) - n)
+	aux := make([]T, n)
+	copy(aux, arr[k:])
+	copy(arr[n:], arr[:k])
+	copy(arr[:n], aux)
+	return int(n)
+}
