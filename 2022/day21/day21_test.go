@@ -48,6 +48,33 @@ func TestPart1(t *testing.T) {
 	}
 }
 
+func TestPart2(t *testing.T) {
+	testCases := map[string]struct {
+		input []string
+		want  int64
+	}{
+		"example": {want: 152, input: []string{"root: pppw + sjmn", "dbpl: 5", "cczh: sllz + lgvd", "zczc: 2", "ptdq: humn - dvpt", "dvpt: 3", "lfqf: 4", "humn: 5", "ljgn: 2", "sjmn: drzm * dbpl", "sllz: 4", "pppw: cczh / lfqf", "lgvd: ljgn * ptdq", "drzm: hmdt - zczc", "hmdt: 32"}},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			defer testutils.Backup(&day21.ReadDataFile)()
+			day21.ReadDataFile = func() ([]byte, error) {
+				return []byte(strings.Join(tc.input, "\n")), nil
+			}
+
+			monkeys, err := day21.ReadData()
+			require.NoError(t, err)
+
+			got, err := day21.Part2(monkeys)
+
+			require.NoError(t, err)
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
+
 func TestRealData(t *testing.T) {
 	expected := `Result of part 1: 49288254556480
 Result of part 2: 1

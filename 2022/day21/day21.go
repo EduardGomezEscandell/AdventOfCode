@@ -7,7 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
 )
 
@@ -18,85 +21,346 @@ const (
 
 // Part1 solves the first half of today's problem.
 func Part1(monkeys map[string]monkey) (int64, error) {
-	return dfs(monkeys, "root")
+	expr, err := assembleExpression(monkeys, "root")
+	if err != nil {
+		return 0, err
+	}
+
+	simplify(expr)
+	if expr.op != eq {
+		return 0, fmt.Errorf("failed to simplify expression:\n%v", expr)
+	}
+
+	return expr.value, err
 }
 
-func dfs(jungle map[string]monkey, name string) (int64, error) {
-	monkey, found := jungle[name]
-	if !found {
-		return 0, fmt.Errorf("monkey not found: %s", name)
-	}
-	if monkey.done {
-		return monkey.result, nil
-	}
+// Part2 solves the first half of today's problem.
+func Part2(monkeys map[string]monkey) (int64, error) {
+	root := monkeys["root"]
+	root.expr.op = sub
+	monkeys["root"] = root
 
-	p1, e := dfs(jungle, monkey.parents[0])
-	if e != nil {
-		return 0, fmt.Errorf("called from %s:\n%v", name, e)
+	human := monkeys["humn"]
+	human.expr = expr{
+		op: unknown,
 	}
-	p2, e := dfs(jungle, monkey.parents[1])
-	if e != nil {
-		return 0, fmt.Errorf("called from %s:\n%v", name, e)
+	monkeys["humn"] = human
+
+	expr, err := assembleExpression(monkeys, "root")
+	if err != nil {
+		return 0, err
 	}
+	simplify(expr.children[0])
+	simplify(expr.children[1])
+	fmt.Println(expr)
 
-	monkey.result = operate(p1, p2, monkey.op)
-	monkey.done = true
-	return monkey.result, nil
-}
-
-func operate(operand1, operand2 int64, operator operator) int64 {
-	switch operator {
-	case add:
-		return operand1 + operand2
-	case sub:
-		return operand1 - operand2
-	case mul:
-		return operand1 * operand2
-	case div:
-		return operand1 / operand2
-	}
-	panic("unreachable")
-}
-
-// Part2 solves the second half of today's problem.
-func Part2(monkeys map[string]monkey) (int, error) {
 	return 1, nil
 }
 
 // ------------ Implementation ---------------------
 
+func (ex expr) String() string {
+	operands := strings.Join(array.Map(ex.children, func(ch *expr) string { return ch.String() }), ", ")
+
+	switch ex.op {
+	case eq:
+		return fmt.Sprintf("%d", ex.value)
+	case unknown:
+		return fmt.Sprintf("UNKNOWN")
+	case add:
+		return fmt.Sprintf("+(%s)", operands)
+	case sub:
+		return fmt.Sprintf("-(%s)", operands)
+	case mul:
+		return fmt.Sprintf("*(%s)", operands)
+	case div:
+		return fmt.Sprintf("÷(%s)", operands)
+	default:
+		panic("unreachable")
+	}
+}
+
+func assembleExpression(jungle map[string]monkey, name string) (*expr, error) {
+	monkey, found := jungle[name]
+	if !found {
+		return nil, fmt.Errorf("monkey not found: %s", name)
+	}
+	if monkey.visited {
+		return &monkey.expr, nil
+	}
+
+	if monkey.expr.op == eq {
+		return &monkey.expr, nil
+	}
+
+	if monkey.expr.op == unknown {
+		return &monkey.expr, nil
+	}
+
+	monkey.expr.children = make([]*expr, len(monkey.children))
+
+	var err error
+	for idx := range monkey.children {
+		monkey.expr.children[idx], err = assembleExpression(jungle, monkey.children[idx])
+		if err != nil {
+			return nil, fmt.Errorf("called from %s:\n%v", name, err)
+		}
+	}
+
+	monkey.visited = true
+	return &monkey.expr, nil
+}
+
+func simplify(ex *expr) {
+	if len(ex.children) == 0 {
+		return
+	}
+	array.Foreach(ex.children, func(ch **expr) { simplify(*ch) })
+
+	// If they all contain direct values, we operate
+	tryOperate(ex)
+
+	// If it is a subtraction, we invert it
+	tryInvertSubtraction(ex)
+
+	// Disassembling products
+	tryDistribute(ex)
+
+	// If children all contain commutative operations, we create a larger commutative operation
+	tryCombineCommutative(ex, add)
+	tryCombineCommutative(ex, mul)
+
+	// Elementary simplifications (multiplication by zero and similar)
+	tryOptimizeAdd(ex)
+	tryOptimizeSub(ex)
+	// tryOptimizeMult(ex)
+	tryOptimizeDiv(ex)
+}
+
+func tryOptimizeMult(ex *expr) {
+	if ex.op != mul {
+		return
+	}
+
+	// Simplifying multiplication by zero: *(4,0,6,...) -> 0
+	anyZero := array.MapReduce(ex.children, func(ch *expr) bool { return ch.op == eq && ch.value == 0 }, fun.Or, false)
+	if anyZero {
+		ex.op = eq
+		ex.value = 0
+		ex.children = nil
+		return
+	}
+
+	// Removing identity element: *(3,1,5) -> *(3,5)
+	k := array.Partition(ex.children, func(ch *expr) bool { return ch.op == eq && ch.value != 1 })
+	ex.children = ex.children[:k]
+
+	// Simplifying Unary multiplication: *(3) -> 3.
+	if len(ex.children) == 1 {
+		*ex = *ex.children[0]
+		return
+	}
+
+	// Simplifying empty multiplication:  *() -> 1
+	if len(ex.children) == 0 {
+		ex.op = eq
+		ex.value = 1
+		ex.children = nil
+		return
+	}
+}
+
+func tryOptimizeAdd(ex *expr) {
+	if ex.op != add {
+		return
+	}
+
+	// Removing identity element: +(3,0,5) -> +(3,5)
+	k := array.Partition(ex.children, func(ch *expr) bool { return ch.op == eq && ch.value != 0 })
+	ex.children = ex.children[:k]
+
+	// Simplifying Unary addition: +(3) -> 3.
+	if len(ex.children) == 1 {
+		*ex = *ex.children[0]
+		return
+	}
+
+	// Simplifying empty addition:  +() -> 0
+	if len(ex.children) == 0 {
+		ex.op = eq
+		ex.value = 0
+		ex.children = nil
+		return
+	}
+}
+
+func tryOptimizeDiv(ex *expr) {
+	if ex.op != div {
+		return
+	}
+
+	// Illegal division: ÷(3,0) -> Undef
+	if ex.children[1].op == eq && ex.children[1].value == 0 {
+		panic(fmt.Errorf("division by zero: %s", ex))
+	}
+
+	// Removing zero element: ÷(0,5) -> 0
+	if ex.children[0].op == eq && ex.children[0].value == 0 {
+		ex.op = eq
+		ex.value = 0
+		ex.children = nil
+		return
+	}
+
+	// Removing identity element: ÷(3,1) -> 3
+	if ex.children[1].op == eq && ex.children[1].value == 1 {
+		*ex = *ex.children[0]
+	}
+}
+
+func tryOptimizeSub(ex *expr) {
+	if ex.op != sub {
+		return
+	}
+
+	// Removing identity element: -(3,0) -> 3
+	if ex.children[1].op == eq && ex.children[1].value == 0 {
+		*ex = *ex.children[0]
+	}
+}
+
+func tryOperate(ex *expr) {
+	if !array.MapReduce(ex.children, func(ch *expr) bool { return ch.op == eq }, fun.And, true) {
+		return
+	}
+	operate(ex)
+}
+
+func tryInvertSubtraction(ex *expr) {
+	if ex.op == sub && ex.children[1].op == eq {
+		ex.op = add
+		ex.children[1].value *= -1
+	}
+}
+
+func tryCombineCommutative(ex *expr, op operator) {
+	if ex.op != op || !array.MapReduce(ex.children, func(ch *expr) bool { return ch.op == op || ch.op == eq }, fun.And, true) {
+		return
+	}
+	newFamily := make([]*expr, 0)
+	array.Foreach(ex.children, func(ch **expr) {
+		if (*ch).op == eq {
+			newFamily = append(newFamily, *ch)
+		} else {
+			newFamily = append(newFamily, (*ch).children...)
+		}
+	})
+
+	// We group all direct values together
+	p := array.Partition(newFamily, func(a *expr) bool { return a.op == eq })
+	if p < 2 {
+		return
+	}
+	val := &expr{op: op, children: newFamily[:p]}
+	operate(val)
+	newFamily[p-1] = val
+	newFamily = newFamily[p-1:]
+	ex.children = newFamily
+	return
+}
+
+// Converts (k*(a0+a1+...)) into ((k*a0)+(k*a1)+...)
+func tryDistribute(ex *expr) {
+	if len(ex.children) != 2 {
+		return
+	}
+
+	array.Sort(ex.children, func(a, b *expr) bool { return a.op < b.op })
+	if ex.children[0].op != eq {
+		return
+	}
+	if ex.children[1].op != add {
+		return
+	}
+
+	k := ex.children[0]
+	a := ex.children[1].children
+
+	ex.op = add
+	ex.children = array.Map(a, func(ai *expr) *expr {
+		e := &expr{
+			op:       mul,
+			children: []*expr{k, ai},
+		}
+		return e
+	})
+
+	simplify(ex)
+}
+
+func operate(ex *expr) {
+	switch ex.op {
+	case eq:
+	case unknown:
+		return
+	case add:
+		ex.value = array.MapReduce(ex.children, func(ch *expr) int64 { return ch.value }, fun.Add[int64], 0)
+	case sub:
+		ex.value = ex.children[0].value - ex.children[1].value
+	case mul:
+		ex.value = array.MapReduce(ex.children, func(ch *expr) int64 { return ch.value }, fun.Mul[int64], 1)
+	case div:
+		ex.value = ex.children[0].value / ex.children[1].value
+	default:
+		panic("unreachable")
+	}
+	ex.op = eq
+	ex.children = nil
+}
+
 type operator int
 
 const (
-	add operator = iota
+	eq operator = iota
+	add
 	sub
 	mul
 	div
+	unknown
 )
 
 type monkey struct {
-	parents [2]string
-	op      operator
-	result  int64
-	done    bool
+	children [2]string
+	expr     expr
+	visited  bool
+}
+
+type expr struct {
+	op       operator
+	value    int64
+	children []*expr
 }
 
 // ---------- Here be boilerplate ------------------
 
 // Main is the entry point to today's problem solution.
 func Main(stdout io.Writer) error {
-	input, err := ReadData()
+	input1, err := ReadData()
 	if err != nil {
 		return fmt.Errorf("error reading data: %v", err)
 	}
+	input2 := map[string]monkey{}
+	for k, v := range input1 {
+		input2[k] = v
+	}
 
-	p1, err := Part1(input)
+	p1, err := Part1(input1)
 	if err != nil {
 		return fmt.Errorf("error in part 1: %v", err)
 	}
 	fmt.Fprintf(stdout, "Result of part 1: %d\n", p1)
 
-	p2, err := Part2(input)
+	p2, err := Part2(input2)
 	if err != nil {
 		return fmt.Errorf("error in part 2: %v", err)
 	}
@@ -144,8 +408,10 @@ func ReadData() (monkeys map[string]monkey, err error) { // nolint: revive
 			}
 
 			monkeys[name[:len(name)-1]] = monkey{
-				done:   true,
-				result: num,
+				expr: expr{
+					op:    eq,
+					value: num,
+				},
 			}
 			return nil
 		}()
@@ -169,8 +435,10 @@ func ReadData() (monkeys map[string]monkey, err error) { // nolint: revive
 				return fmt.Errorf("Failed to parse line %q: invalid operator", line)
 			}
 			monkeys[name] = monkey{
-				parents: [2]string{parentL, parentR},
-				op:      operator,
+				children: [2]string{parentL, parentR},
+				expr: expr{
+					op: operator,
+				},
 			}
 			return nil
 		}()
