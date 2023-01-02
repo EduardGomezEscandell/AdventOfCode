@@ -25,16 +25,16 @@ func Part1(world [][]Cell, path []Instruction) (int, error) {
 
 // Part2 solves the second half of today's problem.
 func Part2(world [][]Cell, path []Instruction, faceSize int) (int, error) {
-	cube := NewCubicTopology(world, faceSize)
+	cube := newCubicTopology(world, faceSize)
 	return solve(world, path, cube)
 }
 
-func positiveMod(x int, n uint) int {
-	m := x % int(n)
+func clampHeading(x int) Heading {
+	m := x % int(4)
 	if m < 0 {
-		m += int(n)
+		m += int(4)
 	}
-	return m
+	return Heading(m)
 }
 
 func headingToDiff(h Heading) (drow, dcol int) {
@@ -128,7 +128,7 @@ type Instruction struct {
 
 // Steer takes a Heading and a Turn and produces a new Heading.
 func Steer(h Heading, t Turn) Heading {
-	return Heading(positiveMod(int(h)+int(t), 4))
+	return clampHeading(int(h) + int(t))
 }
 
 // Advance takes a state (world and location) and applies a displacement (heading and distance).
@@ -166,17 +166,11 @@ func advanceHorizontally(world [][]Cell, x, y, d *int, h *Heading, top Topology)
 
 	// Out of this world
 	if it == -1 || it == len(world[*y]) || (it != end && world[*y][it] == OffWorld) {
-		begin = 0
-		end = it
-		if dir == -1 {
-			begin = len(world[*y]) - 1
-		}
-
 		wrappedY, wrappedX, wrappedH := top.wrapHorizontally(world, *y, *x, *h)
 
 		// Cannot wrap around: there is a wall
 		if world[wrappedY][wrappedX] == Wall {
-			*x = end - dir
+			*x = it - dir
 			*d = 0
 			return
 		}
@@ -219,17 +213,11 @@ func advanceVertically(world [][]Cell, x, y, d *int, h *Heading, top Topology) {
 
 	// Out of this world
 	if it == -1 || it == len(world) || world[it][*x] == OffWorld {
-		begin = 0
-		end = it
-		if dir == -1 {
-			begin = len(world) - 1
-		}
-
 		wrappedY, wrappedX, wrappedH := top.wrapVertically(world, *y, *x, *h)
 
 		// Cannot wrap around: there is a wall
 		if world[wrappedY][wrappedX] == Wall {
-			*y = end - dir
+			*y = it - dir
 			*d = 0
 			return
 		}
@@ -353,18 +341,6 @@ func ReadData() ([][]Cell, []Instruction, error) {
 	}
 
 	return world, path, sc.Err()
-}
-
-type Range struct {
-	begin, end int
-}
-
-type Square struct {
-	x, y Range
-}
-
-type Cube struct {
-	top, bottom, back, forth, left, right Square
 }
 
 func parsePath(text string) ([]Instruction, error) {

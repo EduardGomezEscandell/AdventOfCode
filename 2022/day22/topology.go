@@ -7,11 +7,15 @@ import (
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 )
 
+// Topology implements the criterion used to decide what to
+// do when the cursor moves outside of the valid terrain.
 type Topology interface {
 	wrapHorizontally(world [][]Cell, row, col int, head Heading) (r, c int, h Heading)
 	wrapVertically(world [][]Cell, row, col int, head Heading) (r, c int, h Heading)
 }
 
+// Toroidal topology: when something exits on the right side of a row, it appears back
+// on the left side; and vice-versa. Same goes for columns.
 type Toroidal struct{}
 
 func (Toroidal) wrapHorizontally(world [][]Cell, row, col int, head Heading) (r, c int, h Heading) {
@@ -58,20 +62,21 @@ func (Toroidal) wrapVertically(world [][]Cell, row, col int, head Heading) (r, c
 	return
 }
 
+// Cubic topology: The data is interpreted as an unfolded cube.
 type Cubic struct {
 	faces    [6]face
 	faceSize int
 }
 
-func (topo Cubic) wrapHorizontally(world [][]Cell, row, col int, heading Heading) (r, c int, h Heading) {
-	return topo.wrap(world, row, col, heading)
+func (topo Cubic) wrapHorizontally(_ [][]Cell, row, col int, heading Heading) (r, c int, h Heading) {
+	return topo.wrap(row, col, heading)
 }
 
-func (topo Cubic) wrapVertically(world [][]Cell, row int, col int, heading Heading) (r, c int, h Heading) {
-	return topo.wrap(world, row, col, heading)
+func (topo Cubic) wrapVertically(_ [][]Cell, row int, col int, heading Heading) (r, c int, h Heading) {
+	return topo.wrap(row, col, heading)
 }
 
-func (topo Cubic) wrap(world [][]Cell, row, col int, heading Heading) (r, c int, h Heading) {
+func (topo Cubic) wrap(row, col int, heading Heading) (r, c int, h Heading) {
 	// First: identify which cube we're in
 	R := row / topo.faceSize
 	C := col / topo.faceSize
@@ -79,7 +84,7 @@ func (topo Cubic) wrap(world [][]Cell, row, col int, heading Heading) (r, c int,
 	if it == -1 {
 		panic(fmt.Errorf("cell %dx%d is outside of the cube", row, col))
 	}
-	relativeDirection := Heading(positiveMod(int(heading-1-topo.faces[it].top), 4))
+	relativeDirection := clampHeading(int(heading - 1 - topo.faces[it].top))
 
 	// Second: how far along the edge are we?
 	var s int
@@ -98,7 +103,7 @@ func (topo Cubic) wrap(world [][]Cell, row, col int, heading Heading) (r, c int,
 	enteringFrom := cubeTopology[it][relativeDirection].side
 
 	wallHugRelative := Steer(enteringFrom, Clockwise)
-	wallHug := Heading(positiveMod(int(wallHugRelative+topo.faces[neighbour].top+1), 4))
+	wallHug := clampHeading(int(wallHugRelative + topo.faces[neighbour].top + 1))
 
 	r = topo.faces[neighbour].row * topo.faceSize
 	c = topo.faces[neighbour].col * topo.faceSize
@@ -118,7 +123,7 @@ func (topo Cubic) wrap(world [][]Cell, row, col int, heading Heading) (r, c int,
 	return
 }
 
-func NewCubicTopology(world [][]Cell, faceSize int) Cubic {
+func newCubicTopology(world [][]Cell, faceSize int) Cubic {
 	// Obtaining sparsity pattern
 	filled := [4][4]bool{} // At most, the unfolded can take up 4x3 OR 3x4
 	for i := 0; i < 4; i++ {
@@ -158,7 +163,7 @@ func parseFaces(folded [4][4]bool, id int, faces *[6]face) {
 			if faces[other.id].init {
 				continue
 			}
-			orientation := Heading(positiveMod(1+int(look)-int(other.side), 4))
+			orientation := clampHeading(1 + int(look) - int(other.side))
 			faces[other.id] = face{row: r + dr, col: c + dc, top: orientation, init: true}
 			parseFaces(folded, other.id, faces)
 		}
@@ -166,17 +171,45 @@ func parseFaces(folded [4][4]bool, id int, faces *[6]face) {
 }
 
 /*
-		 +---+
-		 | 0 |
+Toroidal geometry.
+The faces are arbitrarily labeled as such (both relative position
+and orientation are relevant):
+
+	+---+
+	| 0 |
+	+---+---+---+---+
+	| 1 | 2 | 3 | 4 |
+	+---+---+---+---+
+	| 5 |
+	+---+
+
+Any cube unfolding can be mapped to this one. Face 0 is always
+the one at the top left. This is the same labeling applied to
+the problem statement's example:
+
+		     +---+
+		     | 0 |
+	 +---+---+---+
+	 | 3 | 4 | 1 |
 	 +---+---+---+---+
-	 | 4 | 1 | 2 | 3 |
-	 +---+---+---+---+
-		 | 5 |
-		 +---+
+		     | 5 | * |
+		     +---+---+
+
+The face marked as * is face 2 rotated 90 degrees to the right
 */
+
+// cubeTopology are the invariants of a cube's edges. Example:
+//
+//	cubeTopology[0][Left] = {4, Up}
+//
+// means that the left edge of face 0 is the same as the upper
+// edge of face 4. It follows that the matrix must be symmetrical:
+//
+//	cubeTopology[4][Up] = {0, Left}
+//
+// These specific values are only valid for the aforementioned
+// face labeling criterion.
 var cubeTopology = [6][4]contactedSquare{
-	// What edge each face touches
-	// "0: {Left: {4, Right} ..." means that the left edge of face 0 is the same as face 4's right edge
 	0: {Left: {4, Up}, Right: {2, Up}, Up: {3, Up}, Down: {1, Up}},
 	1: {Left: {4, Right}, Right: {2, Left}, Up: {0, Down}, Down: {5, Up}},
 	2: {Left: {1, Right}, Right: {3, Left}, Up: {0, Right}, Down: {5, Right}},
@@ -185,13 +218,13 @@ var cubeTopology = [6][4]contactedSquare{
 	5: {Left: {4, Down}, Right: {2, Down}, Up: {1, Down}, Down: {3, Down}},
 }
 
-type face struct {
-	row, col int
-	top      Heading
-	init     bool
-}
-
 type contactedSquare struct {
 	id   int
 	side Heading
+}
+
+type face struct {
+	row, col int     // Location in the 4x4 meta-matrix
+	top      Heading // Direction of the top of the face
+	init     bool    // Whether the face has been modified after being default-constructed
 }
