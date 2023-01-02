@@ -47,3 +47,9 @@ func Max[T generics.Number](a, b T) T {
 	}
 	return b
 }
+
+// Clamp returns value x if it is inside the range [lo, hi], otherwise
+// returning the range boundary it is closest to.
+func Clamp[T generics.Number](lo, x, hi T) T {
+	return Max(lo, Min(x, hi))
+}
