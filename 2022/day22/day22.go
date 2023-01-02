@@ -29,28 +29,6 @@ func Part2(world [][]Cell, path []Instruction, faceSize int) (int, error) {
 	return solve(world, path, cube)
 }
 
-func clampHeading(x int) Heading {
-	m := x % int(4)
-	if m < 0 {
-		m += int(4)
-	}
-	return Heading(m)
-}
-
-func headingToDiff(h Heading) (drow, dcol int) {
-	switch h {
-	case Up:
-		return -1, 0
-	case Down:
-		return 1, 0
-	case Right:
-		return 0, 1
-	case Left:
-		return 0, -1
-	}
-	panic("unreachable")
-}
-
 func solve(world [][]Cell, path []Instruction, top Topology) (int, error) {
 	if len(world) == 0 {
 		return 0, errors.New("empty world")
@@ -95,14 +73,14 @@ const (
 // Heading is an enum type for the heading to move towards.
 type Heading int8
 
-// Do not change:
-// - They are ordered in clock-wise order. This makes steering simpler.
+// Do not change, their values are not arbitrary:
+// - They are ordered clock-wise. This makes steering simpler.
 // - Their numerical values are defined in the problem statement.
 const (
-	Right Heading = iota
-	Down
-	Left
-	Up
+	Right Heading = 0
+	Down  Heading = 1
+	Left  Heading = 2
+	Up    Heading = 3
 )
 
 func (h Heading) String() string {
@@ -124,11 +102,6 @@ func (h Heading) String() string {
 type Instruction struct {
 	Turn     Turn
 	Distance int
-}
-
-// Steer takes a Heading and a Turn and produces a new Heading.
-func Steer(h Heading, t Turn) Heading {
-	return clampHeading(int(h) + int(t))
 }
 
 // Advance takes a state (world and location) and applies a displacement (heading and distance).
@@ -265,6 +238,38 @@ func findObstructionV(world [][]Cell, col, begin, end int) (row int) {
 		}
 	}
 	return
+}
+
+// Steer takes a Heading and a Turn and produces a new Heading.
+func Steer(h Heading, t Turn) Heading {
+	return clampHeading(int(h) + int(t))
+}
+
+// clampHeading takes an integer representing a heading, and removes
+// any full revolution, i.e. it takes the positive value of x mod 4).
+func clampHeading(x int) Heading {
+	m := x % int(4)
+	if m < 0 {
+		m += int(4)
+	}
+	return Heading(m)
+}
+
+// headingToDiff takes a heading and returns the amount that
+// the row and column must vary in order to advance one step
+// in that direction.
+func headingToDiff(h Heading) (drow, dcol int) {
+	switch h {
+	case Up:
+		return -1, 0
+	case Down:
+		return 1, 0
+	case Right:
+		return 0, 1
+	case Left:
+		return 0, -1
+	}
+	panic("unreachable")
 }
 
 // ---------- Here be boilerplate ------------------
