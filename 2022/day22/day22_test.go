@@ -138,7 +138,7 @@ func TestAdvance(t *testing.T) {
 			x := int(tc.x)
 			y := int(tc.y)
 
-			err := day22.Advance(tc.world, &x, &y, day22.Right, d)
+			err := day22.Advance(tc.world, &x, &y, day22.Right, d, day22.Toroidal)
 			require.NoError(t, err)
 
 			require.Equal(t, tc.wantX, x)
@@ -159,7 +159,7 @@ func TestAdvance(t *testing.T) {
 			x := len(world[y]) - int(tc.x) - 1
 			wantX := len(world[y]) - tc.wantX - 1
 
-			err := day22.Advance(world, &x, &y, day22.Left, d)
+			err := day22.Advance(world, &x, &y, day22.Left, d, day22.Toroidal)
 			require.NoError(t, err)
 
 			require.Equal(t, wantX, x)
@@ -181,7 +181,7 @@ func TestAdvance(t *testing.T) {
 			wantX := tc.wantY
 			wantY := tc.wantX
 
-			err := day22.Advance(world, &x, &y, day22.Down, d)
+			err := day22.Advance(world, &x, &y, day22.Down, d, day22.Toroidal)
 			require.NoError(t, err)
 
 			require.Equal(t, wantX, x)
@@ -204,7 +204,7 @@ func TestAdvance(t *testing.T) {
 			wantX := tc.wantY
 			wantY := len(world) - tc.wantX - 1
 
-			err := day22.Advance(world, &x, &y, day22.Up, d)
+			err := day22.Advance(world, &x, &y, day22.Up, d, day22.Toroidal)
 			require.NoError(t, err)
 
 			require.Equal(t, wantX, x)
@@ -213,12 +213,13 @@ func TestAdvance(t *testing.T) {
 	}
 }
 
-func TestPart1(t *testing.T) { // nolint: dupl
+func TestPart1And2(t *testing.T) { // nolint: dupl
 	t.Parallel()
 
 	testCases := map[string]struct {
 		world [][]Cell
 		path  []Instruction
+		part  int
 		want  int
 	}{
 		"example": {world: [][]Cell{
@@ -245,29 +246,6 @@ func TestPart1(t *testing.T) { // nolint: dupl
 			t.Parallel()
 
 			got, err := day22.Part1(tc.world, tc.path)
-
-			require.NoError(t, err)
-			require.Equal(t, tc.want, got)
-		})
-	}
-}
-
-func TestPart2(t *testing.T) { // nolint: dupl
-	t.Parallel()
-
-	testCases := map[string]struct {
-		input [][]Cell
-		want  int64
-	}{
-		"empty": {want: 1, input: [][]Cell{}},
-	}
-
-	for name, tc := range testCases {
-		tc := tc
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-
-			got, err := day22.Part2(tc.input)
 
 			require.NoError(t, err)
 			require.Equal(t, tc.want, got)

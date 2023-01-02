@@ -21,16 +21,26 @@ const (
 
 // Part1 solves the first half of today's problem.
 func Part1(world [][]Cell, path []Instruction) (int, error) {
+	return solve(world, path, Toroidal)
+}
+
+// Part2 solves the second half of today's problem.
+func Part2(world [][]Cell, path []Instruction) (int, error) {
+	return solve(world, path, Cubic)
+}
+
+func solve(world [][]Cell, path []Instruction, top Topology) (int, error) {
 	if len(world) == 0 {
 		return 0, errors.New("empty world")
 	}
 	heading := Right
 	x := array.Find(world[0], Walkable, fun.Eq[Cell])
 	y := 0
+	fmt.Println(pretty(world, x, y, heading))
 
 	for idx, instr := range path {
 		heading = Steer(heading, instr.Turn)
-		if err := Advance(world, &x, &y, heading, instr.Distance); err != nil {
+		if err := Advance(world, &x, &y, heading, instr.Distance, top); err != nil {
 			return 0, fmt.Errorf("error processing instruction %d: %v", idx, err)
 		}
 	}
@@ -60,11 +70,6 @@ func pretty(world [][]Cell, x, y int, h Heading) string { // nolint: unused
 	return strings.Join(s, "\n")
 }
 
-// Part2 solves the second half of today's problem.
-func Part2(input [][]Cell) (int64, error) {
-	return 1, nil
-}
-
 // ------------ Implementation ---------------------
 
 // Cell is an enum type to specify the type of every location in the world.
@@ -75,6 +80,13 @@ const (
 	OffWorld Cell = ' '
 	Walkable Cell = '.'
 	Wall     Cell = '#'
+)
+
+type Topology bool
+
+const (
+	Toroidal Topology = false // Part 1
+	Cubic    Topology = true  // Part 2
 )
 
 // Turn is an enum type for direction to turn.
@@ -131,130 +143,150 @@ func Steer(h Heading, t Turn) Heading {
 }
 
 // Advance takes a state (world and location) and applies a displacement (heading and distance).
-func Advance(world [][]Cell, x, y *int, h Heading, d int) error {
-	switch h {
-	case Left:
-		advanceHorizontally(world, x, y, -d)
-	case Right:
-		advanceHorizontally(world, x, y, d)
-	case Up:
-		advanceVertically(world, x, y, -d)
-	case Down:
-		advanceVertically(world, x, y, d)
-	default:
-		return fmt.Errorf("unexpected heading: %d", h)
+func Advance(world [][]Cell, x, y *int, h Heading, d int, top Topology) error {
+	for d != 0 {
+		switch h {
+		case Left:
+			advanceHorizontally(world, x, y, &d, &h, top)
+		case Right:
+			advanceHorizontally(world, x, y, &d, &h, top)
+		case Up:
+			advanceVertically(world, x, y, &d, &h, top)
+		case Down:
+			advanceVertically(world, x, y, &d, &h, top)
+		default:
+			return fmt.Errorf("unexpected heading: %d", h)
+		}
 	}
 
 	return nil
 }
 
-func advanceHorizontally(world [][]Cell, x, y *int, d int) {
-	line := world[*y]
-	for d != 0 {
-		begin := *x
-		end := fun.Clamp(-1, *x+d+fun.Sign(d), len(line))
+func advanceHorizontally(world [][]Cell, x, y, d *int, h *Heading, top Topology) {
+	dir := 1
+	if *h == Left {
+		dir = -1
+	}
 
-		// Find obstruction
-		it := findObstructionH(line, begin, end)
-		advance := it - begin - fun.Sign(d)
+	begin := *x
+	end := fun.Clamp(-1, (*x)+(*d+1)*dir, len(world[*y]))
 
-		// Out of this world
-		if it == -1 || it == len(line) || line[it] == OffWorld {
-			begin = 0
-			end = it
-			if d < 0 {
-				begin = len(line) - 1
-			}
+	// Find obstruction
+	it := findObstructionH(world, *y, begin, end)
+	advance := it - begin - dir
 
-			wrappedX := findStartH(line, begin, end)
-
-			// Cannot wrap around: there is a wall
-			if line[wrappedX] == Wall {
-				*x = end - fun.Sign(d)
-				return
-			}
-
-			// Wrap-around
-			*x = wrappedX
-			d -= advance + fun.Sign(d)
-			continue
+	// Out of this world
+	if it == -1 || it == len(world[*y]) || world[*y][it] == OffWorld {
+		begin = 0
+		end = it
+		if dir == -1 {
+			begin = len(world[*y]) - 1
 		}
 
-		// No obstruction
-		if it == end {
-			*x += advance
+		var wrappedX, wrappedY int
+		var wrappedH Heading
+		switch top {
+		case Toroidal:
+			wrappedY, wrappedX, wrappedH = findTorusWrapH(world, *y, *h)
+		case Cubic:
+			wrappedY, wrappedX, wrappedH = findCubeWrapH(world, *y, *x, *h)
+		}
+
+		// Cannot wrap around: there is a wall
+		if world[wrappedY][wrappedX] == Wall {
+			*x = end - dir
+			*d = 0
 			return
 		}
 
-		// Hit a wall
-		if line[it] == Wall {
-			*x += advance
-			return
-		}
+		// Wrap-around
+		*x = wrappedX
+		*y = wrappedY
+		*h = wrappedH
+		*d -= fun.Abs(advance) + 1
+		return
+	}
+
+	// No obstruction
+	if it == end {
+		*x += advance
+		*d = 0
+		return
+	}
+
+	// Hit a wall
+	if world[*y][it] == Wall {
+		*x += advance
+		*d = 0
+		return
 	}
 }
 
-func advanceVertically(world [][]Cell, x, y *int, d int) {
-	for d != 0 {
-		begin := *y
-		end := fun.Clamp(-1, *y+d+fun.Sign(d), len(world))
+func advanceVertically(world [][]Cell, x, y, d *int, h *Heading, top Topology) {
+	dir := 1
+	if *h == Up {
+		dir = -1
+	}
 
-		// Find obstruction
-		it := findObstructionV(world, *x, begin, end)
-		advance := it - begin - fun.Sign(d)
+	begin := *y
+	end := fun.Clamp(-1, (*y)+(*d+1)*dir, len(world))
 
-		// Out of this world
-		if it == -1 || it == len(world) || world[it][*x] == OffWorld {
-			begin = 0
-			end = it
-			if d < 0 {
-				begin = len(world) - 1
-			}
+	// Find obstruction
+	it := findObstructionV(world, *x, begin, end)
+	advance := it - begin - dir
 
-			wrappedY := findStartV(world, *x, begin, end)
-
-			// Cannot wrap around: there is a wall
-			if world[wrappedY][*x] == Wall {
-				*y = end - fun.Sign(d)
-				return
-			}
-
-			// Wrap-around
-			*y = wrappedY
-			d -= advance + fun.Sign(d)
-			continue
+	// Out of this world
+	if it == -1 || it == len(world) || world[it][*x] == OffWorld {
+		begin = 0
+		end = it
+		if dir == -1 {
+			begin = len(world) - 1
 		}
 
-		// No obstruction
-		if it == end {
-			*y += advance
+		var wrappedX, wrappedY int
+		var wrappedH Heading
+		switch top {
+		case Toroidal:
+			wrappedY, wrappedX, wrappedH = findTorusWrapV(world, *x, *h)
+		case Cubic:
+			wrappedY, wrappedX, wrappedH = findCubeWrapV(world, *y, *x, *h)
+		}
+
+		// Cannot wrap around: there is a wall
+		if world[wrappedY][wrappedX] == Wall {
+			*y = end - dir
+			*d = 0
 			return
 		}
 
-		// Hit a wall
-		if world[it][*x] == Wall {
-			*y += advance
-			return
-		}
+		// Wrap-around
+		*x = wrappedX
+		*y = wrappedY
+		*h = wrappedH
+		*d -= fun.Abs(advance) + dir
+		return
+	}
+
+	// No obstruction
+	if it == end {
+		*y += advance
+		*d = 0
+		return
+	}
+
+	// Hit a wall
+	if world[it][*x] == Wall {
+		*y += advance
+		*d = 0
+		return
 	}
 }
 
-func findObstructionH(line []Cell, begin, end int) (it int) {
+func findObstructionH(world [][]Cell, row, begin, end int) (col int) {
 	s := fun.Sign(end - begin)
-	it = begin
-	for ; it != end; it += s {
-		if line[it] != Walkable {
-			return
-		}
-	}
-	return
-}
-
-func findStartH(line []Cell, begin, end int) (it int) {
-	s := fun.Sign(end - begin)
-	it = begin
-	for ; it != end; it += s {
-		if line[it] != OffWorld {
+	col = begin
+	for ; col != end; col += s {
+		if world[row][col] != Walkable {
 			return
 		}
 	}
@@ -272,15 +304,70 @@ func findObstructionV(world [][]Cell, col, begin, end int) (row int) {
 	return
 }
 
-func findStartV(world [][]Cell, col, begin, end int) (row int) {
-	s := fun.Sign(end - begin)
-	row = begin
-	for ; row != end; row += s {
-		if world[row][col] != OffWorld {
+func findTorusWrapH(world [][]Cell, row int, head Heading) (r, c int, h Heading) {
+	c = 0
+	r = row
+	h = head
+
+	end := len(world[r])
+	incr := 1
+
+	if h == Left {
+		c = len(world[r]) - 1
+		end = -1
+		incr = -1
+	}
+
+	for ; c != end; c += incr {
+		if world[r][c] != OffWorld {
 			return
 		}
 	}
 	return
+}
+
+func findTorusWrapV(world [][]Cell, col int, head Heading) (r, c int, h Heading) {
+	c = col
+	r = 0
+	h = head
+
+	end := len(world)
+	incr := 1
+
+	if h == Up {
+		r = len(world) - 1
+		end = -1
+		incr = -1
+	}
+
+	for ; r != end; r += incr {
+		if world[r][c] != OffWorld {
+			return
+		}
+	}
+	return
+}
+
+func advanceDir(h Heading) (dx, dy int) {
+	switch h {
+	case Right:
+		return 1, 0
+	case Left:
+		return -1, 0
+	case Up:
+		return 0, -1
+	case Down:
+		return 0, 1
+	}
+	panic("unreachable")
+}
+
+func findCubeWrapH(world [][]Cell, row int, col int, head Heading) (r, c int, h Heading) {
+	panic("Not implemented")
+}
+
+func findCubeWrapV(world [][]Cell, row int, col int, head Heading) (r, c int, h Heading) {
+	panic("Not implemented")
 }
 
 // ---------- Here be boilerplate ------------------
@@ -298,7 +385,7 @@ func Main(stdout io.Writer) error {
 	}
 	fmt.Fprintf(stdout, "Result of part 1: %d\n", p1)
 
-	p2, err := Part2(world)
+	p2, err := Part2(world, path)
 	if err != nil {
 		return fmt.Errorf("error in part 2: %v", err)
 	}
@@ -357,6 +444,22 @@ func ReadData() ([][]Cell, []Instruction, error) {
 	}
 
 	return world, path, sc.Err()
+}
+
+type Range struct {
+	begin, end int
+}
+
+type Square struct {
+	x, y Range
+}
+
+type Cube struct {
+	top, bottom, back, forth, left, right Square
+}
+
+func ParseTopology() {
+
 }
 
 func parsePath(text string) ([]Instruction, error) {
