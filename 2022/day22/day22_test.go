@@ -137,8 +137,9 @@ func TestAdvance(t *testing.T) {
 			d := int(tc.d)
 			x := int(tc.x)
 			y := int(tc.y)
+			h := day22.Right
 
-			err := day22.Advance(tc.world, &x, &y, day22.Right, d, day22.Toroidal)
+			err := day22.Advance(tc.world, &x, &y, &h, d, day22.Toroidal{})
 			require.NoError(t, err)
 
 			require.Equal(t, tc.wantX, x)
@@ -158,8 +159,9 @@ func TestAdvance(t *testing.T) {
 			y := int(tc.y)
 			x := len(world[y]) - int(tc.x) - 1
 			wantX := len(world[y]) - tc.wantX - 1
+			h := day22.Left
 
-			err := day22.Advance(world, &x, &y, day22.Left, d, day22.Toroidal)
+			err := day22.Advance(world, &x, &y, &h, d, day22.Toroidal{})
 			require.NoError(t, err)
 
 			require.Equal(t, wantX, x)
@@ -180,8 +182,9 @@ func TestAdvance(t *testing.T) {
 			y := int(tc.x)
 			wantX := tc.wantY
 			wantY := tc.wantX
+			h := day22.Down
 
-			err := day22.Advance(world, &x, &y, day22.Down, d, day22.Toroidal)
+			err := day22.Advance(world, &x, &y, &h, d, day22.Toroidal{})
 			require.NoError(t, err)
 
 			require.Equal(t, wantX, x)
@@ -203,8 +206,9 @@ func TestAdvance(t *testing.T) {
 			y := len(world) - int(tc.x) - 1
 			wantX := tc.wantY
 			wantY := len(world) - tc.wantX - 1
+			h := day22.Up
 
-			err := day22.Advance(world, &x, &y, day22.Up, d, day22.Toroidal)
+			err := day22.Advance(world, &x, &y, &h, d, day22.Toroidal{})
 			require.NoError(t, err)
 
 			require.Equal(t, wantX, x)
@@ -213,13 +217,12 @@ func TestAdvance(t *testing.T) {
 	}
 }
 
-func TestPart1And2(t *testing.T) { // nolint: dupl
+func TestPart1(t *testing.T) { // nolint: dupl
 	t.Parallel()
 
 	testCases := map[string]struct {
 		world [][]Cell
 		path  []Instruction
-		part  int
 		want  int
 	}{
 		"example": {world: [][]Cell{
@@ -253,9 +256,51 @@ func TestPart1And2(t *testing.T) { // nolint: dupl
 	}
 }
 
+func TestPart2(t *testing.T) { // nolint: dupl
+	t.Parallel()
+
+	testCases := map[string]struct {
+		world    [][]Cell
+		path     []Instruction
+		faceSize int
+		want     int
+	}{
+		"example": {world: [][]Cell{
+			[]Cell("        ...#    "),
+			[]Cell("        .#..    "),
+			[]Cell("        #...    "),
+			[]Cell("        ....    "),
+			[]Cell("...#.......#    "),
+			[]Cell("........#...    "),
+			[]Cell("..#....#....    "),
+			[]Cell("..........#.    "),
+			[]Cell("        ...#...."),
+			[]Cell("        .....#.."),
+			[]Cell("        .#......"),
+			[]Cell("        ......#."),
+		},
+			path:     []Instruction{{0, 10}, {R, 5}, {L, 5}, {R, 10}, {L, 4}, {R, 5}, {L, 5}},
+			want:     5031,
+			faceSize: 4,
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := day22.Part2(tc.world, tc.path, tc.faceSize)
+
+			require.NoError(t, err)
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
+
 func TestRealData(t *testing.T) {
 	expected := `Result of part 1: 29408
-Result of part 2: 1
+Result of part 2: 115311
 `
 	buff := new(bytes.Buffer)
 
