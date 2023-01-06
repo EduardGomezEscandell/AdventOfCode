@@ -26,7 +26,7 @@ func Part1(world map[Location]Elf) (int, error) {
 		world, anyMoves = automataStep(world, step)
 	}
 
-	area := boundingBox(world).area()
+	area := newBoundingBox(world).area()
 	elfCount := len(world)
 
 	return area - elfCount, nil
@@ -47,13 +47,15 @@ func Part2(world map[Location]Elf) (int, error) {
 
 type direction int8
 
-const ( // Clockwise ordering. Do not change.
+const ( // Counter-clockwise ordering. Do not change.
 	north direction = iota
-	east
-	south
 	west
+	south
+	east
 )
 
+// rotate takes a direction and rotates it by a multiple of 90 degrees.
+// Positive values go counter-clockwise, negatives go clockwise.
 func rotate(d direction, delta int) direction {
 	r := (int(d) + delta) % 4
 	if r < 0 {
@@ -64,10 +66,12 @@ func rotate(d direction, delta int) direction {
 
 var directionPriority = [4]direction{north, south, west, east}
 
+// Location is a struct holding the row and column an elf is located in.
 type Location struct {
 	Row, Col int
 }
 
+// move takes a location and moves it one step in the specified direction.
 func move(l Location, d direction) Location {
 	switch d {
 	case north:
@@ -82,16 +86,19 @@ func move(l Location, d direction) Location {
 	panic("Unreachable")
 }
 
+// Elf as in the problem statement. Only info needed is the cell it came
+// from in order to revert steps when tow elves want to move to the same
+// place.
 type Elf struct {
 	cameFrom Location
 }
 
-type Box struct {
+type boundingBox struct {
 	minRow, maxRow, minCol, maxCol int
 }
 
-func boundingBox(world map[Location]Elf) Box {
-	b := Box{
+func newBoundingBox(world map[Location]Elf) boundingBox {
+	b := boundingBox{
 		minRow: math.MaxInt,
 		maxRow: math.MinInt,
 		minCol: math.MaxInt,
@@ -108,14 +115,14 @@ func boundingBox(world map[Location]Elf) Box {
 	return b
 }
 
-func (b Box) area() int {
+func (b boundingBox) area() int {
 	return (b.maxCol - b.minCol + 1) * (b.maxRow - b.minRow + 1)
 }
 
 // automataStep advances one step. Returns the stepped world and whether anyone moved.
 // Given N elves:
 // - Time complexity is O(N·log(N))
-// - Memory complexity is O(N)
+// - Memory complexity is O(N).
 func automataStep(input map[Location]Elf, round int) (map[Location]Elf, bool) {
 	revertMe := make([]Location, 0, len(input)) // Time is more constrained than memory: we over-allocate
 	output := make(map[Location]Elf, len(input))
@@ -156,7 +163,7 @@ func automataStep(input map[Location]Elf, round int) (map[Location]Elf, bool) {
 // automatonSelectTarget choses where an automaton wants to move to.
 // Given N elves:
 // - Time complexity is O(N)
-// - Memory complexity is O(1)
+// - Memory complexity is O(1).
 func automatonSelectTarget(input map[Location]Elf, round int, elfLoc Location) Location {
 	neighbourhood := [3][3]bool{}
 	var neighbours int
@@ -213,8 +220,8 @@ func automatonSelectTarget(input map[Location]Elf, round int, elfLoc Location) L
 	return elfLoc
 }
 
-func pretty(world map[Location]Elf) string {
-	b := boundingBox(world)
+func pretty(world map[Location]Elf) string { // nolint: unused
+	b := newBoundingBox(world)
 	s := make([]string, 0, b.maxRow-b.minRow+1)
 	l := Location{Row: 0, Col: 0}
 	for l.Row = b.minRow; l.Row <= b.maxRow; l.Row++ {
@@ -250,7 +257,7 @@ func pretty(world map[Location]Elf) string {
 
 // ---------- Here be boilerplate ------------------
 
-// Main is the entry point to today's problem solution.
+// Main is the entry point to today's problem's solution.
 func Main(stdout io.Writer) error {
 	data, err := ReadData()
 	if err != nil {
@@ -278,7 +285,9 @@ var ReadDataFile = func() ([]byte, error) {
 	return input.ReadDataFile(today, fileName)
 }
 
-// ReadData reads the data file.
+// ReadData reads the data file and returns a sparse representation
+// of the elf matrix. It uses a DOK("Dictionary of Keys") format for
+// this matrix.
 func ReadData() (data map[Location]Elf, err error) { // nolint: revive
 	b, err := ReadDataFile()
 	if err != nil {
