@@ -104,7 +104,7 @@ func RunAll(w io.Writer, runner func(uint, io.Writer) (time.Duration, error)) er
 	}
 	if acc > 0 {
 		fmt.Fprintln(w, "-------------------")
-		fmt.Fprintf(w, "Total   %7d µs\n", acc/time.Microsecond)
+		fmt.Fprintf(w, "Total   %9d µs\n", acc/time.Microsecond)
 	}
 	return nil
 }
@@ -121,7 +121,7 @@ func TimeDay(day uint, w io.Writer) (time.Duration, error) {
 	if err != nil {
 		return t, fmt.Errorf("day %2d: %v", day, err)
 	}
-	fmt.Fprintf(w, "Day %2d: %7d µs\n", day, t/time.Microsecond)
+	fmt.Fprintf(w, "Day %2d: %9d µs\n", day, t/time.Microsecond)
 	return t, nil
 }
 
