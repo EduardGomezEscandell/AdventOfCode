@@ -33,8 +33,14 @@ func Part1(world map[Location]Elf) (int, error) {
 }
 
 // Part2 solves the second half of today's problem.
-func Part2() (int, error) {
-	return 1, nil
+func Part2(world map[Location]Elf) (int, error) {
+	anyMoves := true
+	var step int
+	for anyMoves {
+		world, anyMoves = automataStep(world, step)
+		step++
+	}
+	return step, nil
 }
 
 // ------------ Implementation ---------------------
@@ -257,7 +263,7 @@ func Main(stdout io.Writer) error {
 	}
 	fmt.Fprintf(stdout, "Result of part 1: %d\n", p1)
 
-	p2, err := Part2()
+	p2, err := Part2(data)
 	if err != nil {
 		return fmt.Errorf("error in part 2: %v", err)
 	}

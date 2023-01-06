@@ -100,15 +100,27 @@ func TestPart1(t *testing.T) { // nolint: dupl
 
 func TestPart2(t *testing.T) { // nolint: dupl
 	testCases := map[string]struct {
-		want int
+		input map[Location]Elf
+		want  int
 	}{
-		"empty": {want: 1},
+		"example": {
+			input: map[Location]day23.Elf{
+				{0, 4}: {},
+				{1, 2}: {}, {1, 3}: {}, {1, 4}: {}, {1, 6}: {},
+				{2, 0}: {}, {2, 4}: {}, {2, 6}: {},
+				{3, 1}: {}, {3, 5}: {}, {3, 6}: {},
+				{4, 0}: {}, {4, 2}: {}, {4, 3}: {}, {4, 4}: {},
+				{5, 0}: {}, {5, 1}: {}, {5, 3}: {}, {5, 5}: {}, {5, 6}: {},
+				{6, 1}: {}, {6, 4}: {},
+			},
+			want: 20,
+		},
 	}
 
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			got, err := day23.Part2()
+			got, err := day23.Part2(tc.input)
 
 			require.NoError(t, err)
 			require.Equal(t, tc.want, got)
