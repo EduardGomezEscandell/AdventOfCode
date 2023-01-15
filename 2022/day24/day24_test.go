@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"log"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/day24"
@@ -21,42 +20,28 @@ func TestMain(m *testing.M) {
 	os.Exit(r)
 }
 
-func TestReadInput(t *testing.T) {
+func TestPart1(t *testing.T) { // nolint: dupl
 	testCases := map[string]struct {
-		input []string
-		want  []int
+		data [][]rune
+		want int
 	}{
 		"example": {
-			input: []string{""}, want: nil,
+			data: [][]rune{
+				[]rune("#.######"),
+				[]rune("#>>.<^<#"),
+				[]rune("#.<..<<#"),
+				[]rune("#>v.><>#"),
+				[]rune("#<^v^^>#"),
+				[]rune("######.#"),
+			},
+			want: 18,
 		},
 	}
 
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			defer testutils.Backup(&day24.ReadDataFile)()
-			day24.ReadDataFile = func() ([]byte, error) {
-				return []byte(strings.Join(tc.input, "\n")), nil
-			}
-
-			got, err := day24.ReadData()
-			require.NoError(t, err)
-			require.Equal(t, tc.want, got)
-		})
-	}
-}
-
-func TestPart1(t *testing.T) { // nolint: dupl
-	testCases := map[string]struct {
-		want int
-	}{
-		"empty": {want: 1},
-	}
-
-	for name, tc := range testCases {
-		tc := tc
-		t.Run(name, func(t *testing.T) {
-			got, err := day24.Part1()
+			got, err := day24.Part1(tc.data)
 
 			require.NoError(t, err)
 			require.Equal(t, tc.want, got)
@@ -83,8 +68,8 @@ func TestPart2(t *testing.T) { // nolint: dupl
 }
 
 func TestRealData(t *testing.T) {
-	expected := `Result of part 1: 4218
-Result of part 2: 976
+	expected := `Result of part 1: 283
+Result of part 2: 1
 `
 	buff := new(bytes.Buffer)
 
