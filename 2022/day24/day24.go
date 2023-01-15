@@ -227,7 +227,6 @@ func exploreNode(wi *worldInfo, s state) (finished bool, continuations []state) 
 		return true, nil
 	}
 
-	// No prunning, filling candidate moves
 	continuations = []state{}
 	var c state // candidate continuation
 
@@ -282,6 +281,7 @@ func exploreNode(wi *worldInfo, s state) (finished bool, continuations []state) 
 	// Stay put until one of these happens:
 	// - You wait for a whole cycle
 	// - The current cell is no longer available
+	// - The current (cell, snapshot) has been reached before
 	c = s
 	for i := 1; i < wi.period; i++ {
 		c.time = s.time + i
@@ -311,13 +311,13 @@ func stateIsValidAndNovel(wi *worldInfo, s state) bool {
 	}
 
 	// Prunning:
-	// Consider if we've been here in a previous cycle
+	// Consider if we've been here at a previous epoch.
 	epochlessState := s
 	epochlessState.time = turn
 	prev, ok := wi.bestEpoch[epochlessState]
 	if ok && epoch >= prev {
 		// Prunning: we've been in this position with the same storm
-		// configuration at an earlier or equal time.
+		// configuration at an earlier or equal epoch.
 		return false
 	}
 	wi.bestEpoch[epochlessState] = epoch
