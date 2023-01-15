@@ -6,7 +6,10 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math"
 
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
 )
 
@@ -16,8 +19,9 @@ const (
 )
 
 // Part1 solves the first half of today's problem.
-func Part1([]string) (string, error) {
-	return "Hello, world!", nil
+func Part1(data []string) (string, error) {
+	num := array.MapReduce(data, snafuDecode, fun.Add[int], 0)
+	return snafuEncode(num), nil
 }
 
 // Part2 solves the second half of today's problem.
@@ -26,6 +30,62 @@ func Part2([]string) (string, error) {
 }
 
 // ------------ Implementation ---------------------
+
+var digitDecoder = map[byte]int{
+	'2': 2,
+	'1': 1,
+	'0': 0,
+	'-': -1,
+	'=': -2,
+}
+
+func snafuDecode(s string) int {
+	base := 1
+	var num int
+	for i := len(s) - 1; i >= 0; i-- {
+		digit, ok := digitDecoder[s[i]]
+		if !ok {
+			panic(fmt.Errorf("unexpected character '%c' in SNAFU %q", s[i], s))
+		}
+		num += base * digit
+		base *= 5
+	}
+	return num
+}
+
+func snafuEncode(num int) string {
+	maxLen := log5(num) + 2
+	snafu := array.Generate(maxLen, func() rune { return '0' })
+
+	for idx := len(snafu) - 1; num > 0; idx-- {
+		d := num % 5
+		num /= 5
+
+		switch d {
+		case 0:
+			snafu[idx] = '0'
+		case 1:
+			snafu[idx] = '1'
+		case 2:
+			snafu[idx] = '2'
+		case 3:
+			snafu[idx] = '='
+			num += 1
+		case 4:
+			snafu[idx] = '-'
+			num += 1
+		}
+	}
+
+	// Removing leading zeros
+	begin := array.FindIf(snafu, func(r rune) bool { return r != '0' })
+	return string(snafu[begin:])
+}
+
+func log5(n int) int {
+	const log2_of_5 = 2.32192809488736
+	return int(math.Log2(float64(n)) / log2_of_5)
+}
 
 // ---------- Here be boilerplate ------------------
 

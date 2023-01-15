@@ -26,8 +26,22 @@ func TestPart1Part2(t *testing.T) { // nolint: dupl
 		want string
 	}{
 		"example": {
-			data: []string{},
-			want: "Hello, world!",
+			data: []string{
+				"1=-0-2",
+				"12111",
+				"2=0=",
+				"21",
+				"2=01",
+				"111",
+				"20012",
+				"112",
+				"1=-1=",
+				"1-12",
+				"12",
+				"1=",
+				"122",
+			},
+			want: "2=-1=0",
 		},
 	}
 
@@ -42,7 +56,7 @@ func TestPart1Part2(t *testing.T) { // nolint: dupl
 }
 
 func TestRealData(t *testing.T) {
-	expected := `Result of part 1: Hello, world!
+	expected := `Result of part 1: 2-212-2---=00-1--102
 Result of part 2: Hello, world!
 `
 	buff := new(bytes.Buffer)
