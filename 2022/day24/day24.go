@@ -22,12 +22,31 @@ const (
 
 // Part1 solves the first half of today's problem.
 func Part1(world [][]rune) (int, error) {
-	return aStarSearch(world)
+	wi, err := newWorldInfo(world)
+	if err != nil {
+		return 0, err
+	}
+	return aStarSearch(wi, 0)
 }
 
 // Part2 solves the second half of today's problem.
-func Part2() (int, error) {
-	return 1, nil
+func Part2(world [][]rune) (int, error) {
+	wi, err := newWorldInfo(world)
+	if err != nil {
+		return 0, err
+	}
+
+	var time int
+	for i := 0; i < 3; i++ {
+		time, err = aStarSearch(wi, time)
+		if err != nil {
+			return 0, fmt.Errorf("error in leg #%d of the trip: %v", i, err)
+		}
+		wi.entrance, wi.exit = wi.exit, wi.entrance
+		wi.bestTimes = map[state]int{} // Resetting prunning data
+	}
+
+	return time, nil
 }
 
 // ------------ Implementation ---------------------
@@ -133,14 +152,10 @@ func getSnapshot(world [][]rune, turn int) (snapshot, error) {
 	return snapshot, nil
 }
 
-func aStarSearch(world [][]rune) (int, error) {
-	wi, err := newWorldInfo(world)
-	if err != nil {
-		return 0, err
-	}
-
+func aStarSearch(wi *worldInfo, startTime int) (int, error) {
 	start := state{
 		location: wi.entrance,
+		time:     startTime,
 	}
 
 	queue := myheap.New(func(a, b state) bool { return aStarHeuristic(wi, a, b) })
@@ -150,7 +165,7 @@ func aStarSearch(world [][]rune) (int, error) {
 		curr := heap.Pop(queue).(state) //nolint:forcetypeassert // We only push state objects to the heap
 		finished, cont := exploreNode(wi, curr)
 		if finished {
-			return curr.time, err
+			return curr.time, nil
 		}
 		for _, c := range cont {
 			heap.Push(queue, c)
@@ -294,7 +309,7 @@ func Main(stdout io.Writer) error {
 	}
 	fmt.Fprintf(stdout, "Result of part 1: %d\n", p1)
 
-	p2, err := Part2()
+	p2, err := Part2(world)
 	if err != nil {
 		return fmt.Errorf("error in part 2: %v", err)
 	}

@@ -20,10 +20,11 @@ func TestMain(m *testing.M) {
 	os.Exit(r)
 }
 
-func TestPart1(t *testing.T) { // nolint: dupl
+func TestPart1Part2(t *testing.T) { // nolint: dupl
 	testCases := map[string]struct {
-		data [][]rune
-		want int
+		data   [][]rune
+		wantP1 int
+		wantP2 int
 	}{
 		"example": {
 			data: [][]rune{
@@ -34,7 +35,7 @@ func TestPart1(t *testing.T) { // nolint: dupl
 				[]rune("#<^v^^>#"),
 				[]rune("######.#"),
 			},
-			want: 18,
+			wantP1: 18, wantP2: 54,
 		},
 	}
 
@@ -42,34 +43,19 @@ func TestPart1(t *testing.T) { // nolint: dupl
 		tc := tc
 		t.Run(name, func(t *testing.T) {
 			got, err := day24.Part1(tc.data)
+			require.NoError(t, err, "unexpected error in part 1")
+			require.Equal(t, tc.wantP1, got, "unexpected result in part 1")
 
-			require.NoError(t, err)
-			require.Equal(t, tc.want, got)
-		})
-	}
-}
-
-func TestPart2(t *testing.T) { // nolint: dupl
-	testCases := map[string]struct {
-		want int
-	}{
-		"empty": {want: 1},
-	}
-
-	for name, tc := range testCases {
-		tc := tc
-		t.Run(name, func(t *testing.T) {
-			got, err := day24.Part2()
-
-			require.NoError(t, err)
-			require.Equal(t, tc.want, got)
+			got, err = day24.Part2(tc.data)
+			require.NoError(t, err, "unexpected error in part 2")
+			require.Equal(t, tc.wantP2, got, "unexpected result in part 2")
 		})
 	}
 }
 
 func TestRealData(t *testing.T) {
 	expected := `Result of part 1: 283
-Result of part 2: 1
+Result of part 2: 883
 `
 	buff := new(bytes.Buffer)
 
