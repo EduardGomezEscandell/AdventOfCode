@@ -43,7 +43,7 @@ func Part2(world [][]rune) (int, error) {
 			return 0, fmt.Errorf("error in leg #%d of the trip: %v", i, err)
 		}
 		wi.entrance, wi.exit = wi.exit, wi.entrance
-		wi.bestTimes = map[state]int{} // Resetting prunning data
+		wi.bestEpoch = map[state]int{} // Resetting prunning data
 	}
 
 	return time, nil
@@ -51,30 +51,57 @@ func Part2(world [][]rune) (int, error) {
 
 // ------------ Implementation ---------------------
 
+// cell is every tile in the today's problem's world.
 type cell = int8
-type snapshot = [][]cell
 
 const (
-	obstacle cell = 1
-	free     cell = 0
+	obstacle cell = 1 // wall or storm
+	free     cell = 0 // free to walk to
 )
 
+// snapshot represents the world's walls and storm locations
+// at a particular point in time.
+type snapshot = [][]cell
+
+// location packs the row, col values to refer to a position
+// in a 2D array.
 type location struct {
 	row, col int
 }
 
+// state contains the location and point in time. This is sufficient
+// information to fully define a node int the search graph.
 type state struct {
 	location
 	time int
 }
 
+// worldInfo contains the information sufficient to:
+// - navigate the world (using snapshots, width, height and period)
+// - search paths (from entrance to exit)
+// - prune path transpositions (bestTimes).
 type worldInfo struct {
-	snapshots             []snapshot
-	bestTimes             map[state]int
-	width, height, period int
-	entrance, exit        location
+	// Geometry info
+	snapshots     []snapshot // storm configuration for every turn in the first (and hence every) period
+	width, height int        // syntax sugar, so as not to check the size of the first snapshot every time
+
+	// Due to the rectangular shape of the world, every certain number of
+	// turns the storm configuration will repeat. This number of turns we
+	// call the 'period'. After n periods have passed, we say you are in
+	// 'epoch' n.
+	period int
+
+	// Reaching the same state but a later epoch is identical but worse.
+	// Storing the lowest epoch that we reached a state in allows us to
+	// prune large sections of the search tree.
+	bestEpoch map[state]int
+
+	// Routing info
+	entrance, exit location // where we start and end the route
 }
 
+// newWorldInfo generates the world info ready to be used in part one,
+// i.e. with the entrance and exit at the top and bottom, respectively.
 func newWorldInfo(world [][]rune) (*worldInfo, error) {
 	wi := &worldInfo{}
 
@@ -98,7 +125,7 @@ func newWorldInfo(world [][]rune) (*worldInfo, error) {
 		col: array.Find(world[len(world)-1], '.', fun.Eq[rune]),
 	}
 
-	wi.bestTimes = map[state]int{}
+	wi.bestEpoch = map[state]int{}
 
 	wi.period = fun.LCM(wi.width-2, wi.height-2) // -2: The walls are outside the cycle
 	wi.snapshots = make([]snapshot, wi.period)
@@ -114,6 +141,9 @@ func newWorldInfo(world [][]rune) (*worldInfo, error) {
 	return wi, nil
 }
 
+// getSnapshot computes the storm configuration after a certain number of turns.
+// Note that if the world period is n, then {turn, turn+n, turn+2n, ...} will all
+// have the same snapshot.
 func getSnapshot(world [][]rune, turn int) (snapshot, error) {
 	snapshot := array.Generate2D(len(world), len(world[0]), func() cell { return free })
 
@@ -152,6 +182,9 @@ func getSnapshot(world [][]rune, turn int) (snapshot, error) {
 	return snapshot, nil
 }
 
+// aStarSearch uses A* to search for the best path from wi.entrance to wi.exit
+// startTime is the time when the route starts (necessary to know the storm
+// configuration). Returns the exitTime, equal to startTime + traversalTime.
 func aStarSearch(wi *worldInfo, startTime int) (int, error) {
 	start := state{
 		location: wi.entrance,
@@ -175,6 +208,10 @@ func aStarSearch(wi *worldInfo, startTime int) (int, error) {
 	return 0, errors.New("could not find a path to the exit")
 }
 
+// aStarHeuristic is the rule used to identify the best candidate continuation.
+// Note that for the success condition it degenerates to Dijkstra, meaning that
+// the score is just the time to reach that point. This means that we can exit
+// once we find the exit for the first time.
 func aStarHeuristic(wi *worldInfo, a, b state) bool {
 	bestPossibleScore := func(s state) int {
 		return s.time + manhattan(s.location, wi.exit)
@@ -182,6 +219,8 @@ func aStarHeuristic(wi *worldInfo, a, b state) bool {
 	return bestPossibleScore(a) < bestPossibleScore(b)
 }
 
+// exploreNode finds all possible, relevant (i.e. not prunned) continuations
+// to a state; both moving and staying in place.
 func exploreNode(wi *worldInfo, s state) (finished bool, continuations []state) {
 	// Exit found!
 	if s.location == wi.exit {
@@ -255,6 +294,9 @@ func exploreNode(wi *worldInfo, s state) (finished bool, continuations []state) 
 	return false, continuations
 }
 
+// stateIsValidAndNovel ensures that a given state s is valide (i.e. the player
+// is inside the world and not overlapping with an obstacle) and novel, i.e. we
+// have not been in this state at a previous or equal epoch.
 func stateIsValidAndNovel(wi *worldInfo, s state) bool {
 	if s.row < 0 || s.row >= wi.height {
 		return false
@@ -270,18 +312,19 @@ func stateIsValidAndNovel(wi *worldInfo, s state) bool {
 
 	// Prunning:
 	// Consider if we've been here in a previous cycle
-	firstEpoch := s
-	firstEpoch.time = turn
-	prev, ok := wi.bestTimes[firstEpoch]
+	epochlessState := s
+	epochlessState.time = turn
+	prev, ok := wi.bestEpoch[epochlessState]
 	if ok && epoch >= prev {
 		// Prunning: we've been in this position with the same storm
 		// configuration at an earlier or equal time.
 		return false
 	}
-	wi.bestTimes[firstEpoch] = epoch
+	wi.bestEpoch[epochlessState] = epoch
 	return true
 }
 
+// manhattan distance, taxicab distance, L1 norm, whatever you want to call it.
 func manhattan(from, to location) int {
 	return fun.Abs(from.row-to.row) + fun.Abs(from.col-to.col)
 }
@@ -324,7 +367,7 @@ var ReadDataFile = func() ([]byte, error) {
 	return input.ReadDataFile(today, fileName)
 }
 
-// ReadData reads the data file.
+// ReadData reads the data file and returns the raw world data.
 func ReadData() (data [][]rune, err error) { // nolint: revive
 	b, err := ReadDataFile()
 	if err != nil {
