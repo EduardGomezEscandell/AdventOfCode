@@ -38,7 +38,7 @@ func Solve(monkeys []Monkey, nrounds int, stressDivisor uint64) (uint64, error) 
 	// Computing everything mod lcd to avoid overflows
 	// lcd: least common multiple of the test values of the monkeys
 	tv := array.Map(monkeys, func(m Monkey) uint64 { return m.TestValue })
-	lcd := LCM(tv[0], tv[1], tv[2:]...)
+	lcd := fun.LCM(tv[0], tv[1], tv[2:]...)
 	// lcd := array.MapReduce(monkeys, func(m Monkey) uint64 { return m.TestValue }, fun.Mul[uint64], 1)
 
 	for i := 0; i < nrounds; i++ {
@@ -78,27 +78,6 @@ func turn(monkeys []Monkey, turn int, stressDivisor, stressMod uint64) {
 		}
 		monkeys[t].Inventory = append(monkeys[t].Inventory, v)
 	}
-}
-
-// GCD computes the greatest common divisor (GCD) via Euclidean algorithm.
-func GCD(a, b uint64) uint64 {
-	for b != 0 {
-		t := b
-		b = a % b
-		a = t
-	}
-	return a
-}
-
-// LCM finds the Least Common Multiple (LCM) via GCD.
-func LCM(a, b uint64, integers ...uint64) uint64 {
-	result := a * b / GCD(a, b)
-
-	for i := 0; i < len(integers); i++ {
-		result = LCM(result, integers[i])
-	}
-
-	return result
 }
 
 // Monkey as in the monkeys in the problem statement.
