@@ -26,7 +26,7 @@ func Part1(data []string) (string, error) {
 
 // Part2 solves the second half of today's problem.
 func Part2([]string) (string, error) {
-	return "Hello, world!", nil
+	return "Merry Christmas!", nil
 }
 
 // ------------ Implementation ---------------------
@@ -54,7 +54,7 @@ func snafuDecode(s string) int {
 }
 
 func snafuEncode(num int) string {
-	maxLen := log5(num) + 2
+	maxLen := log5(num) + 2 // +1 for integer rounding and +1 to make room for a possible (1-) or (1=)
 	snafu := array.Generate(maxLen, func() rune { return '0' })
 
 	for idx := len(snafu) - 1; num > 0; idx-- {
@@ -70,10 +70,10 @@ func snafuEncode(num int) string {
 			snafu[idx] = '2'
 		case 3:
 			snafu[idx] = '='
-			num += 1
+			num++
 		case 4:
 			snafu[idx] = '-'
-			num += 1
+			num++
 		}
 	}
 
@@ -83,8 +83,8 @@ func snafuEncode(num int) string {
 }
 
 func log5(n int) int {
-	const log2_of_5 = 2.32192809488736
-	return int(math.Log2(float64(n)) / log2_of_5)
+	const log5 = 2.32192809488736 // log2(5)
+	return int(math.Log2(float64(n)) / log5)
 }
 
 // ---------- Here be boilerplate ------------------
