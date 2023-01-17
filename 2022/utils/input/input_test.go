@@ -34,6 +34,7 @@ func TestFilename(t *testing.T) {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
 			os.Setenv(input.EnvRootDir, tc.root)
+			tc.want = filepath.Clean(tc.want)
 
 			got, err := input.DataFullPath(tc.day, tc.filename)
 
