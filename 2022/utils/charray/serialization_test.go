@@ -10,23 +10,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFromArray(t *testing.T) {
+func TestSerialize(t *testing.T) {
 	t.Parallel()
-	t.Run("int", testFromArray[int])
-	t.Run("int8", testFromArray[int8])
-	t.Run("int32", testFromArray[int32])
-	t.Run("int64", testFromArray[int64])
+	t.Run("int", testSerialize[int])
+	t.Run("int8", testSerialize[int8])
+	t.Run("int32", testSerialize[int32])
+	t.Run("int64", testSerialize[int64])
 }
 
-func TestFromChannel(t *testing.T) {
+func TestDeserialize(t *testing.T) {
 	t.Parallel()
-	t.Run("int", testToArray[int])
-	t.Run("int8", testToArray[int8])
-	t.Run("int32", testToArray[int32])
-	t.Run("int64", testToArray[int64])
+	t.Run("int", testDeserialize[int])
+	t.Run("int8", testDeserialize[int8])
+	t.Run("int32", testDeserialize[int32])
+	t.Run("int64", testDeserialize[int64])
 }
 
-func testFromArray[T utils.Signed](t *testing.T) { // nolint: thelper
+func testSerialize[T utils.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 
 	const (
@@ -99,7 +99,7 @@ func testFromArray[T utils.Signed](t *testing.T) { // nolint: thelper
 	}
 }
 
-func testToArray[T utils.Signed](t *testing.T) { // nolint: thelper
+func testDeserialize[T utils.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 	testCases := map[string]struct {
 		data     []T
