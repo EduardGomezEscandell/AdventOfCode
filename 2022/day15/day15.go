@@ -9,10 +9,10 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -25,7 +25,7 @@ const (
 // beacons in these ranges.
 func Part1(sensors []Sensor, beacons []Beacon, target Long) Long {
 	ranges, beaconsX := findExcludedRanges(sensors, beacons, target)
-	return array.MapReduce(ranges, (Range).length, fun.Add[Long], Long(-len(beaconsX)))
+	return algo.MapReduce(ranges, (Range).length, utils.Add[Long], Long(-len(beaconsX)))
 }
 
 // Part2 solves the second half of the problem. It is mostly a wrapper
@@ -43,7 +43,7 @@ func Part2(sensors []Sensor, beacons []Beacon, world Range) (Long, error) {
 	defer close(chSuccess)
 
 	// Partitioning the world
-	nworkers := int(fun.Min(64, world.length()))
+	nworkers := int(utils.Min(64, world.length()))
 	wsize := world.length() / Long(nworkers)
 
 	for w := 0; w < nworkers; w++ {
@@ -51,7 +51,7 @@ func Part2(sensors []Sensor, beacons []Beacon, world Range) (Long, error) {
 		go func() {
 			yRange := Range{
 				Begin: world.Begin + Long(w)*wsize,
-				End:   fun.Min(world.End, world.Begin+Long(w+1)*wsize),
+				End:   utils.Min(world.End, world.Begin+Long(w+1)*wsize),
 			}
 			position, found := part2Worker(ctx, sensors, beacons, world, yRange)
 			chSuccess <- found
@@ -64,7 +64,7 @@ func Part2(sensors []Sensor, beacons []Beacon, world Range) (Long, error) {
 	}
 
 	// Wait for all workers to cancel, otherwise we leak them.
-	found := charray.Reduce(charray.Take(chSuccess, nworkers), fun.Or, false)
+	found := charray.Reduce(charray.Take(chSuccess, nworkers), utils.Or, false)
 	if !found {
 		return 0, errors.New("failed to find distress beacon")
 	}
@@ -132,7 +132,7 @@ func extractGaps(A []Range) (endLead Long, central []Range, beginTail Long) {
 	}
 
 	endLead = A[0].Begin
-	central = array.AdjacentMap(A, func(r1, r2 Range) Range { return Range{r1.End, r2.Begin} })
+	central = algo.AdjacentMap(A, func(r1, r2 Range) Range { return Range{r1.End, r2.Begin} })
 	beginTail = A[len(A)-1].End
 
 	return
@@ -181,7 +181,7 @@ func AddRange(ranges []Range, new Range) []Range {
 	}
 
 	firstGap, firstRange := locatePoint(ranges, new.Begin)
-	start := fun.Max(firstGap, firstRange)
+	start := utils.Max(firstGap, firstRange)
 	lastGap, lastRange := locatePoint(ranges[start:], new.End)
 	if lastGap != -1 {
 		lastGap += start
@@ -191,7 +191,7 @@ func AddRange(ranges []Range, new Range) []Range {
 
 	if firstGap != -1 && lastGap != -1 && firstGap == lastGap {
 		// Entirely contained in a gap
-		return array.Insert(ranges, new, firstGap)
+		return algo.Insert(ranges, new, firstGap)
 	}
 
 	if firstGap != -1 {
@@ -219,7 +219,7 @@ func findExcludedRanges(sensors []Sensor, beacons []Beacon, targetY Long) ([]Ran
 	ranges := []Range{}
 	for _, s := range sensors {
 		radius := manhattan(s.Point, beacons[s.Detects].Point)
-		dist := fun.Abs(s.Y - targetY)
+		dist := algo.Abs(s.Y - targetY)
 		if dist > radius {
 			continue // Sensor is too far away
 		}
@@ -269,7 +269,7 @@ func removeSubarray(arr []Range, begin, end int) []Range {
 }
 
 func locatePoint(ranges []Range, x Long) (firstGap, firstRange int) {
-	idx := array.FindIf(ranges, func(rx Range) bool { return rx.End >= x })
+	idx := algo.FindIf(ranges, func(rx Range) bool { return rx.End >= x })
 	if idx == -1 { // Point is beyond the end
 		return len(ranges), -1
 	}
@@ -291,7 +291,7 @@ const (
 // manhattan is the manhattan distance between points p and q.
 // Manhattan, taxicab and L1 distances are all the same thing.
 func manhattan(p, q Point) Long {
-	return fun.Abs(p.X-q.X) + fun.Abs(p.Y-q.Y)
+	return algo.Abs(p.X-q.X) + algo.Abs(p.Y-q.Y)
 }
 
 // ---------- Here be boilerplate ------------------

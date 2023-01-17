@@ -5,10 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/generics"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -100,7 +99,7 @@ func TestMultiplex(t *testing.T) {
 	t.Run("int64", testMultiplex[int64])
 }
 
-func testMap[T generics.Signed](t *testing.T) { // nolint: thelper
+func testMap[T utils.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 
 	testCases := map[string]struct {
@@ -108,9 +107,9 @@ func testMap[T generics.Signed](t *testing.T) { // nolint: thelper
 		op      func(T) int
 		expects []int
 	}{
-		"empty sign":  {input: []T{}, op: fun.Sign[T], expects: []int{}},
-		"small sign":  {input: []T{1, -2, 3}, op: fun.Sign[T], expects: []int{1, -1, 1}},
-		"normal sign": {input: []T{-8, 7, 0, 3, 3, -15}, op: fun.Sign[T], expects: []int{-1, 1, 0, 1, 1, -1}},
+		"empty sign":  {input: []T{}, op: algo.Sign[T], expects: []int{}},
+		"small sign":  {input: []T{1, -2, 3}, op: algo.Sign[T], expects: []int{1, -1, 1}},
+		"normal sign": {input: []T{-8, 7, 0, 3, 3, -15}, op: algo.Sign[T], expects: []int{-1, 1, 0, 1, 1, -1}},
 	}
 
 	for name, tc := range testCases {
@@ -121,7 +120,7 @@ func testMap[T generics.Signed](t *testing.T) { // nolint: thelper
 
 			gotch := charray.Map(ch, tc.op)
 
-			got := array.FromChannel(gotch)
+			got := charray.Deserialize(gotch)
 			require.Equal(t, tc.expects, got)
 		})
 	}
@@ -129,11 +128,11 @@ func testMap[T generics.Signed](t *testing.T) { // nolint: thelper
 
 func inputToChannel[T any](in []T, cap int, timeout time.Duration) (<-chan T, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	outch := charray.FromArray(ctx, in, cap)
+	outch := charray.Serialize(ctx, in, cap)
 	return outch, cancel
 }
 
-func testReduce[T generics.Signed](t *testing.T) { // nolint: thelper // nolint: thelper
+func testReduce[T utils.Signed](t *testing.T) { // nolint: thelper // nolint: thelper
 	t.Parallel()
 
 	testCases := map[string]struct {
@@ -141,12 +140,12 @@ func testReduce[T generics.Signed](t *testing.T) { // nolint: thelper // nolint:
 		fold    func(T, T) T
 		expects T
 	}{
-		"empty sum":          {input: []T{}, fold: fun.Add[T], expects: 0},
-		"small sum":          {input: []T{1, 2, 3}, fold: fun.Add[T], expects: 6},
-		"normal sum":         {input: []T{8, 7, 5, 3, 3, -15}, fold: fun.Add[T], expects: 11},
-		"empty subtraction":  {input: []T{}, fold: fun.Sub[T], expects: 0},
-		"small subtraction":  {input: []T{1, 2, 3}, fold: fun.Sub[T], expects: -6},
-		"normal subtraction": {input: []T{8, 7, 5, 3, 3, -15}, fold: fun.Sub[T], expects: -11},
+		"empty sum":          {input: []T{}, fold: utils.Add[T], expects: 0},
+		"small sum":          {input: []T{1, 2, 3}, fold: utils.Add[T], expects: 6},
+		"normal sum":         {input: []T{8, 7, 5, 3, 3, -15}, fold: utils.Add[T], expects: 11},
+		"empty subtraction":  {input: []T{}, fold: utils.Sub[T], expects: 0},
+		"small subtraction":  {input: []T{1, 2, 3}, fold: utils.Sub[T], expects: -6},
+		"normal subtraction": {input: []T{8, 7, 5, 3, 3, -15}, fold: utils.Sub[T], expects: -11},
 	}
 
 	for name, tc := range testCases {
@@ -161,7 +160,7 @@ func testReduce[T generics.Signed](t *testing.T) { // nolint: thelper // nolint:
 	}
 }
 
-func testMapReduce[T generics.Signed](t *testing.T) { // nolint: thelper // nolint: thelper
+func testMapReduce[T utils.Signed](t *testing.T) { // nolint: thelper // nolint: thelper
 	t.Parallel()
 
 	sq := func(x T) int { return int(x * x) }
@@ -190,7 +189,7 @@ func testMapReduce[T generics.Signed](t *testing.T) { // nolint: thelper // noli
 	}
 }
 
-func testAdjacentReduce[T generics.Signed](t *testing.T) { // nolint: thelper
+func testAdjacentReduce[T utils.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 	testCases := map[string]struct {
 		input   []T
@@ -198,9 +197,9 @@ func testAdjacentReduce[T generics.Signed](t *testing.T) { // nolint: thelper
 		fold    func(T, T) T
 		expects T
 	}{
-		"empty sum of differences":  {merge: fun.Sub[T], fold: fun.Add[T], expects: 0, input: []T{}},
-		"small sum of differences":  {merge: fun.Sub[T], fold: fun.Add[T], expects: -2, input: []T{1, 2, 3}},
-		"normal sum of differences": {merge: fun.Sub[T], fold: fun.Add[T], expects: 23, input: []T{8, 7, 5, 3, 3, -15}},
+		"empty sum of differences":  {merge: utils.Sub[T], fold: utils.Add[T], expects: 0, input: []T{}},
+		"small sum of differences":  {merge: utils.Sub[T], fold: utils.Add[T], expects: -2, input: []T{1, 2, 3}},
+		"normal sum of differences": {merge: utils.Sub[T], fold: utils.Add[T], expects: 23, input: []T{8, 7, 5, 3, 3, -15}},
 	}
 
 	for name, tc := range testCases {
@@ -215,7 +214,7 @@ func testAdjacentReduce[T generics.Signed](t *testing.T) { // nolint: thelper
 	}
 }
 
-func testZipWith[T generics.Signed](t *testing.T) { // nolint: thelper
+func testZipWith[T utils.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 	testCases := map[string]struct {
 		input1 []T
@@ -223,11 +222,11 @@ func testZipWith[T generics.Signed](t *testing.T) { // nolint: thelper
 		zip    func(T, T) T
 		want   []T
 	}{
-		"empty":      {zip: fun.Sub[T], want: []T{}},
-		"half empty": {zip: fun.Sub[T], input1: []T{1}, want: []T{}},
-		"single":     {zip: fun.Sub[T], input1: []T{1}, input2: []T{2}, want: []T{-1}},
-		"normal":     {zip: fun.Sub[T], input1: []T{1, 3, 9}, input2: []T{2, -1, 6}, want: []T{-1, 4, 3}},
-		"normal add": {zip: fun.Add[T], input1: []T{1, 3, 9}, input2: []T{2, -1, 6}, want: []T{3, 2, 15}},
+		"empty":      {zip: utils.Sub[T], want: []T{}},
+		"half empty": {zip: utils.Sub[T], input1: []T{1}, want: []T{}},
+		"single":     {zip: utils.Sub[T], input1: []T{1}, input2: []T{2}, want: []T{-1}},
+		"normal":     {zip: utils.Sub[T], input1: []T{1, 3, 9}, input2: []T{2, -1, 6}, want: []T{-1, 4, 3}},
+		"normal add": {zip: utils.Add[T], input1: []T{1, 3, 9}, input2: []T{2, -1, 6}, want: []T{3, 2, 15}},
 	}
 
 	for name, tc := range testCases {
@@ -236,18 +235,18 @@ func testZipWith[T generics.Signed](t *testing.T) { // nolint: thelper
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
-			ch1 := charray.FromArray(ctx, tc.input1, 0)
-			ch2 := charray.FromArray(ctx, tc.input2, 0)
+			ch1 := charray.Serialize(ctx, tc.input1, 0)
+			ch2 := charray.Serialize(ctx, tc.input2, 0)
 
 			gotch := charray.ZipWith(ch1, ch2, tc.zip)
 
-			got := array.FromChannel(gotch)
+			got := charray.Deserialize(gotch)
 			require.Equal(t, tc.want, got)
 		})
 	}
 }
 
-func testZipReduce[T generics.Signed](t *testing.T) { // nolint: thelper
+func testZipReduce[T utils.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 
 	testCases := map[string]struct {
@@ -268,28 +267,28 @@ func testZipReduce[T generics.Signed](t *testing.T) { // nolint: thelper
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
-			ch1 := charray.FromArray(ctx, tc.input1, 0)
-			ch2 := charray.FromArray(ctx, tc.input2, 0)
+			ch1 := charray.Serialize(ctx, tc.input1, 0)
+			ch2 := charray.Serialize(ctx, tc.input2, 0)
 
-			got := charray.Reduce(charray.ZipWith(ch1, ch2, fun.Mul[T]), fun.Add[T], 0)
+			got := charray.Reduce(charray.ZipWith(ch1, ch2, utils.Mul[T]), utils.Add[T], 0)
 			require.Equal(t, tc.want, got)
 		})
 	}
 }
 
-func testAdjacentMap[T generics.Signed](t *testing.T) { // nolint: thelper
+func testAdjacentMap[T utils.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 	testCases := map[string]struct {
 		input   []T
 		op      func(T, T) T
 		expects []T
 	}{
-		"empty sum":          {input: []T{}, op: fun.Add[T], expects: []T{}},
-		"small sum":          {input: []T{1, -2, 3}, op: fun.Add[T], expects: []T{-1, 1}},
-		"normal sum":         {input: []T{-8, 7, 0, 3, 3, -15}, op: fun.Add[T], expects: []T{-1, 7, 3, 6, -12}},
-		"empty subtraction":  {input: []T{}, op: fun.Sub[T], expects: []T{}},
-		"small subtraction":  {input: []T{1, -2, 3}, op: fun.Sub[T], expects: []T{3, -5}},
-		"normal subtraction": {input: []T{-8, 7, 0, 3, 3, -15}, op: fun.Sub[T], expects: []T{-15, 7, -3, 0, 18}},
+		"empty sum":          {input: []T{}, op: utils.Add[T], expects: []T{}},
+		"small sum":          {input: []T{1, -2, 3}, op: utils.Add[T], expects: []T{-1, 1}},
+		"normal sum":         {input: []T{-8, 7, 0, 3, 3, -15}, op: utils.Add[T], expects: []T{-1, 7, 3, 6, -12}},
+		"empty subtraction":  {input: []T{}, op: utils.Sub[T], expects: []T{}},
+		"small subtraction":  {input: []T{1, -2, 3}, op: utils.Sub[T], expects: []T{3, -5}},
+		"normal subtraction": {input: []T{-8, 7, 0, 3, 3, -15}, op: utils.Sub[T], expects: []T{-15, 7, -3, 0, 18}},
 	}
 
 	for name, tc := range testCases {
@@ -300,27 +299,27 @@ func testAdjacentMap[T generics.Signed](t *testing.T) { // nolint: thelper
 
 			gotch := charray.AdjacentMap(ch, tc.op)
 
-			got := array.FromChannel(gotch)
+			got := charray.Deserialize(gotch)
 			require.Equal(t, tc.expects, got)
 		})
 	}
 }
 
-func testTopN[T generics.Signed](t *testing.T) { // nolint: thelper
+func testTopN[T utils.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 	testCases := map[string]struct {
 		input []T
 		n     uint
-		comp  fun.Comparator[T]
+		comp  utils.Comparator[T]
 		want  []T
 	}{
-		"empty":           {n: 2, input: []T{}, comp: fun.Lt[T], want: []T{}},
-		"too short":       {n: 5, input: []T{1, 2, 3}, comp: fun.Lt[T], want: []T{1, 2, 3}},
-		"just the amount": {n: 5, input: []T{1, 4, 2, 3}, comp: fun.Lt[T], want: []T{1, 2, 3, 4}},
-		"bottom 3":        {n: 3, input: []T{8, 7, 5, 3, 3, 15}, comp: fun.Lt[T], want: []T{3, 3, 5}},
-		"top 3":           {n: 3, input: []T{8, 7, 5, 3, 3, 15}, comp: fun.Gt[T], want: []T{15, 8, 7}},
-		"bottom 4":        {n: 4, input: []T{-1, 84, 5, 101, 12, 9, 15, 1}, comp: fun.Lt[T], want: []T{-1, 1, 5, 9}},
-		"top 4":           {n: 4, input: []T{-1, 84, 5, 101, 12, 9, 15, 1}, comp: fun.Gt[T], want: []T{101, 84, 15, 12}},
+		"empty":           {n: 2, input: []T{}, comp: utils.Lt[T], want: []T{}},
+		"too short":       {n: 5, input: []T{1, 2, 3}, comp: utils.Lt[T], want: []T{1, 2, 3}},
+		"just the amount": {n: 5, input: []T{1, 4, 2, 3}, comp: utils.Lt[T], want: []T{1, 2, 3, 4}},
+		"bottom 3":        {n: 3, input: []T{8, 7, 5, 3, 3, 15}, comp: utils.Lt[T], want: []T{3, 3, 5}},
+		"top 3":           {n: 3, input: []T{8, 7, 5, 3, 3, 15}, comp: utils.Gt[T], want: []T{15, 8, 7}},
+		"bottom 4":        {n: 4, input: []T{-1, 84, 5, 101, 12, 9, 15, 1}, comp: utils.Lt[T], want: []T{-1, 1, 5, 9}},
+		"top 4":           {n: 4, input: []T{-1, 84, 5, 101, 12, 9, 15, 1}, comp: utils.Gt[T], want: []T{101, 84, 15, 12}},
 	}
 
 	for name, tc := range testCases {
@@ -335,7 +334,7 @@ func testTopN[T generics.Signed](t *testing.T) { // nolint: thelper
 	}
 }
 
-func testCommon[T generics.Signed](t *testing.T) { // nolint: thelper
+func testCommon[T utils.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 	testCases := map[string]struct {
 		input1 []T
@@ -343,76 +342,76 @@ func testCommon[T generics.Signed](t *testing.T) { // nolint: thelper
 		sort   func(T, T) bool
 		want   []T
 	}{
-		"less than, empty":                               {sort: fun.Lt[T], want: []T{}},
-		"greater than, empty":                            {sort: fun.Gt[T], want: []T{}},
-		"less than, half empty":                          {sort: fun.Lt[T], input1: []T{1, 6, 8}, want: []T{}},
-		"greater than, half empty":                       {sort: fun.Gt[T], input1: []T{1, 6, 8}, want: []T{}},
-		"less than, single, no shared":                   {sort: fun.Lt[T], input1: []T{1}, input2: []T{2}, want: []T{}},
-		"greater than, single, no shared":                {sort: fun.Gt[T], input1: []T{1}, input2: []T{2}, want: []T{}},
-		"less than, single, shared":                      {sort: fun.Lt[T], input1: []T{1}, input2: []T{1}, want: []T{1}},
-		"greater than, single, shared":                   {sort: fun.Gt[T], input1: []T{1}, input2: []T{1}, want: []T{1}},
-		"less than, normal, shared":                      {sort: fun.Lt[T], input1: []T{1, 3, 9}, input2: []T{1, 5, 9}, want: []T{1, 9}},
-		"greater than, normal, shared":                   {sort: fun.Gt[T], input1: []T{1, 3, 9}, input2: []T{1, 5, 9}, want: []T{9, 1}},
-		"less than, normal, no shared":                   {sort: fun.Lt[T], input1: []T{1, 3, 9}, input2: []T{2, 4, 6}, want: []T{}},
-		"greater than, normal, no shared":                {sort: fun.Gt[T], input1: []T{1, 3, 9}, input2: []T{2, 4, 6}, want: []T{}},
-		"less than, repeats, no shared":                  {sort: fun.Lt[T], input1: []T{15, 0, 15, 9}, input2: []T{0, 15}, want: []T{0, 15}},
-		"greater than, repeats, no shared":               {sort: fun.Gt[T], input1: []T{15, 0, 15, 9}, input2: []T{0, 15}, want: []T{15, 0}},
-		"less than, double repeats, no shared":           {sort: fun.Lt[T], input1: []T{15, 0, 15, 9}, input2: []T{0, 15, 15}, want: []T{0, 15, 15}},
-		"greater than, double repeats, no shared":        {sort: fun.Gt[T], input1: []T{15, 0, 15, 9}, input2: []T{0, 15, 15}, want: []T{15, 15, 0}},
-		"greater than, triple double repeats, no shared": {sort: fun.Gt[T], input1: []T{15, 15, 15, 9}, input2: []T{0, 15, 15}, want: []T{15, 15}},
+		"less than, empty":                               {sort: utils.Lt[T], want: []T{}},
+		"greater than, empty":                            {sort: utils.Gt[T], want: []T{}},
+		"less than, half empty":                          {sort: utils.Lt[T], input1: []T{1, 6, 8}, want: []T{}},
+		"greater than, half empty":                       {sort: utils.Gt[T], input1: []T{1, 6, 8}, want: []T{}},
+		"less than, single, no shared":                   {sort: utils.Lt[T], input1: []T{1}, input2: []T{2}, want: []T{}},
+		"greater than, single, no shared":                {sort: utils.Gt[T], input1: []T{1}, input2: []T{2}, want: []T{}},
+		"less than, single, shared":                      {sort: utils.Lt[T], input1: []T{1}, input2: []T{1}, want: []T{1}},
+		"greater than, single, shared":                   {sort: utils.Gt[T], input1: []T{1}, input2: []T{1}, want: []T{1}},
+		"less than, normal, shared":                      {sort: utils.Lt[T], input1: []T{1, 3, 9}, input2: []T{1, 5, 9}, want: []T{1, 9}},
+		"greater than, normal, shared":                   {sort: utils.Gt[T], input1: []T{1, 3, 9}, input2: []T{1, 5, 9}, want: []T{9, 1}},
+		"less than, normal, no shared":                   {sort: utils.Lt[T], input1: []T{1, 3, 9}, input2: []T{2, 4, 6}, want: []T{}},
+		"greater than, normal, no shared":                {sort: utils.Gt[T], input1: []T{1, 3, 9}, input2: []T{2, 4, 6}, want: []T{}},
+		"less than, repeats, no shared":                  {sort: utils.Lt[T], input1: []T{15, 0, 15, 9}, input2: []T{0, 15}, want: []T{0, 15}},
+		"greater than, repeats, no shared":               {sort: utils.Gt[T], input1: []T{15, 0, 15, 9}, input2: []T{0, 15}, want: []T{15, 0}},
+		"less than, double repeats, no shared":           {sort: utils.Lt[T], input1: []T{15, 0, 15, 9}, input2: []T{0, 15, 15}, want: []T{0, 15, 15}},
+		"greater than, double repeats, no shared":        {sort: utils.Gt[T], input1: []T{15, 0, 15, 9}, input2: []T{0, 15, 15}, want: []T{15, 15, 0}},
+		"greater than, triple double repeats, no shared": {sort: utils.Gt[T], input1: []T{15, 15, 15, 9}, input2: []T{0, 15, 15}, want: []T{15, 15}},
 	}
 
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			array.Sort(tc.input1, tc.sort)
-			array.Sort(tc.input2, tc.sort)
+			algo.Sort(tc.input1, tc.sort)
+			algo.Sort(tc.input2, tc.sort)
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
-			ch1 := charray.FromArray(ctx, tc.input1, 0)
-			ch2 := charray.FromArray(ctx, tc.input2, 0)
+			ch1 := charray.Serialize(ctx, tc.input1, 0)
+			ch2 := charray.Serialize(ctx, tc.input2, 0)
 
 			gotch := charray.Common(ch1, ch2, tc.sort)
-			got := array.FromChannel(gotch)
+			got := charray.Deserialize(gotch)
 			require.Equal(t, tc.want, got)
 		})
 	}
 }
 
-func testUnique[T generics.Signed](t *testing.T) { // nolint: thelper
+func testUnique[T utils.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 	testCases := map[string]struct {
 		input []T
 		sort  func(T, T) bool
 		want  []T
 	}{
-		"empty":                           {sort: fun.Lt[T], want: []T{}},
-		"one":                             {sort: fun.Lt[T], input: []T{5}, want: []T{5}},
-		"few, greater than, no repeats":   {sort: fun.Gt[T], input: []T{3, 1, 5}, want: []T{5, 3, 1}},
-		"few, less than, no repeats":      {sort: fun.Lt[T], input: []T{3, 1, 5}, want: []T{1, 3, 5}},
-		"few, greater than, some repeats": {sort: fun.Gt[T], input: []T{3, 1, 3, 5}, want: []T{5, 3, 1}},
-		"few, less than, some repeats":    {sort: fun.Lt[T], input: []T{3, 1, 3, 5}, want: []T{1, 3, 5}},
+		"empty":                           {sort: utils.Lt[T], want: []T{}},
+		"one":                             {sort: utils.Lt[T], input: []T{5}, want: []T{5}},
+		"few, greater than, no repeats":   {sort: utils.Gt[T], input: []T{3, 1, 5}, want: []T{5, 3, 1}},
+		"few, less than, no repeats":      {sort: utils.Lt[T], input: []T{3, 1, 5}, want: []T{1, 3, 5}},
+		"few, greater than, some repeats": {sort: utils.Gt[T], input: []T{3, 1, 3, 5}, want: []T{5, 3, 1}},
+		"few, less than, some repeats":    {sort: utils.Lt[T], input: []T{3, 1, 3, 5}, want: []T{1, 3, 5}},
 	}
 
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			array.Sort(tc.input, tc.sort)
+			algo.Sort(tc.input, tc.sort)
 
 			ch, cancel := inputToChannel(tc.input, 0, 10*time.Second)
 			defer cancel()
 
-			gotch := charray.Unique(ch, fun.SortToEqual(tc.sort))
+			gotch := charray.Unique(ch, utils.Equal(tc.sort))
 
-			got := array.FromChannel(gotch)
+			got := charray.Deserialize(gotch)
 			require.Equal(t, tc.want, got)
 		})
 	}
 }
 
-func testMultiplex[T generics.SignedInt](t *testing.T) { // nolint: thelper
+func testMultiplex[T utils.SignedInt](t *testing.T) { // nolint: thelper
 	t.Parallel()
 
 	testCases := map[string]struct {
@@ -446,7 +445,7 @@ func testMultiplex[T generics.SignedInt](t *testing.T) { // nolint: thelper
 			for i, ch := range gotchans {
 				i, ch := i, ch
 				go func() {
-					got[i] = array.FromChannel(ch)
+					got[i] = charray.Deserialize(ch)
 					done <- struct{}{}
 				}()
 			}

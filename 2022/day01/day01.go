@@ -9,9 +9,9 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -21,20 +21,20 @@ const (
 
 // Part1 solves the first half of the problem.
 func Part1(input [][]uint) (uint, error) {
-	caloryCounts := array.Map(input, accumulate)
-	return array.Best(caloryCounts, fun.Gt[uint]), nil
+	caloryCounts := algo.Map(input, accumulate)
+	return algo.First(caloryCounts, utils.Gt[uint]), nil
 }
 
 // Part2 solves the second half of the problem.
 func Part2(input [][]uint) (uint, error) {
-	caloryCounts := array.Map(input, accumulate)
-	top3 := array.BestN(caloryCounts, 3, fun.Gt[uint])
+	caloryCounts := algo.Map(input, accumulate)
+	top3 := algo.FirstN(caloryCounts, 3, utils.Gt[uint])
 	return accumulate(top3), nil
 }
 
 // accumulate takes a slice and returns the sum of its members.
 func accumulate(arr []uint) uint {
-	return array.Reduce(arr, fun.Add[uint], 0)
+	return algo.Reduce(arr, utils.Add[uint], 0)
 }
 
 /// ---------- Here be boilerplate ------------------

@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -33,19 +33,19 @@ func Part2(monkeys []Monkey) (uint64, error) {
 // Solve solves todays' problem.
 func Solve(monkeys []Monkey, nrounds int, stressDivisor uint64) (uint64, error) {
 	if len(monkeys) < 2 {
-		return 0, errors.New("Need at least two monkeys to play")
+		return 0, errors.New("need at least two monkeys to play")
 	}
 	// Computing everything mod lcd to avoid overflows
 	// lcd: least common multiple of the test values of the monkeys
-	tv := array.Map(monkeys, func(m Monkey) uint64 { return m.TestValue })
-	lcd := fun.LCM(tv[0], tv[1], tv[2:]...)
-	// lcd := array.MapReduce(monkeys, func(m Monkey) uint64 { return m.TestValue }, fun.Mul[uint64], 1)
+	tv := algo.Map(monkeys, func(m Monkey) uint64 { return m.TestValue })
+	lcd := algo.LCM(tv[0], tv[1], tv[2:]...)
+	// lcd := algo.MapReduce(monkeys, func(m Monkey) uint64 { return m.TestValue }, utils.Mul[uint64], 1)
 
 	for i := 0; i < nrounds; i++ {
 		round(monkeys, stressDivisor, lcd)
 	}
 
-	monkeyBusiness := array.BestN(monkeys, 2, func(a, b Monkey) bool { return a.Inspections > b.Inspections })
+	monkeyBusiness := algo.FirstN(monkeys, 2, func(a, b Monkey) bool { return a.Inspections > b.Inspections })
 	return monkeyBusiness[0].Inspections * monkeyBusiness[1].Inspections, nil
 }
 
@@ -95,7 +95,7 @@ type Monkey struct {
 
 func (old Monkey) copy() Monkey {
 	m := old
-	m.Inventory = array.Map(old.Inventory, fun.Identity[uint64])
+	m.Inventory = algo.Map(old.Inventory, utils.Identity[uint64])
 	return m
 }
 
@@ -118,7 +118,7 @@ type problemResult struct {
 // Main is the entry point to today's problem solution.
 func Main(stdout io.Writer) error {
 	input1, err := ParseInput()
-	input2 := array.Map(input1, (Monkey).copy)
+	input2 := algo.Map(input1, (Monkey).copy)
 
 	resultCh := make(chan problemResult)
 	go func() {

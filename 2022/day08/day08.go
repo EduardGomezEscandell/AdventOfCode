@@ -8,10 +8,10 @@ import (
 	"io"
 	"sync"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -27,9 +27,9 @@ func Part1(forest [][]Height) (uint, error) {
 	minHeights := ComputeMinimumHeights(forest)
 
 	// A tree is visible if it is taller than the minimum height in its location
-	visible := array.ZipReduce(forest, minHeights, func(fRow []Height, mhRow []Height) uint {
-		return array.ZipReduce(fRow, mhRow, fun.Gt[Height], fun.Count[uint], 0)
-	}, fun.Add[uint], 0)
+	visible := algo.ZipReduce(forest, minHeights, func(fRow []Height, mhRow []Height) uint {
+		return algo.ZipReduce(fRow, mhRow, utils.Gt[Height], algo.Count[uint], 0)
+	}, utils.Add[uint], 0)
 
 	return visible, nil
 }
@@ -51,14 +51,14 @@ func ComputeMinimumHeights(forest [][]Height) [][]Height {
 	width := len(forest[0])
 
 	// same shape as forest
-	minHeights := array.Generate(depth, func() []Height { return make([]Height, width) })
+	minHeights := algo.Generate(depth, func() []Height { return make([]Height, width) })
 
 	// Left->right scan
 	for r := 0; r < depth; r++ {
 		var acc Height = -1
 		for c := 0; c < width; c++ {
 			minHeights[r][c] = acc
-			acc = fun.Max(acc, forest[r][c])
+			acc = utils.Max(acc, forest[r][c])
 		}
 	}
 
@@ -66,8 +66,8 @@ func ComputeMinimumHeights(forest [][]Height) [][]Height {
 	for r := 0; r < depth; r++ {
 		var acc Height = -1
 		for c := width - 1; c >= 0; c-- {
-			minHeights[r][c] = fun.Min(acc, minHeights[r][c])
-			acc = fun.Max(acc, forest[r][c])
+			minHeights[r][c] = utils.Min(acc, minHeights[r][c])
+			acc = utils.Max(acc, forest[r][c])
 		}
 	}
 
@@ -75,8 +75,8 @@ func ComputeMinimumHeights(forest [][]Height) [][]Height {
 	for c := 0; c < width; c++ {
 		var acc Height = -1
 		for r := 0; r < depth; r++ {
-			minHeights[r][c] = fun.Min(acc, minHeights[r][c])
-			acc = fun.Max(acc, forest[r][c])
+			minHeights[r][c] = utils.Min(acc, minHeights[r][c])
+			acc = utils.Max(acc, forest[r][c])
 		}
 	}
 
@@ -84,8 +84,8 @@ func ComputeMinimumHeights(forest [][]Height) [][]Height {
 	for c := 0; c < width; c++ {
 		var acc Height = -1
 		for r := depth - 1; r >= 0; r-- {
-			minHeights[r][c] = fun.Min(acc, minHeights[r][c])
-			acc = fun.Max(acc, forest[r][c])
+			minHeights[r][c] = utils.Min(acc, minHeights[r][c])
+			acc = utils.Max(acc, forest[r][c])
 		}
 	}
 
@@ -105,7 +105,7 @@ func findBestScenery(forest [][]Height) uint {
 			defer wg.Done()
 			var best uint
 			for j := range forest[i] {
-				best = fun.Max(best, ComputeScenery(forest, i, j))
+				best = utils.Max(best, ComputeScenery(forest, i, j))
 			}
 			ch <- best
 		}()
@@ -116,7 +116,7 @@ func findBestScenery(forest [][]Height) uint {
 		close(ch)
 	}()
 
-	return charray.Best(ch, fun.Gt[uint])
+	return charray.Best(ch, utils.Gt[uint])
 }
 
 // ComputeScenery computes the scenery score for a single location
@@ -206,7 +206,7 @@ func ParseInput() (data [][]Height, err error) {
 
 	for sc.Scan() {
 		line := sc.Text()
-		arr := array.Map([]rune(line), func(r rune) Height { return Height(r - '0') })
+		arr := algo.Map([]rune(line), func(r rune) Height { return Height(r - '0') })
 		data = append(data, arr)
 	}
 

@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/channel"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/algo"
 )
 
 const (
@@ -104,15 +104,15 @@ func (v *vec) sub(w vec) {
 // adjacent indicates if two point vectors are at a taxicab or
 // diagonal distance under 2.
 func (v *vec) adjacent(w vec) bool {
-	return fun.Abs(v.x-w.x) < 2 && fun.Abs(v.y-w.y) < 2
+	return algo.Abs(v.x-w.x) < 2 && algo.Abs(v.y-w.y) < 2
 }
 
 // unit gives a vector pointing in the same direction as the original,
 // with x,y contained in {-1,0,1}.
 func (v vec) unit() vec {
 	return vec{
-		x: fun.Sign(v.x),
-		y: fun.Sign(v.y),
+		x: algo.Sign(v.x),
+		y: algo.Sign(v.y),
 	}
 }
 

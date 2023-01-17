@@ -9,9 +9,9 @@ import (
 	"io"
 	"math"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -55,12 +55,12 @@ func Part2(cubeList []Cube) (int, error) {
 
 	// Generate domain: bounding box +1 unit in all directions.
 	origin := box.min
-	world := array.Generate3D(xspan, yspan, zspan, func() colour { return unpainted })
+	world := algo.Generate3D(xspan, yspan, zspan, func() colour { return unpainted })
 
 	// Two jobs:
 	// - Change of coordinates so domain starts at (0,0,0)
 	// - Paint cubes inside the domain with "inside" colour
-	array.Foreach(cubeList, func(c *Cube) {
+	algo.Foreach(cubeList, func(c *Cube) {
 		c.X -= origin.X
 		c.Y -= origin.Y
 		c.Z -= origin.Z
@@ -187,15 +187,15 @@ type extrema struct {
 // boundingBox returns a bounding box with 1 tile of slack
 // in every direction.
 func boundingBox(c []Cube) extrema {
-	return array.Reduce(c, func(e extrema, c Cube) extrema {
-		e.min.X = fun.Min(e.min.X, c.X-1)
-		e.max.X = fun.Max(e.max.X, c.X+1)
+	return algo.Reduce(c, func(e extrema, c Cube) extrema {
+		e.min.X = utils.Min(e.min.X, c.X-1)
+		e.max.X = utils.Max(e.max.X, c.X+1)
 
-		e.min.Y = fun.Min(e.min.Y, c.Y-1)
-		e.max.Y = fun.Max(e.max.Y, c.Y+1)
+		e.min.Y = utils.Min(e.min.Y, c.Y-1)
+		e.max.Y = utils.Max(e.max.Y, c.Y+1)
 
-		e.min.Z = fun.Min(e.min.Z, c.Z-1)
-		e.max.Z = fun.Max(e.max.Z, c.Z+1)
+		e.min.Z = utils.Min(e.min.Z, c.Z-1)
+		e.max.Z = utils.Max(e.max.Z, c.Z+1)
 
 		return e
 	}, extrema{

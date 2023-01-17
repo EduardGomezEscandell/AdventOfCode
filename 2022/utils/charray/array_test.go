@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/generics"
+	"github.com/EduardGomezEscandell/algo/utils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,7 +18,15 @@ func TestFromArray(t *testing.T) {
 	t.Run("int64", testFromArray[int64])
 }
 
-func testFromArray[T generics.Signed](t *testing.T) { // nolint: thelper
+func TestFromChannel(t *testing.T) {
+	t.Parallel()
+	t.Run("int", testToArray[int])
+	t.Run("int8", testToArray[int8])
+	t.Run("int32", testToArray[int32])
+	t.Run("int64", testToArray[int64])
+}
+
+func testFromArray[T utils.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 
 	const (
@@ -48,7 +56,7 @@ func testFromArray[T generics.Signed](t *testing.T) { // nolint: thelper
 			input := make([]T, len(tc.data))
 			copy(input, tc.data)
 
-			ch := charray.FromArray(ctx, input, tc.capacity)
+			ch := charray.Serialize(ctx, input, tc.capacity)
 
 			// Stopping before starting?
 			if tc.whenCancel == Start {
@@ -87,6 +95,57 @@ func testFromArray[T generics.Signed](t *testing.T) { // nolint: thelper
 			require.False(t, ok, "failed to close channel after consuming the entire array")
 
 			require.Equal(t, tc.data, input, "channel.FromArray has modified the intput array when it shouldn't've.")
+		})
+	}
+}
+
+func testToArray[T utils.Signed](t *testing.T) { // nolint: thelper
+	t.Parallel()
+	testCases := map[string]struct {
+		data     []T
+		maxLen   int
+		capacity int // Should not affect results
+		buffer   int
+	}{
+		"empty":                      {data: []T{}, maxLen: -1, capacity: -1},
+		"empty, extra capacity":      {data: []T{}, maxLen: -1, capacity: 16},
+		"don't read":                 {data: []T{1, 35, -8}, maxLen: 0, capacity: -1},
+		"don't read, extra capacity": {data: []T{1, 35, -8}, maxLen: 0, capacity: 16},
+		"read some":                  {data: []T{0, 64, -8, 118, 99}, maxLen: 3, capacity: -1},
+		"read some, extra capacity":  {data: []T{0, 64, -8, 118, 99}, maxLen: 3, capacity: 16},
+		"read all":                   {data: []T{0, 64, -8, 118, 99}, maxLen: -1, capacity: -1},
+		"read all, extra capacity":   {data: []T{0, 64, -8, 118, 99}, maxLen: -1, capacity: 16},
+		"read all, extra MaxLen":     {data: []T{0, 64, -8, 118, 99}, maxLen: 2 << 61, capacity: -1},
+		// Large number to crash any machine if it is misused as preallocation^^^^^^^
+		"read all, buffered": {data: []T{0, 64, -8, 118, 99}, maxLen: -1, capacity: -1, buffer: 2},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			input := make([]T, len(tc.data))
+			copy(input, tc.data)
+
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+
+			ch := charray.Serialize(ctx, input, tc.buffer)
+
+			var got []T
+			if tc.maxLen >= 0 {
+				got = charray.Deserialize(ch, charray.MaxLen(tc.maxLen))
+				wantLen := utils.Min(tc.maxLen, len(tc.data))
+				require.Equalf(t, wantLen, len(got),
+					"Unexpected length. Should be equal to Min(len(data), maxLen): Min(%d, %d) => %d", len(tc.data), tc.maxLen, wantLen)
+				require.Equal(t, tc.data[:wantLen], got)
+				return
+			}
+			got = charray.Deserialize(ch)
+			wantLen := len(tc.data)
+			require.Equalf(t, wantLen, len(got), "Unexpected length. Should be equal to len(data) => %d", wantLen)
+			require.Equal(t, tc.data, got)
 		})
 	}
 }

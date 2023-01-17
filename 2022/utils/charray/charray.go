@@ -4,9 +4,9 @@
 package charray
 
 import (
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/channel"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 // Map applies function f:T->O element-wise to generate another
@@ -53,7 +53,7 @@ func Generate[O any](len int, cap int, f func() O) <-chan O {
 // Example use: Sum the values
 //
 //	Reduce(in, func(x,y int)int { return x+y }) # Option 1.
-//	Reduce(in, fun.Add[int])                    # Option 2.
+//	Reduce(in, utils.Add[int])                    # Option 2.
 func Reduce[T, O any](in <-chan T, fold func(O, T) O, init O) O {
 	o := init
 	for v := range in {
@@ -67,7 +67,7 @@ func Reduce[T, O any](in <-chan T, fold func(O, T) O, init O) O {
 // equal to the length of the shortest input. The output channel is closed at
 // the end.
 func ZipWith[F, S, O any](first <-chan F, second <-chan S, zip func(F, S) O) <-chan O {
-	out := make(chan O, fun.Max(cap(first), cap(second)))
+	out := make(chan O, utils.Max(cap(first), cap(second)))
 	go func() {
 		defer close(out)
 		defer channel.Exhaust(first)
@@ -113,10 +113,10 @@ func AdjacentMap[I, O any](in <-chan I, f func(I, I) O) <-chan O {
 // Example use: return the maximum value in the list
 //
 //	Best(in, func(x, y int) bool { return x>y })
-//	Best(in, fun.Gt)
+//	Best(in, utils.Gt)
 //
 // Complexity is O(|in|).
-func Best[I any](in <-chan I, isBetter fun.Comparator[I]) (acc I) {
+func Best[I any](in <-chan I, isBetter utils.Comparator[I]) (acc I) {
 	for v := range in {
 		if isBetter(v, acc) {
 			acc = v
@@ -136,10 +136,10 @@ func Best[I any](in <-chan I, isBetter fun.Comparator[I]) (acc I) {
 // Example use: return the 3 largest values in the list
 //
 //	BestN(in, 3, func(x, y int) bool { return x>y })
-//	BestN(in, 3, fun.Gt)
+//	BestN(in, 3, utils.Gt)
 //
 // Complexity is O(n·|in|).
-func BestN[I any](in <-chan I, n uint, isBetter fun.Comparator[I]) []I {
+func BestN[I any](in <-chan I, n uint, comp utils.Comparator[I]) []I {
 	out := make([]I, 0, n)
 	for i := uint(0); i < n; i++ {
 		v, ok := <-in
@@ -148,10 +148,10 @@ func BestN[I any](in <-chan I, n uint, isBetter fun.Comparator[I]) []I {
 		}
 		out = append(out, v)
 	}
-	array.Sort(out, isBetter)
+	algo.Sort(out, comp)
 
 	for v := range in {
-		array.UpdateBestN(n, out, v, isBetter)
+		algo.InsertSorted(n, out, v, comp)
 	}
 
 	return out
@@ -168,8 +168,8 @@ func BestN[I any](in <-chan I, n uint, isBetter fun.Comparator[I]) []I {
 // two lists.
 //
 // Complexity is O(|first| + |second|).
-func Common[T any](first, second <-chan T, comp fun.Comparator[T]) <-chan T {
-	out := make(chan T, fun.Max(cap(first), cap(second)))
+func Common[T any](first, second <-chan T, comp utils.Comparator[T]) <-chan T {
+	out := make(chan T, utils.Max(cap(first), cap(second)))
 	go func() {
 		defer close(out)
 		defer channel.Exhaust(first)
@@ -206,7 +206,7 @@ func Common[T any](first, second <-chan T, comp fun.Comparator[T]) <-chan T {
 // Sorting with < and applying == will work.
 //
 // Complexity is O(|in|).
-func Unique[T any](in <-chan T, equal fun.Comparator[T]) <-chan T {
+func Unique[T any](in <-chan T, equal utils.Comparator[T]) <-chan T {
 	out := make(chan T, cap(in))
 	go func() {
 		defer close(out)
@@ -232,23 +232,23 @@ func Unique[T any](in <-chan T, equal fun.Comparator[T]) <-chan T {
 // Multiplex takes a channel array and produces n channels. Each value read
 // from the input will be sent to the output returned from selection(value).
 func Multiplex[T any](in <-chan T, n int, selection func(T) int) []<-chan T {
-	outs := array.Generate(n, func() chan T { return make(chan T, cap(in)) })
+	outs := algo.Generate(n, func() chan T { return make(chan T, cap(in)) })
 
 	go func() {
 		defer channel.Exhaust(in)
-		defer array.Foreach(outs, func(ch *chan T) { close(*ch) })
+		defer algo.Foreach(outs, func(ch *chan T) { close(*ch) })
 
 		for v := range in {
 			idx := selection(v)
 			outs[idx] <- v
 		}
 	}()
-	return array.Map(outs, channel.ConvertToRecieveOnly[T])
+	return algo.Map(outs, channel.ConvertToRecieveOnly[T])
 }
 
 // Concat concatenates two channeled arrays.
 func Concat[T any](a <-chan T, b <-chan T) <-chan T {
-	out := make(chan T, fun.Max(cap(a), cap(b)))
+	out := make(chan T, utils.Max(cap(a), cap(b)))
 	go func() {
 		defer close(out)
 

@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -34,7 +34,7 @@ func solve(world [][]Cell, path []Instruction, top Topology) (int, error) {
 		return 0, errors.New("empty world")
 	}
 	heading := Right
-	x := array.Find(world[0], Walkable, fun.Eq[Cell])
+	x := algo.Find(world[0], Walkable, utils.Eq[Cell])
 	y := 0
 
 	for idx, instr := range path {
@@ -131,7 +131,7 @@ func advanceHorizontally(world [][]Cell, x, y, d *int, h *Heading, top Topology)
 	}
 
 	begin := *x
-	end := fun.Clamp(-1, (*x)+(*d+1)*dir, len(world[*y]))
+	end := algo.Clamp(-1, (*x)+(*d+1)*dir, len(world[*y]))
 
 	// Find obstruction
 	it := findObstructionH(world, *y, begin, end)
@@ -152,7 +152,7 @@ func advanceHorizontally(world [][]Cell, x, y, d *int, h *Heading, top Topology)
 		*x = wrappedX
 		*y = wrappedY
 		*h = wrappedH
-		*d -= fun.Abs(advance) + 1
+		*d -= algo.Abs(advance) + 1
 		return
 	}
 
@@ -178,7 +178,7 @@ func advanceVertically(world [][]Cell, x, y, d *int, h *Heading, top Topology) {
 	}
 
 	begin := *y
-	end := fun.Clamp(-1, (*y)+(*d+1)*dir, len(world))
+	end := algo.Clamp(-1, (*y)+(*d+1)*dir, len(world))
 
 	// Find obstruction
 	it := findObstructionV(world, *x, begin, end)
@@ -199,7 +199,7 @@ func advanceVertically(world [][]Cell, x, y, d *int, h *Heading, top Topology) {
 		*x = wrappedX
 		*y = wrappedY
 		*h = wrappedH
-		*d -= fun.Abs(advance) + dir
+		*d -= algo.Abs(advance) + dir
 		return
 	}
 
@@ -219,7 +219,7 @@ func advanceVertically(world [][]Cell, x, y, d *int, h *Heading, top Topology) {
 }
 
 func findObstructionH(world [][]Cell, row, begin, end int) (col int) {
-	s := fun.Sign(end - begin)
+	s := algo.Sign(end - begin)
 	col = begin
 	for ; col != end; col += s {
 		if world[row][col] != Walkable {
@@ -230,7 +230,7 @@ func findObstructionH(world [][]Cell, row, begin, end int) (col int) {
 }
 
 func findObstructionV(world [][]Cell, col, begin, end int) (row int) {
-	s := fun.Sign(end - begin)
+	s := algo.Sign(end - begin)
 	row = begin
 	for ; row != end; row += s {
 		if world[row][col] != Walkable {
@@ -322,12 +322,12 @@ func ReadData() ([][]Cell, []Instruction, error) {
 		}
 
 		world = append(world, []Cell(text))
-		maxLen = fun.Max(len(text), maxLen)
+		maxLen = utils.Max(len(text), maxLen)
 	}
 
-	world = array.Map(world, func(line []Cell) []Cell {
+	world = algo.Map(world, func(line []Cell) []Cell {
 		padding := maxLen - len(line)
-		return append(line, array.Generate(padding, func() Cell { return OffWorld })...)
+		return append(line, algo.Generate(padding, func() Cell { return OffWorld })...)
 	})
 
 	// Section 2: path

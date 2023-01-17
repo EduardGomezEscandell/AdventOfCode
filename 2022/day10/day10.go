@@ -9,10 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/channel"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/algo"
 )
 
 const (
@@ -41,13 +40,13 @@ func Part1(in <-chan input.Line) (int, error) {
 
 // Part2 solves the second half of the problem.
 func Part2(in <-chan input.Line) (string, error) {
-	screen := array.Generate(6, func() []rune { return array.Generate(40, func() rune { return ' ' }) })
+	screen := algo.Generate(6, func() []rune { return algo.Generate(40, func() rune { return ' ' }) })
 	cpu := newCPU(in)
 	for !cpu.done {
 		col := cpu.counter % 40
 		row := cpu.counter / 40
 
-		if fun.Abs(cpu.X-col) < 2 {
+		if algo.Abs(cpu.X-col) < 2 {
 			screen[row][col] = '#'
 		}
 
@@ -65,7 +64,7 @@ func Part2(in <-chan input.Line) (string, error) {
 // ------------- Implementation ------------------
 
 func showScreen(screen [][]rune) string {
-	return strings.Join(array.Map(screen, func(r []rune) string { return string(r) }), "\n")
+	return strings.Join(algo.Map(screen, func(r []rune) string { return string(r) }), "\n")
 }
 
 func newCPU(in <-chan input.Line) *cpu {

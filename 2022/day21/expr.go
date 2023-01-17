@@ -5,8 +5,8 @@ import (
 	"math"
 	"strings"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 type operator int
@@ -39,7 +39,7 @@ const (
 )
 
 func (ex expr) String() string {
-	operands := array.Map(ex.children, func(ch *expr) string { return ch.String() })
+	operands := algo.Map(ex.children, func(ch *expr) string { return ch.String() })
 
 	switch ex.op {
 	case constant:
@@ -75,13 +75,13 @@ func eval(ex *expr, store bool, replace *int64) (v float64) {
 			return 0
 		}
 	case add:
-		v = array.MapReduce(ex.children, func(ch *expr) float64 { return eval(ch, store, replace) }, fun.Add[float64], 0)
+		v = algo.MapReduce(ex.children, func(ch *expr) float64 { return eval(ch, store, replace) }, utils.Add[float64], 0)
 	case sub:
 		x := eval(ex.children[0], store, replace)
 		y := eval(ex.children[1], store, replace)
 		v = x - y
 	case mul:
-		v = array.MapReduce(ex.children, func(ch *expr) float64 { return eval(ch, store, replace) }, fun.Mul[float64], 1)
+		v = algo.MapReduce(ex.children, func(ch *expr) float64 { return eval(ch, store, replace) }, utils.Mul[float64], 1)
 	case div:
 		x := eval(ex.children[0], store, replace)
 		y := eval(ex.children[1], store, replace)
@@ -108,7 +108,7 @@ func simplify(ex *expr) {
 	if len(ex.children) == 0 {
 		return
 	}
-	array.Foreach(ex.children, func(ch **expr) { simplify(*ch) })
+	algo.Foreach(ex.children, func(ch **expr) { simplify(*ch) })
 
 	// If they all contain direct values, we operate
 	tryOperate(ex)
@@ -137,7 +137,7 @@ func tryOptimizeMult(ex *expr) {
 	}
 
 	// Simplifying multiplication by zero: *(4,0,6,...) -> 0
-	anyZero := array.MapReduce(ex.children, func(ch *expr) bool { return ch.op == constant && ch.value == 0 }, fun.Or, false)
+	anyZero := algo.MapReduce(ex.children, func(ch *expr) bool { return ch.op == constant && ch.value == 0 }, utils.Or, false)
 	if anyZero {
 		ex.op = constant
 		ex.value = 0
@@ -146,7 +146,7 @@ func tryOptimizeMult(ex *expr) {
 	}
 
 	// Removing identity element: *(3,1,5) -> *(3,5)
-	k := array.Partition(ex.children, func(ch *expr) bool { return ch.op != constant || ch.value != 1 })
+	k := algo.Partition(ex.children, func(ch *expr) bool { return ch.op != constant || ch.value != 1 })
 	ex.children = ex.children[:k]
 
 	// Simplifying Unary multiplication: *(3) -> 3.
@@ -170,7 +170,7 @@ func tryOptimizeAdd(ex *expr) {
 	}
 
 	// Removing identity element: +(3,0,5) -> +(3,5)
-	k := array.Partition(ex.children, func(ch *expr) bool { return ch.op != constant || ch.value != 0 })
+	k := algo.Partition(ex.children, func(ch *expr) bool { return ch.op != constant || ch.value != 0 })
 	ex.children = ex.children[:k]
 
 	// Simplifying Unary addition: +(3) -> 3.
@@ -226,7 +226,7 @@ func tryOptimizeSub(ex *expr) {
 // tryOperate replaces a subtree with is equivalent value when
 // all its children are constants.
 func tryOperate(ex *expr) {
-	if !array.MapReduce(ex.children, func(ch *expr) bool { return ch.op == constant }, fun.And, true) {
+	if !algo.MapReduce(ex.children, func(ch *expr) bool { return ch.op == constant }, utils.And, true) {
 		return
 	}
 	eval(ex, true, nil)
@@ -248,11 +248,11 @@ func tryInvertSubtraction(ex *expr) {
 // - etc.
 // operator ⨯ must be commutative and associative for this to make sense.
 func tryCombineCommutative(ex *expr, op operator) {
-	if ex.op != op || !array.MapReduce(ex.children, func(ch *expr) bool { return ch.op == op || ch.op == constant }, fun.And, true) {
+	if ex.op != op || !algo.MapReduce(ex.children, func(ch *expr) bool { return ch.op == op || ch.op == constant }, utils.And, true) {
 		return
 	}
 	newFamily := make([]*expr, 0)
-	array.Foreach(ex.children, func(ch **expr) {
+	algo.Foreach(ex.children, func(ch **expr) {
 		if (*ch).op == constant {
 			newFamily = append(newFamily, *ch)
 		} else {
@@ -261,7 +261,7 @@ func tryCombineCommutative(ex *expr, op operator) {
 	})
 
 	// We group all direct values together
-	p := array.Partition(newFamily, func(a *expr) bool { return a.op == constant })
+	p := algo.Partition(newFamily, func(a *expr) bool { return a.op == constant })
 	if p < 2 {
 		return
 	}
@@ -281,7 +281,7 @@ func tryDistributeMul(ex *expr) {
 		return
 	}
 
-	array.Sort(ex.children, func(a, b *expr) bool { return a.op < b.op })
+	algo.Sort(ex.children, func(a, b *expr) bool { return a.op < b.op })
 	if ex.children[0].op != constant {
 		return
 	}
@@ -293,7 +293,7 @@ func tryDistributeMul(ex *expr) {
 	a := ex.children[1].children
 
 	ex.op = add
-	ex.children = array.Map(a, func(ai *expr) *expr {
+	ex.children = algo.Map(a, func(ai *expr) *expr {
 		e := &expr{
 			op:       mul,
 			children: []*expr{k, ai},
@@ -321,7 +321,7 @@ func tryDistributeDiv(ex *expr) {
 	k := ex.children[1]
 
 	ex.op = add
-	ex.children = array.Map(a, func(ai *expr) *expr {
+	ex.children = algo.Map(a, func(ai *expr) *expr {
 		e := &expr{
 			op:       div,
 			children: []*expr{ai, k},

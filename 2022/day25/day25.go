@@ -8,9 +8,9 @@ import (
 	"io"
 	"math"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 
 // Part1 solves the first half of today's problem.
 func Part1(data []string) (string, error) {
-	num := array.MapReduce(data, snafuDecode, fun.Add[int], 0)
+	num := algo.MapReduce(data, snafuDecode, utils.Add[int], 0)
 	return snafuEncode(num), nil
 }
 
@@ -55,7 +55,7 @@ func snafuDecode(s string) int {
 
 func snafuEncode(num int) string {
 	maxLen := log5(num) + 2 // +1 for integer rounding and +1 to make room for a possible (1-) or (1=)
-	snafu := array.Generate(maxLen, func() rune { return '0' })
+	snafu := algo.Generate(maxLen, func() rune { return '0' })
 
 	for idx := len(snafu) - 1; num > 0; idx-- {
 		d := num % 5
@@ -78,7 +78,7 @@ func snafuEncode(num int) string {
 	}
 
 	// Removing leading zeros
-	begin := array.FindIf(snafu, func(r rune) bool { return r != '0' })
+	begin := algo.FindIf(snafu, func(r rune) bool { return r != '0' })
 	return string(snafu[begin:])
 }
 

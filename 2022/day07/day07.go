@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -60,7 +60,7 @@ func addSmallDirectories(root *fsNode) size {
 	ch := make(chan size)
 	var wg sync.WaitGroup
 
-	array.Foreach(root.Children, func(child **fsNode) {
+	algo.Foreach(root.Children, func(child **fsNode) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -72,7 +72,7 @@ func addSmallDirectories(root *fsNode) size {
 		wg.Wait()
 		close(ch)
 	}()
-	children := charray.Reduce(ch, fun.Add[size], 0)
+	children := charray.Reduce(ch, utils.Add[size], 0)
 	if root.Data.Size > 100_000 {
 		return children
 	}

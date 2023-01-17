@@ -4,15 +4,14 @@ package day24
 import (
 	"bufio"
 	"bytes"
-	"container/heap"
 	"errors"
 	"fmt"
 	"io"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/myheap"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/dstruct"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -117,17 +116,17 @@ func newWorldInfo(world [][]rune) (*worldInfo, error) {
 
 	wi.entrance = location{
 		row: 0,
-		col: array.Find(world[0], '.', fun.Eq[rune]),
+		col: algo.Find(world[0], '.', utils.Eq[rune]),
 	}
 
 	wi.exit = location{
 		row: len(world) - 1,
-		col: array.Find(world[len(world)-1], '.', fun.Eq[rune]),
+		col: algo.Find(world[len(world)-1], '.', utils.Eq[rune]),
 	}
 
 	wi.bestEpoch = map[state]int{}
 
-	wi.period = fun.LCM(wi.width-2, wi.height-2) // -2: The walls are outside the cycle
+	wi.period = algo.LCM(wi.width-2, wi.height-2) // -2: The walls are outside the cycle
 	wi.snapshots = make([]snapshot, wi.period)
 
 	for idx := range wi.snapshots {
@@ -145,7 +144,7 @@ func newWorldInfo(world [][]rune) (*worldInfo, error) {
 // Note that if the world period is n, then {turn, turn+n, turn+2n, ...} will all
 // have the same snapshot.
 func getSnapshot(world [][]rune, turn int) (snapshot, error) {
-	snapshot := array.Generate2D(len(world), len(world[0]), func() cell { return free })
+	snapshot := algo.Generate2D(len(world), len(world[0]), func() cell { return free })
 
 	height := uint(len(world))
 	width := uint(len(world[0]))
@@ -191,17 +190,17 @@ func aStarSearch(wi *worldInfo, startTime int) (int, error) {
 		time:     startTime,
 	}
 
-	queue := myheap.New(func(a, b state) bool { return aStarHeuristic(wi, a, b) })
-	heap.Push(queue, start)
+	queue := dstruct.NewHeap(func(a, b state) bool { return aStarHeuristic(wi, a, b) })
+	queue.Push(start)
 
 	for queue.Len() > 0 {
-		curr := heap.Pop(queue).(state) //nolint:forcetypeassert // We only push state objects to the heap
+		curr := queue.Pop()
 		finished, cont := exploreNode(wi, curr)
 		if finished {
 			return curr.time, nil
 		}
 		for _, c := range cont {
-			heap.Push(queue, c)
+			queue.Push(c)
 		}
 	}
 
@@ -326,7 +325,7 @@ func stateIsValidAndNovel(wi *worldInfo, s state) bool {
 
 // manhattan distance, taxicab distance, L1 norm, whatever you want to call it.
 func manhattan(from, to location) int {
-	return fun.Abs(from.row-to.row) + fun.Abs(from.col-to.col)
+	return algo.Abs(from.row-to.row) + algo.Abs(from.col-to.col)
 }
 
 func positiveMod(x int, n uint) int {

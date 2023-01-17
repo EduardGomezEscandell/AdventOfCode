@@ -1,11 +1,13 @@
 package day16
 
-import "github.com/EduardGomezEscandell/AdventOfCode/2022/utils/lrucache"
+import (
+	"github.com/EduardGomezEscandell/algo/dstruct"
+)
 
 type prunningTool struct {
 	bestRemaining []Score
 	bestScore     Score
-	cache         *lrucache.LruCache[worldState, Score]
+	cache         *dstruct.LruCache[worldState, Score]
 }
 
 type worldState struct {
@@ -17,7 +19,7 @@ type worldState struct {
 func newPrunningTool(world []Valve, time int, elephantsAllowed bool) *prunningTool {
 	return &prunningTool{
 		bestRemaining: bestRemainingScore(world, time, elephantsAllowed),
-		cache:         lrucache.New[worldState, Score](10_000_000),
+		cache:         dstruct.NewLRU[worldState, Score](10_000_000),
 	}
 }
 

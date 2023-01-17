@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/day05"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/testutils"
+	"github.com/EduardGomezEscandell/algo/algo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -39,15 +39,15 @@ func TestParseInitalState(t *testing.T) {
 		{'P'},
 	}
 
-	lines := array.Map(example, input.NewLine)
+	lines := algo.Map(example, input.NewLine)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	ch := charray.FromArray(ctx, lines, 0)
+	ch := charray.Serialize(ctx, lines, 0)
 	gotstacks, err := day05.ParseInitalState(ch)
 	require.NoError(t, err)
 
-	internalData := array.Map(gotstacks, func(s day05.Stack) []rune { return s.Data() })
+	internalData := algo.Map(gotstacks, func(s day05.Stack) []rune { return s.Data() })
 	require.Equal(t, want, internalData)
 }
 
@@ -84,11 +84,11 @@ func TestSolve(t *testing.T) {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			lines := array.Map(tc.data, input.NewLine)
+			lines := algo.Map(tc.data, input.NewLine)
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
-			ch := charray.FromArray(ctx, lines, 0)
+			ch := charray.Serialize(ctx, lines, 0)
 			got, err := day05.Solve(ch, tc.crane)
 
 			require.NoError(t, err)

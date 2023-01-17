@@ -9,11 +9,11 @@ import (
 	"io"
 	"math"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/lrucache"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/dstruct"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -33,12 +33,12 @@ func Part1(blueprints []Blueprint) uint {
 		}()
 	}
 	r := charray.Take(ch, len(blueprints))
-	return charray.Reduce(r, fun.Add[uint], 0)
+	return charray.Reduce(r, utils.Add[uint], 0)
 }
 
 // Part2 solves the second half of today's problem.
 func Part2(blueprints []Blueprint) uint {
-	N := fun.Min(3, len(blueprints))
+	N := utils.Min(3, len(blueprints))
 	blueprints = blueprints[:N]
 
 	ch := make(chan uint)
@@ -51,7 +51,7 @@ func Part2(blueprints []Blueprint) uint {
 		}()
 	}
 	r := charray.Take(ch, N)
-	return charray.Reduce(r, fun.Mul[uint], 1)
+	return charray.Reduce(r, utils.Mul[uint], 1)
 }
 
 // ------------ Implementation ---------------------
@@ -108,7 +108,7 @@ func SolveBlueprint(bp Blueprint, time uint) uint {
 	s.inv.harvester[Ore] = 1
 
 	var best uint
-	cache := lrucache.New[state, struct{}](3_000 * int(time))
+	cache := dstruct.NewLRU[state, struct{}](3_000 * int(time))
 	dfs(bp, s, &best, cache)
 	return best
 }
@@ -116,8 +116,8 @@ func SolveBlueprint(bp Blueprint, time uint) uint {
 // dfs is a greedy depth-first search that explores all possible actions with a given
 // blueprint, inventory and time. It prunes based on caching results and on impossibility
 // of improving over the current best result.
-func dfs(bp Blueprint, s state, best *uint, cache *lrucache.LruCache[state, struct{}]) {
-	*best = fun.Max(*best, s.inv.currency[Geode])
+func dfs(bp Blueprint, s state, best *uint, cache *dstruct.LruCache[state, struct{}]) {
+	*best = utils.Max(*best, s.inv.currency[Geode])
 
 	if s.time == 0 {
 		return
@@ -138,7 +138,7 @@ func dfs(bp Blueprint, s state, best *uint, cache *lrucache.LruCache[state, stru
 
 	// Exploring continuations
 	cont := []state{}
-	for _, mach := range array.Reverse(machines[:]) {
+	for _, mach := range algo.Reverse(machines[:]) {
 		w := waitNeeded(bp, s.inv, mach) + 1 // It takes one minute to build the machine
 		if s.time < w {
 			continue
@@ -155,7 +155,7 @@ func dfs(bp Blueprint, s state, best *uint, cache *lrucache.LruCache[state, stru
 	}
 
 	// We are greedy with resources to establish a high "best" in order to prune better.
-	array.Sort(cont, func(a, b state) bool {
+	algo.Sort(cont, func(a, b state) bool {
 		for material := Geode; material >= 0; material-- {
 			if a.inv.harvester[material] != b.inv.harvester[material] {
 				return a.inv.harvester[material] > b.inv.harvester[material]
@@ -168,7 +168,7 @@ func dfs(bp Blueprint, s state, best *uint, cache *lrucache.LruCache[state, stru
 	})
 
 	// Recursing
-	array.Foreach(cont, func(s *state) {
+	algo.Foreach(cont, func(s *state) {
 		dfs(bp, *s, best, cache)
 	})
 
@@ -180,14 +180,14 @@ func dfs(bp Blueprint, s state, best *uint, cache *lrucache.LruCache[state, stru
 
 // waitNeeded computes how much time is needed to be able to afford a machine.
 func waitNeeded(bp Blueprint, inv inventory, machine Machine) uint {
-	shortage := array.ZipWith(inv.currency[:], bp.Costs[machine][:], func(have, need uint) uint {
+	shortage := algo.ZipWith(inv.currency[:], bp.Costs[machine][:], func(have, need uint) uint {
 		if need < have {
 			return 0
 		}
 		return need - have
 	})
 
-	return array.ZipReduce(inv.harvester[:], shortage, func(growth, target uint) uint {
+	return algo.ZipReduce(inv.harvester[:], shortage, func(growth, target uint) uint {
 		if target == 0 {
 			return 0
 		}
@@ -195,7 +195,7 @@ func waitNeeded(bp Blueprint, inv inventory, machine Machine) uint {
 			return math.MaxInt // aka forever
 		}
 		return (target-1)/growth + 1 // Rounded up
-	}, fun.Max[uint], 0)
+	}, utils.Max[uint], 0)
 }
 
 // wait reduces the time left and increases the resources accordingly.

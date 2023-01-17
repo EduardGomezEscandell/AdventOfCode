@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/day22"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/testutils"
+	"github.com/EduardGomezEscandell/algo/algo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -40,7 +40,7 @@ func transpose[T any](t [][]T) [][]T {
 		return [][]T{}
 	}
 
-	u := array.Generate(len(t[0]), func() []T { return make([]T, len(t)) })
+	u := algo.Generate(len(t[0]), func() []T { return make([]T, len(t)) })
 
 	for i := range t {
 		for j := range t[i] {
@@ -154,7 +154,7 @@ func TestAdvance(t *testing.T) {
 			t.Parallel()
 
 			// Mirroring world
-			world := array.Map(tc.world, array.Reverse[Cell])
+			world := algo.Map(tc.world, algo.Reverse[Cell])
 			d := int(tc.d)
 			y := int(tc.y)
 			x := len(world[y]) - int(tc.x) - 1
@@ -200,7 +200,7 @@ func TestAdvance(t *testing.T) {
 
 			// Transposing and mirroring test case
 			world := transpose(tc.world)
-			world = array.Reverse(world)
+			world = algo.Reverse(world)
 			d := int(tc.d)
 			x := int(tc.y)
 			y := len(world) - int(tc.x) - 1

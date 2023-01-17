@@ -9,9 +9,9 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -43,7 +43,7 @@ func Main(stdout io.Writer) error {
 
 // Part1 solves the first half of the problem.
 func Part1(inp []uint) (uint, error) {
-	return array.AdjacentReduce(inp, fun.Lt[uint], fun.Count[uint]), nil
+	return algo.AdjacentReduce(inp, utils.Lt[uint], algo.Count[uint]), nil
 }
 
 // Part2 solves the second half of the problem.
@@ -53,7 +53,7 @@ func Part2(inp []uint) (uint, error) {
 	}
 
 	count := uint(0)
-	curr := array.Reduce(inp[0:3], fun.Add[uint], 0)
+	curr := algo.Reduce(inp[0:3], utils.Add[uint], 0)
 	for i := 3; i < len(inp); i++ {
 		prev := curr
 		curr = prev - inp[i-3] + inp[i]

@@ -10,10 +10,10 @@ import (
 	"math"
 	"strings"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/lrucache"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/dstruct"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -45,7 +45,7 @@ func Solve(winds []int8, nrocks Long) (Long, error) {
 	// State cache. We'll use this to detect cycles.
 	// We only fill it with small states (i.e. at most 4 rows)
 	// so we don't need the cache to be massive.
-	lru := lrucache.New[state, progress](100)
+	lru := dstruct.NewLRU[state, progress](100)
 
 	prog := progress{
 		y: 0,
@@ -89,7 +89,7 @@ func Solve(winds []int8, nrocks Long) (Long, error) {
 		}
 
 		// Updating maximum y coordinate
-		prog.y = fun.Max(prog.y, Long(y+rocks[rockID].height)+yOffset)
+		prog.y = utils.Max(prog.y, Long(y+rocks[rockID].height)+yOffset)
 		yOffset += Long(droppedRows)
 
 		// Seeing if we've had the same state before, but only consider
@@ -290,10 +290,10 @@ func prettyPrint(world []byte, r rock, X, Y int) string { // nolint: unused
 		}
 	}
 
-	floor := array.Generate(7, func() byte { return '=' })
-	s = append(array.Reverse(s), floor)
+	floor := algo.Generate(7, func() byte { return '=' })
+	s = append(algo.Reverse(s), floor)
 
-	return strings.Join(array.Map(s, func(b []byte) string { return string(b) }), "\n") + "\n"
+	return strings.Join(algo.Map(s, func(b []byte) string { return string(b) }), "\n") + "\n"
 }
 
 // ---------- Here be boilerplate ------------------
@@ -339,7 +339,7 @@ func ReadData() ([]int8, error) {
 	var input []int8
 	if sc.Scan() {
 		var err error
-		input = array.Map([]byte(sc.Text()), func(r byte) int8 {
+		input = algo.Map([]byte(sc.Text()), func(r byte) int8 {
 			switch r {
 			case '<':
 				return -1

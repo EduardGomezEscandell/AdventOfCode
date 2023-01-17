@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/channel"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/generics"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,7 +20,7 @@ func TestSplit(t *testing.T) {
 	t.Run("int64", testSplit[int64])
 }
 
-func testSplit[T generics.Signed](t *testing.T) { // nolint: thelper
+func testSplit[T utils.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 	testCases := map[string]struct {
 		data      []T
@@ -40,13 +40,13 @@ func testSplit[T generics.Signed](t *testing.T) { // nolint: thelper
 		t.Run(name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
-			input := charray.FromArray(ctx, tc.data, tc.buffer)
+			input := charray.Serialize(ctx, tc.data, tc.buffer)
 
 			chans := channel.Split(ctx, input, tc.nChannels)
 			require.Equal(t, tc.nChannels, len(chans))
 
 			for i, want := range tc.data {
-				received := array.Map(chans, channel.RecvOk[T])
+				received := algo.Map(chans, channel.RecvOk[T])
 				for chID, recv := range received {
 					require.True(t, recv.Ok, "Unexpectedly closed channel #%d after iteration #%d", chID, i)
 					require.Equalf(t, want, recv.V, "Mismatch between expected values for channel #%d after iteration #%d", chID, i)
