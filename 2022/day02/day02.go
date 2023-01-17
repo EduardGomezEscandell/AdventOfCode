@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -19,12 +19,12 @@ const (
 
 // Part1 solves the first half of the problem.
 func Part1(input []Round) (uint, error) {
-	return array.MapReduce(input, (Round).ScoreP1, fun.Add[uint], 0), nil
+	return algo.MapReduce(input, (Round).ScoreP1, utils.Add[uint], 0), nil
 }
 
 // Part2 solves the second half of the problem.
 func Part2(input []Round) (uint, error) {
-	return array.MapReduce(input, (Round).ScoreP2, fun.Add[uint], 0), nil
+	return algo.MapReduce(input, (Round).ScoreP2, utils.Add[uint], 0), nil
 }
 
 // ---------------- Implementation -----------------------

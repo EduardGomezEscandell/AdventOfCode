@@ -5,13 +5,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/channel"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/stack"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/tree"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/dstruct"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 // Filesystem is a tree of file descriptors. It mocks a drive's filesystem.
@@ -50,7 +50,7 @@ func ParseFilesystem(input <-chan input.Line) (Filesystem, error) {
 
 // path is a stack of nested file descriptors. It represents the route to
 // get from the root to a particular file.
-type path = stack.Stack[*fsNode]
+type path = dstruct.Stack[*fsNode]
 
 // FsToStrig represents the filesystem as a list. Items are indented to
 // show their nesting.
@@ -65,7 +65,7 @@ func fsNodeToString(fn fsNode, indent string) string {
 		return fmt.Sprintf("%s- %s (file, size=%d)", indent, fn.Data.Name, fn.Data.Size)
 	}
 	s := fmt.Sprintf("%s- %s (dir)", indent, fn.Data.Name)
-	children := strings.Join(array.Map(fn.Children, func(child *fsNode) string { return fsNodeToString(*child, indent+"  ") }), "\n")
+	children := strings.Join(algo.Map(fn.Children, func(child *fsNode) string { return fsNodeToString(*child, indent+"  ") }), "\n")
 	if len(children) == 0 {
 		return s
 	}
@@ -75,7 +75,7 @@ func fsNodeToString(fn fsNode, indent string) string {
 // getChild finds if there is a child file with the specified name, and returns its
 // index. Returns -1 if it is not found.
 func getChild(dir fsNode, filename string) int {
-	return array.FindIf(dir.Children, func(f *fsNode) bool { return f.Data.Name == filename })
+	return algo.FindIf(dir.Children, func(f *fsNode) bool { return f.Data.Name == filename })
 }
 
 // mkdir creates a new directory with the specified name in the current working
@@ -166,7 +166,7 @@ func computeDirectorySizes(root *fsNode) size {
 	ch := make(chan size)
 	var wg sync.WaitGroup
 
-	array.Foreach(root.Children, func(child **fsNode) {
+	algo.Foreach(root.Children, func(child **fsNode) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -179,6 +179,6 @@ func computeDirectorySizes(root *fsNode) size {
 		close(ch)
 	}()
 
-	root.Data.Size = charray.Reduce(ch, fun.Add[size], 0)
+	root.Data.Size = charray.Reduce(ch, utils.Add[size], 0)
 	return root.Data.Size
 }

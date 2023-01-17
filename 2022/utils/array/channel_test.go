@@ -7,8 +7,7 @@ import (
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/generics"
+	"github.com/EduardGomezEscandell/algo/utils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,7 +18,7 @@ func TestFromChannel(t *testing.T) {
 	t.Run("int32", testFromChannel[int32])
 	t.Run("int64", testFromChannel[int64])
 }
-func testFromChannel[T generics.Signed](t *testing.T) { // nolint: thelper
+func testFromChannel[T utils.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 	testCases := map[string]struct {
 		data     []T
@@ -56,7 +55,7 @@ func testFromChannel[T generics.Signed](t *testing.T) { // nolint: thelper
 			var got []T
 			if tc.maxLen >= 0 {
 				got = array.FromChannel(ch, array.MaxLen(tc.maxLen))
-				wantLen := fun.Min(tc.maxLen, len(tc.data))
+				wantLen := utils.Min(tc.maxLen, len(tc.data))
 				require.Equalf(t, wantLen, len(got),
 					"Unexpected length. Should be equal to Min(len(data), maxLen): Min(%d, %d) => %d", len(tc.data), tc.maxLen, wantLen)
 				require.Equal(t, tc.data[:wantLen], got)

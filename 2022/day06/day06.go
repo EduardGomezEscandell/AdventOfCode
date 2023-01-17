@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -39,8 +39,8 @@ func solve(data []byte, n int) (int, error) {
 		window[0] = v
 		copy(window[1:], prev)
 		// Sorting window and finding consecutive identical pairs
-		array.Sort(window, fun.Lt[byte])
-		repeats := array.AdjacentReduce(window, fun.Eq[byte], fun.Count[byte])
+		algo.Sort(window, utils.Lt[byte])
+		repeats := algo.AdjacentReduce(window, utils.Eq[byte], algo.Count[byte])
 		// If no repeats, we're done
 		if repeats == 0 {
 			return i + n, nil

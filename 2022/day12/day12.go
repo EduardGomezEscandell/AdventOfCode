@@ -4,15 +4,14 @@ package day12
 import (
 	"bufio"
 	"bytes"
-	"container/heap"
 	"errors"
 	"fmt"
 	"io"
 	"math"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/myheap"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/dstruct"
 )
 
 const (
@@ -26,7 +25,7 @@ func Part1(world [][]uint8) (int, error) {
 		return 0, errors.New("empty world")
 	}
 
-	cost := array.Map(world, func(row []uint8) []int { return array.Map(row, func(uint8) int { return math.MaxInt }) })
+	cost := algo.Map(world, func(row []uint8) []int { return algo.Map(row, func(uint8) int { return math.MaxInt }) })
 
 	// We start at the S cell
 	start := findCell(world, 'S')
@@ -38,14 +37,14 @@ func Part1(world [][]uint8) (int, error) {
 	world[end.i][end.j] = 'z'
 
 	// Dijkstra time!
-	candidates := myheap.New(func(a, b idx) bool { return cost[a.i][a.j] < cost[b.i][b.j] })
+	candidates := dstruct.NewHeap(func(a, b idx) bool { return cost[a.i][a.j] < cost[b.i][b.j] })
 	allowed := func(jump int) bool { return jump < 2 }
 	visit(world, cost, candidates, allowed, start)
 	for i := 0; candidates.Len() != 0; i++ {
 		if i > len(world)*len(world[0]) {
 			break
 		}
-		best := heap.Pop(candidates).(idx) // nolint: forcetypeassert
+		best := candidates.Pop()
 		if best == end {
 			return cost[best.i][best.j], nil
 		}
@@ -60,7 +59,7 @@ func Part2(world [][]uint8) (int, error) {
 		return 0, errors.New("empty world")
 	}
 
-	cost := array.Map(world, func(row []uint8) []int { return array.Map(row, func(uint8) int { return math.MaxInt }) })
+	cost := algo.Map(world, func(row []uint8) []int { return algo.Map(row, func(uint8) int { return math.MaxInt }) })
 
 	// S cell is just like any other 'a' cell now
 	s := findCell(world, 'S')
@@ -72,11 +71,11 @@ func Part2(world [][]uint8) (int, error) {
 	cost[start.i][start.j] = 0
 
 	// Dijkstra time!
-	candidates := myheap.New(func(a, b idx) bool { return cost[a.i][a.j] < cost[b.i][b.j] })
+	candidates := dstruct.NewHeap(func(a, b idx) bool { return cost[a.i][a.j] < cost[b.i][b.j] })
 	allowed := func(jump int) bool { return jump > -2 }
 	visit(world, cost, candidates, allowed, start)
 	for candidates.Len() != 0 {
-		best := heap.Pop(candidates).(idx) // nolint: forcetypeassert
+		best := candidates.Pop()
 		if world[best.i][best.j] == 'a' {
 			return cost[best.i][best.j], nil
 		}
@@ -86,7 +85,7 @@ func Part2(world [][]uint8) (int, error) {
 }
 
 // ---------- Implementation ------------------.
-func visit(world [][]uint8, cost [][]int, candidates *myheap.Heap[idx], allowed func(int) bool, at idx) {
+func visit(world [][]uint8, cost [][]int, candidates dstruct.Heap[idx], allowed func(int) bool, at idx) {
 	if at.i > 0 {
 		to := idx{at.i - 1, at.j}
 		consider(world, cost, candidates, allowed, at, to)
@@ -108,7 +107,7 @@ func visit(world [][]uint8, cost [][]int, candidates *myheap.Heap[idx], allowed 
 	}
 }
 
-func consider(world [][]uint8, cost [][]int, candidates *myheap.Heap[idx], allowed func(int) bool, from, to idx) {
+func consider(world [][]uint8, cost [][]int, candidates dstruct.Heap[idx], allowed func(int) bool, from, to idx) {
 	climb := int(world[to.i][to.j]) - int(world[from.i][from.j])
 	if !allowed(climb) {
 		return
@@ -116,7 +115,7 @@ func consider(world [][]uint8, cost [][]int, candidates *myheap.Heap[idx], allow
 	c := cost[from.i][from.j] + 1
 	// This only works because all edge costs are the same!
 	if c < cost[to.i][to.j] {
-		heap.Push(candidates, to)
+		candidates.Push(to)
 		cost[to.i][to.j] = c
 	}
 }

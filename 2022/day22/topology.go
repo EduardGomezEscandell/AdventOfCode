@@ -3,8 +3,8 @@ package day22
 import (
 	"fmt"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 // Topology implements the criterion used to decide what to
@@ -80,7 +80,7 @@ func (topo Cubic) wrap(row, col int, heading Heading) (r, c int, h Heading) {
 	// First: identify which cube we're in
 	R := row / topo.faceSize
 	C := col / topo.faceSize
-	it := array.FindIf(topo.faces[:], func(f face) bool { return f.row == R && f.col == C })
+	it := algo.FindIf(topo.faces[:], func(f face) bool { return f.row == R && f.col == C })
 	if it == -1 {
 		panic(fmt.Errorf("cell %dx%d is outside of the cube", row, col))
 	}
@@ -143,7 +143,7 @@ func newCubicTopology(world [][]Cell, faceSize int) Cubic {
 
 	// Generating cube
 	topology := Cubic{faceSize: faceSize}
-	topology.faces[0] = face{top: Up, row: 0, col: array.FindIf(filled[0][:], fun.Identity[bool]), init: true}
+	topology.faces[0] = face{top: Up, row: 0, col: algo.FindIf(filled[0][:], utils.Identity[bool]), init: true}
 	parseFaces(filled, 0, &topology.faces)
 
 	return topology

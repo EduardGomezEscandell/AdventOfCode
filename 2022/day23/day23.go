@@ -10,8 +10,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -106,10 +106,10 @@ func newBoundingBox(world map[Location]Elf) boundingBox {
 	}
 
 	for loc := range world {
-		b.minRow = fun.Min(b.minRow, loc.Row)
-		b.maxRow = fun.Max(b.maxRow, loc.Row)
-		b.minCol = fun.Min(b.minCol, loc.Col)
-		b.maxCol = fun.Max(b.maxCol, loc.Col)
+		b.minRow = utils.Min(b.minRow, loc.Row)
+		b.maxRow = utils.Max(b.maxRow, loc.Row)
+		b.minCol = utils.Min(b.minCol, loc.Col)
+		b.maxCol = utils.Max(b.maxCol, loc.Col)
 	}
 
 	return b

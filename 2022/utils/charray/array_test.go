@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/generics"
+	"github.com/EduardGomezEscandell/algo/utils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,7 +18,7 @@ func TestFromArray(t *testing.T) {
 	t.Run("int64", testFromArray[int64])
 }
 
-func testFromArray[T generics.Signed](t *testing.T) { // nolint: thelper
+func testFromArray[T utils.Signed](t *testing.T) { // nolint: thelper
 	t.Parallel()
 
 	const (

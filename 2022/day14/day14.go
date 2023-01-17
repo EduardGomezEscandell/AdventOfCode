@@ -9,9 +9,9 @@ import (
 	"io"
 	"strings"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -147,12 +147,12 @@ func AssembleWorld(segments [][2]Location, sourceX int) (world [][]Cell, Xoffset
 	}
 
 	// Finding extrema
-	b := array.Reduce(segments, func(b box, segment [2]Location) box {
+	b := algo.Reduce(segments, func(b box, segment [2]Location) box {
 		// Exploiting fact that segments go from small to big
-		b.MinX = fun.Min(b.MinX, segment[0].X)
-		b.MinY = fun.Min(b.MinY, segment[0].Y)
-		b.MaxX = fun.Max(b.MaxX, segment[1].X)
-		b.MaxY = fun.Max(b.MaxY, segment[1].Y)
+		b.MinX = utils.Min(b.MinX, segment[0].X)
+		b.MinY = utils.Min(b.MinY, segment[0].Y)
+		b.MaxX = utils.Max(b.MaxX, segment[1].X)
+		b.MaxY = utils.Max(b.MaxY, segment[1].Y)
 		return b
 	}, box{MinX: sourceX, MaxX: sourceX, MinY: 0, MaxY: 0}) // {sourceX, 0} must be contained
 
@@ -165,16 +165,16 @@ func AssembleWorld(segments [][2]Location, sourceX int) (world [][]Cell, Xoffset
 	width := int64(b.MaxX) - int64(b.MinX) + 1
 
 	world = make([][]Cell, height)
-	array.Foreach(world, func(row *[]Cell) { *row = make([]Cell, width) })
+	algo.Foreach(world, func(row *[]Cell) { *row = make([]Cell, width) })
 
 	// Filling world
 	offset := b.MinX
-	array.Foreach(segments, func(s *[2]Location) {
+	algo.Foreach(segments, func(s *[2]Location) {
 		// Exploiting fact that segments go from small to big
 		s[0].X -= offset
 		s[1].X -= offset
-		dx := fun.Sign(s[1].X - s[0].X)
-		dy := fun.Sign(s[1].Y - s[0].Y)
+		dx := algo.Sign(s[1].X - s[0].X)
+		dy := algo.Sign(s[1].Y - s[0].Y)
 		l := s[0]
 		for l.X <= s[1].X && l.Y <= s[1].Y {
 			world[l.Y][l.X] = Rock

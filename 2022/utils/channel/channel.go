@@ -4,8 +4,8 @@ package channel
 import (
 	"context"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 // Split takes an input channel and creates n channels such that every value
@@ -25,11 +25,11 @@ func Split[T any](ctx context.Context, input <-chan T, n int) []<-chan T {
 
 	// Create slice of output channels
 	cap := cap(input)
-	outputs := array.Generate(n, func() chan T { return make(chan T, cap) })
+	outputs := algo.Generate(n, func() chan T { return make(chan T, cap) })
 
 	// Splitting coroutine. Reads from input and sends it down all outputs.
 	go func() {
-		defer array.Foreach(outputs, func(o *chan T) { close(*o) })
+		defer algo.Foreach(outputs, func(o *chan T) { close(*o) })
 
 		for {
 			// Reading from the channel
@@ -46,7 +46,7 @@ func Split[T any](ctx context.Context, input <-chan T, n int) []<-chan T {
 			}
 
 			// Asyncronously sending value down all channels
-			failures := array.Map(outputs, func(out chan T) <-chan bool {
+			failures := algo.Map(outputs, func(out chan T) <-chan bool {
 				failed := make(chan bool)
 				go func() {
 					select {
@@ -60,14 +60,14 @@ func Split[T any](ctx context.Context, input <-chan T, n int) []<-chan T {
 				return failed
 			})
 			// Barrier: collecting failures (and ending if one failed)
-			anyFailed := array.MapReduce(failures, Recv[bool], fun.Or, false)
+			anyFailed := algo.MapReduce(failures, Recv[bool], utils.Or, false)
 			if anyFailed {
 				return
 			}
 		}
 	}()
 
-	return array.Map(outputs, func(ch chan T) <-chan T { return ch })
+	return algo.Map(outputs, func(ch chan T) <-chan T { return ch })
 }
 
 // Recv is a wrapper around <-ch.

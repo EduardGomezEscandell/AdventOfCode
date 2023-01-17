@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/day07"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/testutils"
+	"github.com/EduardGomezEscandell/algo/algo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -44,7 +44,7 @@ func TestPart1(t *testing.T) {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			lines := array.Map(tc.data, input.NewLine)
+			lines := algo.Map(tc.data, input.NewLine)
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
@@ -77,7 +77,7 @@ func TestPart2(t *testing.T) {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			lines := array.Map(tc.data, input.NewLine)
+			lines := algo.Map(tc.data, input.NewLine)
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
@@ -137,7 +137,7 @@ $ ls
     - k (file, size=7214296)`
 
 	// Reading through channel
-	lines := array.Map(strings.Split(data, "\n"), input.NewLine)
+	lines := algo.Map(strings.Split(data, "\n"), input.NewLine)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	ch := charray.FromArray(ctx, lines, 0)

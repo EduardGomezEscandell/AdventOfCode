@@ -11,8 +11,9 @@ import (
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/channel"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -56,11 +57,11 @@ func Part2(in <-chan node) (int, error) {
 	}
 
 	// Sorting extra values (yes I could hard code it, whatever)
-	array.Sort(extraInput[:], func(a, b node) bool { return compNodes(a, b) == lt })
+	algo.Sort(extraInput[:], func(a, b node) bool { return compNodes(a, b) == lt })
 
 	// The index of each value is the count of entries that are beneath it in order, plus one.
 	// This solution is O(N), whereas sorting would be O(N log N)
-	countSmaller := array.Reduce(arr, func(acc [2]int, x node) [2]int {
+	countSmaller := algo.Reduce(arr, func(acc [2]int, x node) [2]int {
 		if compNodes(x, extraInput[0]) != gt {
 			return [2]int{acc[0] + 1, acc[1] + 1}
 		}
@@ -133,7 +134,7 @@ func compInts(a, b int) comp {
 // compSlices compares list-nodes according to the
 // criteria specified by the problem statement.
 func compSlices(u, v []node) comp {
-	size := fun.Min(len(u), len(v))
+	size := utils.Min(len(u), len(v))
 	for i := 0; i < size; i++ {
 		c := compNodes(u[i], v[i])
 		if c != eq {
@@ -245,7 +246,7 @@ func PrettyPrint(t node) string {
 	case aInt:
 		return fmt.Sprintf("%d", x)
 	case aList:
-		return "[" + strings.Join(array.Map(u, PrettyPrint), ",") + "]"
+		return "[" + strings.Join(algo.Map(u, PrettyPrint), ",") + "]"
 	}
 	panic(errors.New("invalid arguments: t is not valid token"))
 }

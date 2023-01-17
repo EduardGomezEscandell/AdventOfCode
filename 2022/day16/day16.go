@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -58,7 +58,7 @@ func greedyDFS(world []Valve, ws worldState, score Score, elephantsAllowed bool,
 		return 0
 	}
 
-	defer func() { pi.bestScore = fun.Max(pi.bestScore, score+addedScore) }()
+	defer func() { pi.bestScore = utils.Max(pi.bestScore, score+addedScore) }()
 
 	// Checking if we have the solution in cache
 	if s, ok := pi.cache.Get(ws); ok {
@@ -83,8 +83,8 @@ func greedyDFS(world []Valve, ws worldState, score Score, elephantsAllowed bool,
 	elephantAt := world[ws.location[elephant]]
 
 	// Movements
-	playerMoves := array.Map(playerAt.Paths, fun.Identity[VID])
-	elephantMoves := array.Map(elephantAt.Paths, fun.Identity[VID])
+	playerMoves := algo.Map(playerAt.Paths, utils.Identity[VID])
+	elephantMoves := algo.Map(elephantAt.Paths, utils.Identity[VID])
 
 	// Adding valve openings
 	playerMoves = append(playerMoves, ws.location[player])
@@ -112,22 +112,22 @@ func greedyDFS(world []Valve, ws worldState, score Score, elephantsAllowed bool,
 	}
 
 	// DFS greedy search: we perform the actions with highest priority first.
-	array.Sort(actions, func(a, b action) bool { return a.priority > b.priority })
-	return array.MapReduce(actions, func(a action) Score { return a.exec() }, fun.Max[Score], 0)
+	algo.Sort(actions, func(a, b action) bool { return a.priority > b.priority })
+	return algo.MapReduce(actions, func(a action) Score { return a.exec() }, utils.Max[Score], 0)
 }
 
 func purgeDuplicateActions(actions []action) []action {
-	array.Sort(actions, func(a, b action) bool {
+	algo.Sort(actions, func(a, b action) bool {
 		ka0 := uint16(a.newState.location[0])
 		ka1 := uint16(a.newState.location[1])
-		ka := fun.Min(ka0, ka1)<<8 + fun.Max(ka0, ka1)
+		ka := utils.Min(ka0, ka1)<<8 + utils.Max(ka0, ka1)
 
 		kb0 := uint16(b.newState.location[0])
 		kb1 := uint16(b.newState.location[1])
-		kb := fun.Min(kb0, kb1)<<8 + fun.Max(kb0, kb1)
+		kb := utils.Min(kb0, kb1)<<8 + utils.Max(kb0, kb1)
 		return ka < kb
 	})
-	return actions[:array.Unique(actions, func(a, b action) bool {
+	return actions[:algo.Unique(actions, func(a, b action) bool {
 		if a.newState.location == b.newState.location {
 			return true
 		}
@@ -296,8 +296,8 @@ func ReadData() ([]Valve, VID, error) {
 	}
 
 	// Sorting valves by flowrate
-	array.Sort(pv, func(p, q protovalve) bool { return p.flowrate > q.flowrate })
-	startPoint := array.FindIf(pv, func(pv protovalve) bool { return pv.name == "AA" })
+	algo.Sort(pv, func(p, q protovalve) bool { return p.flowrate > q.flowrate })
+	startPoint := algo.FindIf(pv, func(pv protovalve) bool { return pv.name == "AA" })
 	if startPoint == -1 {
 		return nil, 0, errors.New("Coud not find valve named AA")
 	}
@@ -318,7 +318,7 @@ func ReadData() ([]Valve, VID, error) {
 		var err error
 		world[i] = Valve{
 			Flowrate: Score(pv[i].flowrate),
-			Paths: array.Map(pv[i].paths, func(name string) VID {
+			Paths: algo.Map(pv[i].paths, func(name string) VID {
 				id, ok := ids[name]
 				if !ok && err == nil {
 					err = fmt.Errorf("Entry %d references inexistent valve %q", i, name)
@@ -330,7 +330,7 @@ func ReadData() ([]Valve, VID, error) {
 			return nil, 0, err
 		}
 		// Sorting paths by flowrate
-		array.Sort(world[i].Paths, fun.Lt[VID])
+		algo.Sort(world[i].Paths, utils.Lt[VID])
 	}
 
 	return world, VID(startPoint), nil

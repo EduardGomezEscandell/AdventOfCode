@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 // Part1 solves the first half of today's problem.
 func Part1(input []int) (int64, error) {
 	var i int
-	in := array.Map(input, func(x int) entry {
+	in := algo.Map(input, func(x int) entry {
 		defer func() { i++ }()
 		return entry{value: int64(x), position: i}
 	})
@@ -32,7 +32,7 @@ func Part1(input []int) (int64, error) {
 // Part2 solves the second half of today's problem.
 func Part2(input []int) (int64, error) {
 	var i int
-	in := array.Map(input, func(x int) entry {
+	in := algo.Map(input, func(x int) entry {
 		defer func() { i++ }()
 		return entry{value: 811589153 * int64(x), position: i}
 	})
@@ -51,9 +51,9 @@ func solve(data []entry, nmixes int) (int64, error) {
 		mix(data)
 		// fmt.Println(pretty(data))
 	}
-	array.Sort(data, func(a, b entry) bool { return a.position < b.position })
+	algo.Sort(data, func(a, b entry) bool { return a.position < b.position })
 
-	zero := array.FindIf(data, func(n entry) bool { return n.value == 0 })
+	zero := algo.FindIf(data, func(n entry) bool { return n.value == 0 })
 	if zero == -1 {
 		return 0, fmt.Errorf("Could not find item with value 0")
 	}
@@ -86,7 +86,7 @@ func mix(data []entry) {
 			direction = +1 // Rotate right
 			first, last = last, first
 		}
-		array.Foreach(data, func(e *entry) {
+		algo.Foreach(data, func(e *entry) {
 			if first <= e.position && e.position <= last {
 				e.position += direction
 			}
@@ -107,9 +107,9 @@ func positiveMod(x int64, n int64) int64 {
 }
 
 func pretty(data []entry) string { // nolint: unused
-	d := array.Map(data, fun.Identity[entry])
-	array.Sort(d, func(a, b entry) bool { return a.position < b.position })
-	return strings.Join(array.Map(d, func(e entry) string {
+	d := algo.Map(data, utils.Identity[entry])
+	algo.Sort(d, func(a, b entry) bool { return a.position < b.position })
+	return strings.Join(algo.Map(d, func(e entry) string {
 		return fmt.Sprintf("%d: %d", e.position, e.value)
 	}), ", ")
 }

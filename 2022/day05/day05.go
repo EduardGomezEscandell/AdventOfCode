@@ -9,12 +9,12 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/channel"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/stack"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/dstruct"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -47,7 +47,7 @@ func Solve(in <-chan input.Line, crane func(stacks []Stack, inst Instruction)) (
 	channel.Exhaust(done)
 
 	// Obtaining values
-	top := array.MapReduce(stacks, (Stack).Peek, fun.Append[rune], []rune{})
+	top := algo.MapReduce(stacks, (Stack).Peek, utils.Append[rune], []rune{})
 	return string(top), nil
 }
 
@@ -76,7 +76,7 @@ func Crane9000(stacks []Stack, inst Instruction) {
 // Crane9001 performs instructions as specified in Part 2 of the problem statement.
 func Crane9001(stacks []Stack, inst Instruction) {
 	from := &stacks[inst.from]
-	intermediate := stack.New[rune](0, inst.qty)
+	intermediate := dstruct.NewStack[rune](0, inst.qty)
 	to := &stacks[inst.to]
 	for i := 0; i < inst.qty; i++ {
 		intermediate.Push(from.Peek())
@@ -88,8 +88,8 @@ func Crane9001(stacks []Stack, inst Instruction) {
 	}
 }
 
-// Stack is syntax sugar for stack.Stack[rune].
-type Stack = stack.Stack[rune]
+// Stack is syntax sugar for dstructStack[rune].
+type Stack = dstruct.Stack[rune]
 
 // Instruction contains the stack moving instruction.
 type Instruction struct {
@@ -114,16 +114,16 @@ func parseInstruction(ln input.Line) Instruction {
 // ParseInitalState reads the data file and returns the list of
 // reindeers and their calories.
 func ParseInitalState(input <-chan input.Line) (stacks []Stack, err error) {
-	defer func() { array.Foreach(stacks, (*Stack).Invert) }()
+	defer func() { algo.Foreach(stacks, (*Stack).Invert) }()
 
 	parseLine := func(line string) bool {
-		data := array.Stride([]rune(line)[1:], 4)
+		data := algo.Stride([]rune(line)[1:], 4)
 		allLetters := regexp.MustCompile(`^[a-zA-Z ]*$`).MatchString(string(data))
 		if !allLetters {
 			return false // Must be end of stack
 		}
 
-		stacks = array.ZipWith(stacks, data, func(s Stack, r rune) Stack {
+		stacks = algo.ZipWith(stacks, data, func(s Stack, r rune) Stack {
 			if r != ' ' {
 				s.Push(r)
 			}
@@ -138,7 +138,7 @@ func ParseInitalState(input <-chan input.Line) (stacks []Stack, err error) {
 		return stacks, nil
 	}
 	nstacks := (len(fromInput.Str()) + 1) / 4
-	stacks = array.Generate(nstacks, func() Stack { return stack.New[rune]() })
+	stacks = algo.Generate(nstacks, func() Stack { return dstruct.NewStack[rune]() })
 
 	if !parseLine(fromInput.Str()) {
 		return

@@ -9,8 +9,9 @@ import (
 
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/channel"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -32,7 +33,7 @@ func solve(dataChannel <-chan input.Line, parseLine func(input.Line) bool) (r ui
 
 	// Parsing input
 	overlaps := charray.Map(dataChannel, parseLine)
-	return charray.Reduce(overlaps, fun.Count[uint], 0), nil
+	return charray.Reduce(overlaps, algo.Count[uint], 0), nil
 }
 
 // Part1 solves the first half of the problem.
@@ -59,8 +60,8 @@ func lineContainsFullOverlap(line input.Line) bool {
 		panic(err)
 	}
 
-	start := fun.Min(elf1[0], elf2[0])
-	finish := fun.Max(elf1[1], elf2[1])
+	start := utils.Min(elf1[0], elf2[0])
+	finish := utils.Max(elf1[1], elf2[1])
 
 	if start == elf1[0] && finish == elf1[1] {
 		return true

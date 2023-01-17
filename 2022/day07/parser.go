@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/tree"
+	"github.com/EduardGomezEscandell/algo/algo"
 )
 
 // StateMachine is a finite state machine that transitions between
@@ -104,7 +104,7 @@ func (p *StateMachine) NextLine(line string) (err error) {
 		if err == nil {
 			return
 		}
-		path := array.Map(p.cwdPath.Data(), func(f *fsNode) string { return f.Data.Name })
+		path := algo.Map(p.cwdPath.Data(), func(f *fsNode) string { return f.Data.Name })
 		err = fmt.Errorf("error in line %d\nline: %s\ncwd:  %s\ncmd:  %s\nargs: %s\nerr: %v", p.LineNo, line, strings.Join(path, "/"), p.Cmd, p.Args, err)
 	}()
 	p.LineNo++

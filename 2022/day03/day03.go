@@ -9,10 +9,10 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/channel"
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/fun"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
+	"github.com/EduardGomezEscandell/algo/algo"
+	"github.com/EduardGomezEscandell/algo/utils"
 )
 
 const (
@@ -37,10 +37,10 @@ func Part1(dataChannel <-chan input.Line) (uint, error) {
 		sack[0] = elf[:halfIdx]
 		sack[1] = elf[halfIdx:]
 
-		array.Sort(sack[0], fun.Gt[rune])
-		array.Sort(sack[1], fun.Gt[rune])
-		c := array.Common(sack[0], sack[1], fun.Gt[rune])
-		c = c[:array.Unique(c, fun.Eq[rune])]
+		algo.Sort(sack[0], utils.Gt[rune])
+		algo.Sort(sack[1], utils.Gt[rune])
+		c := algo.Intersect(sack[0], sack[1], utils.Gt[rune])
+		c = c[:algo.Unique(c, utils.Eq[rune])]
 		switch len(c) {
 		case 1:
 			priorities += runePriority(c[0])
@@ -69,15 +69,15 @@ func Part2(dataChannel <-chan input.Line) (uint, error) {
 			if err != nil {
 				return 0, err
 			}
-			array.Sort(elves[i], fun.Lt[rune])
+			algo.Sort(elves[i], utils.Lt[rune])
 		}
 
 		// Finding common runes
 		common := elves[0]
 		for _, elf := range elves[1:] {
-			common = array.Common(common, elf, fun.Lt[rune])
+			common = algo.Intersect(common, elf, utils.Lt[rune])
 		}
-		common = common[:array.Unique(common, fun.Eq[rune])]
+		common = common[:algo.Unique(common, utils.Eq[rune])]
 
 		// Deallng with results
 		switch len(common) {
@@ -112,7 +112,7 @@ func readElf(dataChannel <-chan input.Line) ([]rune, bool, error) {
 }
 
 func helperElvesToString(elves [][]rune) string {
-	return array.Reduce(elves, func(acc string, elf []rune) string {
+	return algo.Reduce(elves, func(acc string, elf []rune) string {
 		return fmt.Sprintf("%s\n    %s", acc, string(elf))
 	}, "")
 }
