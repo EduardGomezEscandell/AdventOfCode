@@ -43,7 +43,7 @@ func TestParseInitalState(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	ch := charray.FromArray(ctx, lines, 0)
+	ch := charray.Serialize(ctx, lines, 0)
 	gotstacks, err := day05.ParseInitalState(ch)
 	require.NoError(t, err)
 
@@ -88,7 +88,7 @@ func TestSolve(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
-			ch := charray.FromArray(ctx, lines, 0)
+			ch := charray.Serialize(ctx, lines, 0)
 			got, err := day05.Solve(ch, tc.crane)
 
 			require.NoError(t, err)

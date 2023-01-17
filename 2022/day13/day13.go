@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/channel"
+	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/input"
 	"github.com/EduardGomezEscandell/algo/algo"
 	"github.com/EduardGomezEscandell/algo/utils"
@@ -44,7 +44,7 @@ func Part1(in <-chan node) (int, error) {
 
 // Part2 solves the second half of the problem.
 func Part2(in <-chan node) (int, error) {
-	arr := array.FromChannel(in)
+	arr := charray.Deserialize(in)
 
 	// Append extra entries
 	var err error

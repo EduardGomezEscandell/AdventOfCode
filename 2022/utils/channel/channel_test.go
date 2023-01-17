@@ -40,7 +40,7 @@ func testSplit[T utils.Signed](t *testing.T) { // nolint: thelper
 		t.Run(name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
-			input := charray.FromArray(ctx, tc.data, tc.buffer)
+			input := charray.Serialize(ctx, tc.data, tc.buffer)
 
 			chans := channel.Split(ctx, input, tc.nChannels)
 			require.Equal(t, tc.nChannels, len(chans))

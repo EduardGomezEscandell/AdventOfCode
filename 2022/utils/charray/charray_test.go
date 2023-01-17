@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/array"
 	"github.com/EduardGomezEscandell/AdventOfCode/2022/utils/charray"
 	"github.com/EduardGomezEscandell/algo/algo"
 	"github.com/EduardGomezEscandell/algo/utils"
@@ -121,7 +120,7 @@ func testMap[T utils.Signed](t *testing.T) { // nolint: thelper
 
 			gotch := charray.Map(ch, tc.op)
 
-			got := array.FromChannel(gotch)
+			got := charray.Deserialize(gotch)
 			require.Equal(t, tc.expects, got)
 		})
 	}
@@ -129,7 +128,7 @@ func testMap[T utils.Signed](t *testing.T) { // nolint: thelper
 
 func inputToChannel[T any](in []T, cap int, timeout time.Duration) (<-chan T, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	outch := charray.FromArray(ctx, in, cap)
+	outch := charray.Serialize(ctx, in, cap)
 	return outch, cancel
 }
 
@@ -236,12 +235,12 @@ func testZipWith[T utils.Signed](t *testing.T) { // nolint: thelper
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
-			ch1 := charray.FromArray(ctx, tc.input1, 0)
-			ch2 := charray.FromArray(ctx, tc.input2, 0)
+			ch1 := charray.Serialize(ctx, tc.input1, 0)
+			ch2 := charray.Serialize(ctx, tc.input2, 0)
 
 			gotch := charray.ZipWith(ch1, ch2, tc.zip)
 
-			got := array.FromChannel(gotch)
+			got := charray.Deserialize(gotch)
 			require.Equal(t, tc.want, got)
 		})
 	}
@@ -268,8 +267,8 @@ func testZipReduce[T utils.Signed](t *testing.T) { // nolint: thelper
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
-			ch1 := charray.FromArray(ctx, tc.input1, 0)
-			ch2 := charray.FromArray(ctx, tc.input2, 0)
+			ch1 := charray.Serialize(ctx, tc.input1, 0)
+			ch2 := charray.Serialize(ctx, tc.input2, 0)
 
 			got := charray.Reduce(charray.ZipWith(ch1, ch2, utils.Mul[T]), utils.Add[T], 0)
 			require.Equal(t, tc.want, got)
@@ -300,7 +299,7 @@ func testAdjacentMap[T utils.Signed](t *testing.T) { // nolint: thelper
 
 			gotch := charray.AdjacentMap(ch, tc.op)
 
-			got := array.FromChannel(gotch)
+			got := charray.Deserialize(gotch)
 			require.Equal(t, tc.expects, got)
 		})
 	}
@@ -371,11 +370,11 @@ func testCommon[T utils.Signed](t *testing.T) { // nolint: thelper
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
-			ch1 := charray.FromArray(ctx, tc.input1, 0)
-			ch2 := charray.FromArray(ctx, tc.input2, 0)
+			ch1 := charray.Serialize(ctx, tc.input1, 0)
+			ch2 := charray.Serialize(ctx, tc.input2, 0)
 
 			gotch := charray.Common(ch1, ch2, tc.sort)
-			got := array.FromChannel(gotch)
+			got := charray.Deserialize(gotch)
 			require.Equal(t, tc.want, got)
 		})
 	}
@@ -406,7 +405,7 @@ func testUnique[T utils.Signed](t *testing.T) { // nolint: thelper
 
 			gotch := charray.Unique(ch, utils.Equal(tc.sort))
 
-			got := array.FromChannel(gotch)
+			got := charray.Deserialize(gotch)
 			require.Equal(t, tc.want, got)
 		})
 	}
@@ -446,7 +445,7 @@ func testMultiplex[T utils.SignedInt](t *testing.T) { // nolint: thelper
 			for i, ch := range gotchans {
 				i, ch := i, ch
 				go func() {
-					got[i] = array.FromChannel(ch)
+					got[i] = charray.Deserialize(ch)
 					done <- struct{}{}
 				}()
 			}

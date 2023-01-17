@@ -47,7 +47,7 @@ func TestPart1(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
-			ch := charray.FromArray(ctx, lines, 0)
+			ch := charray.Serialize(ctx, lines, 0)
 			got, err := day09.Part1(ch)
 
 			require.NoError(t, err)
@@ -78,7 +78,7 @@ func TestPart2(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
-			ch := charray.FromArray(ctx, lines, 0)
+			ch := charray.Serialize(ctx, lines, 0)
 			got, err := day09.Part2(ch)
 
 			require.NoError(t, err)
