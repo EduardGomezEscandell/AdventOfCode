@@ -1,0 +1,41 @@
+name: "2023"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/2023.yml
+      - "2023/**"
+  workflow_dispatch:
+
+jobs:
+  run:
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [Release, Debug]
+        sanitizer: ["no sanitizer", "sanitizer"]
+    runs-on: ubuntu-latest
+    # Need at least Ubuntu-22.10 to get GCC-13, and GitHub runners only go up to Ubuntu-22.04.
+    container: ubuntu:rolling
+    defaults:
+      run:
+        working-directory: ./2023
+    env:
+      BUILD_TYPE: ${{ matrix.build_type }}
+      ENABLE_SANITIZER: ${{ matrix.sanitizer == 'sanitizer' && '1' || '0' }}
+      BUILD_TESTS: "1"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: ./dependencies
+      - name: Build
+        run: ./make
+      - name: Test
+        continue-on-error: true
+        run: ./build/${BUILD_TYPE}/test/test
+      - name: Run
+        run: ./build/${BUILD_TYPE}/cmd/aoc2023 --all
