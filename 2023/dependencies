@@ -1,0 +1,9 @@
+#!/bin/bash
+set -eu
+
+export DEBIAN_NONINTERACTIVE=1
+
+SUDO=$(which sudo) || true
+
+$SUDO apt update -y
+$SUDO apt install -y cmake g++-13 gcc-13 git
