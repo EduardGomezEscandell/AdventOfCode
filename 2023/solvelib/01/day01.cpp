@@ -16,7 +16,7 @@ std::int64_t Day01::part1() {
   return std::transform_reduce(
       std::istream_iterator<std::string>(ss),
       std::istream_iterator<std::string>{}, 0, std::plus<int>{},
-      [](std::string const line) {
+      [](std::string_view line) {
         // First digit
         const auto first = std::ranges::find_if(line, is_num);
         if (first == line.end())
@@ -74,7 +74,7 @@ std::int64_t Day01::part2() {
   return std::transform_reduce(
       std::istream_iterator<std::string>(ss),
       std::istream_iterator<std::string>{}, 0, std::plus<int>{},
-      [](std::string const line) {
+      [](std::string_view line) {
         // First digit
         const auto first = find_number(line.begin(), line.end());
         if (first.first == line.end())
