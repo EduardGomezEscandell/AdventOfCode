@@ -16,4 +16,10 @@ TEST_CASE("Day 1") {
          solution.load("./data/01/example3.txt");
         REQUIRE_EQ(solution.part2(), 33);
     }
+
+    SUBCASE("Real data") {
+        solution.load("./data/01/input.txt");
+        REQUIRE_EQ(solution.part1(), 54561);
+        REQUIRE_EQ(solution.part2(), 54076);
+    }
 }
