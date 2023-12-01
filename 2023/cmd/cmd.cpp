@@ -108,9 +108,23 @@ void usage(std::ostream &s) {
     << "   Runs all solutions\n\n";
 }
 
+std::string datafile(int day) {
+  return std::format("./data/{:02d}/input.txt", day);
+}
+
 bool solve_day(
     std::map<const int, std::unique_ptr<xmas::solution>>::value_type const
         &solution) {
+  
+  try {
+    solution.second.get()->load(datafile(solution.second->day()));
+  } catch (std::runtime_error &e) {
+    log_error("day {} could not load: {}\n", solution.second.get()->day(),
+              e.what());
+    return false;
+  }
+  
+  
   try {
     solution.second.get()->run();
     return true;
