@@ -242,20 +242,20 @@ func ReadData() ([][2]Location, error) {
 		}
 
 		for _, tok := range tokens[1:] {
-			var new Location
-			_, err := fmt.Sscanf(tok, "%d,%d", &new.X, &new.Y)
+			var newloc Location
+			_, err := fmt.Sscanf(tok, "%d,%d", &newloc.X, &newloc.Y)
 			if err != nil {
 				return nil, fmt.Errorf("Failed to parse point %q in line %q: %v", tokens[0], sc.Text(), err)
 			}
 
-			localSegments = append(localSegments, [2]Location{prev, new})
+			localSegments = append(localSegments, [2]Location{prev, newloc})
 			latest := &localSegments[len(localSegments)-1]
 			// Swapping: segments go from small to big
 			if latest[0].X > latest[1].X || latest[0].Y > latest[1].Y {
 				latest[0], latest[1] = latest[1], latest[0]
 			}
 
-			prev = new
+			prev = newloc
 		}
 
 		segments = append(segments, localSegments...)

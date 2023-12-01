@@ -18,6 +18,7 @@ type Topology interface {
 // on the left side; and vice-versa. Same goes for columns.
 type Toroidal struct{}
 
+//nolint:revive
 func (Toroidal) wrapHorizontally(world [][]Cell, row, col int, head Heading) (r, c int, h Heading) {
 	c = 0
 	r = row
@@ -40,6 +41,7 @@ func (Toroidal) wrapHorizontally(world [][]Cell, row, col int, head Heading) (r,
 	return
 }
 
+//nolint:revive
 func (Toroidal) wrapVertically(world [][]Cell, row, col int, head Heading) (r, c int, h Heading) {
 	c = col
 	r = 0
