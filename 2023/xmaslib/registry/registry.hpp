@@ -5,7 +5,7 @@
 #include <map>
 #include <memory>
 
-#include "../solvebase/solvebase.hpp"
+#include "../solution/solution.hpp"
 
 namespace xmas {
 

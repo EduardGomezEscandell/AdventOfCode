@@ -1,6 +1,6 @@
 #pragma once
 
-#include "xmaslib/solvebase/solvebase.hpp"
+#include "xmaslib/solution/solution.hpp"
 
 class Day01 : public xmas::solution {
 public:
@@ -9,4 +9,5 @@ public:
 public:
   std::int64_t part1() override;
   std::int64_t part2() override;
+
 };

@@ -5,7 +5,7 @@
 #include <map>
 #include <memory>
 
-#include "xmaslib/solvebase/solvebase.hpp"
+#include "xmaslib/solution/solution.hpp"
 
 
 int run(std::vector<std::string_view> &args);

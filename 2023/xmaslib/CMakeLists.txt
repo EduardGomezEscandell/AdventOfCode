@@ -1,5 +1,5 @@
 add_library(xmaslib
-    solvebase/solvebase.hpp
+    solution/solution.hpp solution/solution.cpp
     registry/registry.hpp registry/registry.cpp
 )
 
