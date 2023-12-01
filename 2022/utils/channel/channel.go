@@ -24,8 +24,8 @@ func Split[T any](ctx context.Context, input <-chan T, n int) []<-chan T {
 	}
 
 	// Create slice of output channels
-	cap := cap(input)
-	outputs := algo.Generate(n, func() chan T { return make(chan T, cap) })
+	capacity := cap(input)
+	outputs := algo.Generate(n, func() chan T { return make(chan T, capacity) })
 
 	// Splitting coroutine. Reads from input and sends it down all outputs.
 	go func() {
@@ -106,6 +106,7 @@ func ConvertToRecieveOnly[T any](ch chan T) <-chan T {
 
 // Exhaust pulls and ignores all the values in a channel.
 func Exhaust[T any](ch <-chan T) {
+	//nolint:revive // Yes, I want it empty
 	for range ch {
 	}
 }

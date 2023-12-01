@@ -212,16 +212,16 @@ func newAction(world []Valve, ws worldState, score Score, elephantsAllowed bool,
 		}
 	}
 
-	new := ws
-	new.location[player] = playerT
-	new.location[elephant] = elephantT
-	new.timeLeft = timeLeft
-	new.opened = opened
+	newState := ws
+	newState.location[player] = playerT
+	newState.location[elephant] = elephantT
+	newState.timeLeft = timeLeft
+	newState.opened = opened
 
 	return &action{
 		priority: priority,
-		newState: new,
-		exec:     func() Score { return newScore + greedyDFS(world, new, score+newScore, elephantsAllowed, pi) },
+		newState: newState,
+		exec:     func() Score { return newScore + greedyDFS(world, newState, score+newScore, elephantsAllowed, pi) },
 	}
 }
 
