@@ -1,7 +1,7 @@
 #include "cmd.hpp"
 #include "solvelib/alldays.hpp"
-#include "xmaslib/registry/registry.hpp"
 #include "xmaslib/log/log.hpp"
+#include "xmaslib/registry/registry.hpp"
 
 #include <algorithm>
 #include <cstdlib>
@@ -42,18 +42,21 @@ int run(std::vector<std::string_view> &args) {
     return exit_success;
   }
 
-  if(args[0].starts_with("-")) {
-    xlog::error("Unknown argument {}. Use --help to see possible inputs.", args[0]);
+  if (args[0].starts_with("-")) {
+    xlog::error("Unknown argument {}. Use --help to see possible inputs.",
+                args[0]);
     return exit_bad_args;
   }
 
   // Parse days requested
-  std::vector<std::map<const int, std::unique_ptr<xmas::solution>>::const_iterator>
+  std::vector<
+      std::map<const int, std::unique_ptr<xmas::solution>>::const_iterator>
       days;
   days.reserve(args.size());
   for (auto &arg : args) {
     if (arg.starts_with("-")) {
-      xlog::error("invalid mixed argument types, use --help to see valid inputs");
+      xlog::error(
+          "invalid mixed argument types, use --help to see valid inputs");
       return exit_bad_args;
     }
 
@@ -104,22 +107,14 @@ std::string datafile(int day) {
 bool solve_day(
     std::map<const int, std::unique_ptr<xmas::solution>>::value_type const
         &solution) {
-  
+
   try {
-    solution.second.get()->load(datafile(solution.second->day()));
+    solution.second.get()->set_input(datafile(solution.second->day()));
   } catch (std::runtime_error &e) {
     xlog::error("day {} could not load: {}\n", solution.second.get()->day(),
-              e.what());
+                e.what());
     return false;
   }
-  
-  
-  try {
-    solution.second.get()->run();
-    return true;
-  } catch (std::runtime_error &e) {
-    xlog::error("day {} returned error: {}\n", solution.second.get()->day(),
-              e.what());
-    return false;
-  }
+
+  return solution.second.get()->run();
 }

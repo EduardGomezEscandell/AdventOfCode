@@ -11,8 +11,18 @@
 
 namespace xmas {
 
-void solution::run() {
+bool solution::run() noexcept {
   xlog::info("Day {}", this->day());
+
+  try {
+  this->load();
+  } catch (std::runtime_error &err) {
+    xlog::error("Load failed with message: {}", err.what());
+    return false;
+  } catch(...) {
+    xlog::error("Load failed with no message");
+    return false;
+  }
 
   try {
     const auto start = std::chrono::high_resolution_clock::now();
@@ -20,10 +30,13 @@ void solution::run() {
     const auto elapsed = std::chrono::high_resolution_clock::now() - start;
 
     xlog::info(
-        " Result 1: {} ({} μs)", result,
+        "Result 1: {} ({} μs)", result,
         std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count());
   } catch (std::runtime_error &err) {
     xlog::error("Part 1 failed with message: {}", err.what());
+  }  catch(...) {
+    xlog::error("Part 1 failed with no message");
+    return false;
   }
 
   try {
@@ -32,17 +45,24 @@ void solution::run() {
     const auto elapsed = std::chrono::high_resolution_clock::now() - start;
 
     xlog::info(
-        " Result 2: {} ({} μs)", result,
+        "Result 2: {} ({} μs)", result,
         std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count());
   } catch (std::runtime_error &err) {
     xlog::error("Part 2 failed with message: {}", err.what());
+  } catch(...) {
+    xlog::error("Part 2 failed with no message");
+    return false;
   }
+
+  return true;
 }
 
-void solution::load(std::string_view path) {
-  std::ifstream f(path.data());
+void solution::set_input(std::string_view path) { this->data_path = path; }
+
+void solution::load() {
+  std::ifstream f(this->data_path.data());
   if (!f) {
-    throw std::runtime_error(std::format("could not open file {}", path));
+    throw std::runtime_error(std::format("could not open file {}", this->data_path));
   }
 
   std::stringstream buff;
@@ -50,7 +70,7 @@ void solution::load(std::string_view path) {
   input = std::move(buff).str();
 
   if (input.size() == 0) {
-    xlog::warning("did not load any data from {}", path);
+    xlog::warning("did not load any data from {}", this->data_path);
   }
 }
 

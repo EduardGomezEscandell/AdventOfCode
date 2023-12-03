@@ -4,8 +4,15 @@
 TEST_CASE("Day 2") {
     Day02 solution{};
 
+    SUBCASE("Part 1") {
+        solution.set_input("./data/02/example1.txt");
+        solution.load();
+        CHECK_THROWS(solution.part1());
+    }
+
     SUBCASE("Part 2") {
-        solution.load("./data/02/example1.txt");
-        // REQUIRE_EQ(solution.day(), 1);
+        solution.set_input("./data/02/example1.txt");
+        solution.load();
+        CHECK_THROWS(solution.part2());
     }
 }
