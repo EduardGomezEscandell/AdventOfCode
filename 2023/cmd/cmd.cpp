@@ -1,6 +1,7 @@
 #include "cmd.hpp"
 #include "solvelib/alldays.hpp"
 #include "xmaslib/registry/registry.hpp"
+#include "xmaslib/log/log.hpp"
 
 #include <algorithm>
 #include <cstdlib>
@@ -12,18 +13,6 @@
 #include <stdexcept>
 #include <string_view>
 #include <vector>
-
-template <typename... Args>
-constexpr void log_error(std::format_string<Args...> msg, Args &&...args) {
-  std::cerr << "\x1b[31mERROR  \x1b[0m "
-            << std::format(msg, std::forward<Args>(args)...) << std::endl;
-}
-
-template <typename... Args>
-constexpr void log_warning(std::format_string<Args...> msg, Args &&...args) {
-  std::cerr << "\x1b[33mWARNING\x1b[0m "
-            << std::format(msg, std::forward<Args>(args)...) << std::endl;
-}
 
 constexpr int exit_success = EXIT_SUCCESS;
 constexpr int exit_bad_args = 2;
@@ -43,7 +32,7 @@ int run(std::vector<std::string_view> &args) {
   try {
     populate_registry();
   } catch (std::runtime_error &e) {
-    log_error("could not populate the registry fully: {}", e.what());
+    xlog::error("could not populate the registry fully: {}", e.what());
   }
   const auto &solutions = xmas::registered_solutions();
 
@@ -54,7 +43,7 @@ int run(std::vector<std::string_view> &args) {
   }
 
   if(args[0].starts_with("-")) {
-    log_error("Unknown argument {}. Use --help to see possible inputs.", args[0]);
+    xlog::error("Unknown argument {}. Use --help to see possible inputs.", args[0]);
     return exit_bad_args;
   }
 
@@ -64,19 +53,19 @@ int run(std::vector<std::string_view> &args) {
   days.reserve(args.size());
   for (auto &arg : args) {
     if (arg.starts_with("-")) {
-      log_error("invalid mixed argument types, use --help to see valid inputs");
+      xlog::error("invalid mixed argument types, use --help to see valid inputs");
       return exit_bad_args;
     }
 
     const int day = std::atoi(arg.data());
     if (day == 0) {
-      log_warning("{} is not a vaid day", day);
+      xlog::warning("{} is not a vaid day", day);
       continue;
     }
 
     auto it = solutions.find(day);
     if (it == solutions.end()) {
-      log_warning("no solution registered for day {}", day);
+      xlog::warning("no solution registered for day {}", day);
       continue;
     }
 
@@ -119,7 +108,7 @@ bool solve_day(
   try {
     solution.second.get()->load(datafile(solution.second->day()));
   } catch (std::runtime_error &e) {
-    log_error("day {} could not load: {}\n", solution.second.get()->day(),
+    xlog::error("day {} could not load: {}\n", solution.second.get()->day(),
               e.what());
     return false;
   }
@@ -129,7 +118,7 @@ bool solve_day(
     solution.second.get()->run();
     return true;
   } catch (std::runtime_error &e) {
-    log_error("day {} returned error: {}\n", solution.second.get()->day(),
+    xlog::error("day {} returned error: {}\n", solution.second.get()->day(),
               e.what());
     return false;
   }
