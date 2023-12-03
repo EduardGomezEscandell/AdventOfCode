@@ -7,7 +7,9 @@
 
 #include "xmaslib/log/log.hpp"
 
-Round::Round(std::string_view data) : Round{0, 0, 0} {
+rgb parse_round(std::string_view data) {
+  rgb round{0, 0, 0};
+
   auto it = data.begin();
   while (it != data.end()) {
 
@@ -35,13 +37,13 @@ Round::Round(std::string_view data) : Round{0, 0, 0} {
 
     switch (*it) {
     case 'r':
-      this->red += count;
+      round.red += count;
       break;
     case 'g':
-      this->green += count;
+      round.green += count;
       break;
     case 'b':
-      this->blue += count;
+      round.blue += count;
       break;
     default:
       throw std::runtime_error(std::format(
@@ -54,6 +56,8 @@ Round::Round(std::string_view data) : Round{0, 0, 0} {
       ++it;
     }
   }
+
+  return round;
 }
 
 game::game(std::string_view line) {
@@ -80,12 +84,19 @@ game::game(std::string_view line) {
   }
 
   try {
-    this->rounds.resize(semicolons.size() - 1, Round{});
-    std::transform(std::execution::par_unseq, semicolons.cbegin(),
-                   semicolons.cend() - 1, semicolons.cbegin() + 1,
-                   this->rounds.begin(), [](auto prev, auto next) -> Round {
-                     return Round(std::string_view{prev + 1, next});
-                   });
+    this->max = std::transform_reduce(
+        std::execution::par_unseq, semicolons.cbegin(), semicolons.cend() - 1,
+        semicolons.cbegin() + 1, rgb{},
+        [](rgb const &acc, rgb const &round) -> rgb {
+          return rgb{
+              .red = std::max(acc.red, round.red),
+              .green = std::max(acc.green, round.green),
+              .blue = std::max(acc.blue, round.blue),
+          };
+        },
+        [](auto prev, auto next) -> rgb {
+          return parse_round(std::string_view{prev + 1, next});
+        });
   } catch (std::runtime_error &e) {
     throw std::runtime_error(
         std::format("could not parse round in line {}: {}", line, e.what()));
