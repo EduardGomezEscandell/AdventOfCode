@@ -6,6 +6,6 @@
 #include "02/day02.hpp"
 
 inline void populate_registry() {
-    xmas::register_solution<1, Day01>();
-    xmas::register_solution<2, Day02>();
+  xmas::register_solution<Day01>();
+  xmas::register_solution<Day02>();
 }
