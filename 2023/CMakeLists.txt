@@ -13,6 +13,8 @@ endif()
 
 message("Compiling with: ${CMAKE_CXX_FLAGS}")
 
+find_package(TBB REQUIRED)
+
 add_subdirectory(external_libraries)
 add_subdirectory(solvelib)
 add_subdirectory(xmaslib)
