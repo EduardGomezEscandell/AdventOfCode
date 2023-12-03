@@ -10,8 +10,9 @@ class solution {
 public:
   virtual int day() = 0;
 
-  virtual void run();
-  virtual void load(std::string_view path);
+  virtual void set_input(std::string_view path);
+  virtual void load();
+  virtual bool run() noexcept;
 
 protected:
   virtual std::int64_t part1() { throw std::runtime_error("not implemented"); }
@@ -20,6 +21,8 @@ protected:
   std::string input;
 
 private:
+  std::string data_path;
+
   std::optional<std::int64_t> p1;
   std::optional<std::int64_t> p2;
 };
