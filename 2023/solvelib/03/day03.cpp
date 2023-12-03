@@ -6,7 +6,6 @@
 #include <execution>
 #include <functional>
 #include <numeric>
-#include <span>
 #include <vector>
 
 constexpr bool isnum(char ch) { return ch >= '0' && ch <= '9'; }
@@ -17,18 +16,13 @@ std::int64_t Day03::part1() {
     this->input.push_back('\n');
   }
 
-  // Represent input as a matrix
   const std::size_t ncols =
       1 + std::size_t(std::find(input.cbegin(), input.cend(), '\n') -
                       input.cbegin());
-
   const std::size_t nrows = this->input.size() / ncols;
-
   xlog::debug("Detected {} rows and {} columns", nrows, ncols);
 
-  std::vector<std::span<char>> input_matrix(nrows, std::span<char>{});
-
-  // Make a mask.
+  // Make a mask labeling all symbol-adjacent cells
   std::vector<bool> mask(this->input.size(), 0);
   {
     // Detect symbols
@@ -49,7 +43,7 @@ std::int64_t Day03::part1() {
     std::vector<std::size_t> iota(this->input.size(), 0);
     std::iota(iota.begin(), iota.end(), 0);
 
-    // Expand the mask to cover symbol adjacentcy
+    // Expand the mask to cover symbol adjacency
     std::transform(std::execution::par_unseq, iota.cbegin(), iota.cend(),
                    mask.begin(), [&](std::size_t idx) -> std::int64_t {
                      // Top row
@@ -96,6 +90,7 @@ std::int64_t Day03::part1() {
                    });
   }
 
+  // Parse each row
   std::vector<std::size_t> rows(nrows, 0);
   std::iota(rows.begin(), rows.end(), 0);
   return std::transform_reduce(
@@ -113,9 +108,9 @@ std::int64_t Day03::part1() {
           if (!isnum(input[idx])) {
             if (relevant) {
               total += num;
-              xlog::debug("(ROW {}) Adding number {}", row, num);
+              xlog::debug("Row {}: Adding number {}", row, num);
             } else if (num != 0) {
-              xlog::debug("(ROW {}) Ignoring number {}", row, num);
+              xlog::debug("Row {}: Ignoring number {}", row, num);
             }
             num = 0;
             relevant = false;
