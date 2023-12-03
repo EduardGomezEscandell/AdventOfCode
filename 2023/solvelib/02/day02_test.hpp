@@ -13,12 +13,13 @@ TEST_CASE("Day 2") {
   SUBCASE("Part 2") {
     solution.set_input("./data/02/example1.txt");
     solution.load();
-    CHECK_THROWS(solution.part2());
+    CHECK_EQ(solution.part2(), 2286);
   }
 
   SUBCASE("Real data") {
     solution.set_input("./data/02/input.txt");
     solution.load();
     REQUIRE_EQ(solution.part1(), 2268);
+    REQUIRE_EQ(solution.part2(), 63542);
   }
 }
