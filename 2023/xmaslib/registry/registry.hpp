@@ -18,7 +18,7 @@ std::map<int, std::unique_ptr<solution>> &registered_solutions() noexcept;
 template <int V, std::derived_from<xmas::solution> T> void register_solution() {
   auto &m = internal::registered_solutions();
 
-  if (auto x = m.find(V); x != m.begin()) {
+  if (auto x = m.find(V); x != m.end()) {
     throw std::runtime_error(std::format(
         "Attempting the overwrite registered solution for day {}", V));
   }
