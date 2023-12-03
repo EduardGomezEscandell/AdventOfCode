@@ -1,6 +1,7 @@
 add_library(solvelib
     alldays.hpp
     01/day01.hpp    01/day01.cpp 01/day01_test.hpp
+    02/day02.hpp    02/day02.cpp 02/day02_test.hpp
 )
 
 set_target_properties(solvelib PROPERTIES LINKER_LANGUAGE CXX)
