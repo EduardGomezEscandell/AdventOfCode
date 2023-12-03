@@ -40,7 +40,7 @@ struct line_iterator {
     return *this;
   }
 
-  value_type operator*() { return {start, endl}; }
+  value_type operator*() const { return {start, endl}; }
 
 private:
   using base = std::string_view::iterator;
