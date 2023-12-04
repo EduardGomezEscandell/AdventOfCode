@@ -1,7 +1,5 @@
 #include "day03.hpp"
 
-#include <iostream>
-
 #include "xmaslib/log/log.hpp"
 #include "xmaslib/solution/solution.hpp"
 #include <algorithm>
