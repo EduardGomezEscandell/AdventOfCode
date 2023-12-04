@@ -7,6 +7,6 @@ This challenge consists of daily problems of varying difficulty released every m
 The website of the challenge can be found at https://adventofcode.com/
 
 See all the solutions:
-- [2023](./2023/README.md), written in C++.
-- [2022](./2023/README.md), written in Go.
-- [2021](./2023/README.md), written in C.
+- [2023](./2023), written in C++.
+- [2022](./2022), written in Go.
+- [2021](./2021), written in C.
