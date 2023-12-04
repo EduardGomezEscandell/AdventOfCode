@@ -15,6 +15,7 @@
 
 constexpr bool isnum(char ch) { return ch >= '0' && ch <= '9'; }
 
+namespace {
 std::pair<std::size_t, std::size_t> dimensions(std::string_view input) {
   const std::size_t ncols =
       1 + std::size_t(std::find(input.cbegin(), input.cend(), '\n') -
@@ -24,6 +25,7 @@ std::pair<std::size_t, std::size_t> dimensions(std::string_view input) {
 
   return std::make_pair(nrows, ncols);
 }
+} // namespace
 
 void Day03::load() {
   xmas::solution::load();
