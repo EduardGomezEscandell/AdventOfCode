@@ -39,3 +39,6 @@ jobs:
         run: ./build/${BUILD_TYPE}/test/test
       - name: Run
         run: ./build/${BUILD_TYPE}/cmd/aoc2023 --all
+      - name: Time
+        if: matrix.build_type=='Release' && matrix.sanitizer=='0'
+        run: ./build/${BUILD_TYPE}/cmd/aoc2023 --time
