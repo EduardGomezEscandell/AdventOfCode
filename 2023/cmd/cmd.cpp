@@ -147,8 +147,8 @@ bool time_days(app &, solution_vector const &days,
 
   xlog::info("DONE");
   xlog::info(
-      "Average total time was {} ms",
-      std::chrono::duration_cast<std::chrono::milliseconds>(total).count());
+      "Average total time was {} μs",
+      std::chrono::duration_cast<std::chrono::microseconds>(total).count());
 
   return total_success;
 }
