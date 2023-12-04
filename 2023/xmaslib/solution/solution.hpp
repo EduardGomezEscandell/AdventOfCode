@@ -14,7 +14,7 @@ public:
 
   virtual void set_input(std::string_view path);
   virtual void load();
-  virtual bool run() noexcept;
+  virtual bool run(bool verbose) noexcept;
 
   // Same as standard library
   using duration = std::chrono::duration<long, std::ratio<1, 1000000000>>;
