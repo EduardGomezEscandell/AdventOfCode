@@ -4,3 +4,4 @@
 #include "solvelib/01/day01_test.hpp"
 #include "solvelib/02/day02_test.hpp"
 #include "solvelib/03/day03_test.hpp"
+#include "solvelib/04/day04_test.hpp"
