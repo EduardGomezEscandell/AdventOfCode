@@ -25,17 +25,24 @@ To see options, use:
 $ ./build/Release/cmd/aoc2023 --help
 Usage:
 
-aoc2023 -h | -help
-   Prints this message and exits
+aoc2023 -h
+aoc2023 --help
+    Shows this message and exits
 
-aoc2023 DAYS...
-   Runs the solution for the specified days
+aoc2023 -r
+aoc2023 --run
+    Run the solutions for the specified days
 
+aoc2023 -a
 aoc2023 --all
-   Runs all solutions
+    Run all the solutions
+
+aoc2023 -t
+aoc2023 --time
+    Run all the solutions many times to get an accurate profile
 ```
 
 To run the tests, use:
-```
+```bash
 ./build/Release/test/test
 ```

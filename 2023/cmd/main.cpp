@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
 
   a.register_command({
       .flags = {"-t", "--time"},
-      .help = "Runs all the solutions many times to get an accurate profile",
+      .help = "Run all the solutions many times to get an accurate profile",
       .run =
           [](app::app &app, app::argv args) {
             if (args.size() != 0) {
