@@ -1,17 +1,29 @@
 #pragma once
 
-#include <vector>
-#include <string_view>
+#include <cstdlib>
 #include <map>
-#include <memory>
+#include <string_view>
+#include <vector>
 
-#include "xmaslib/solution/solution.hpp"
+constexpr int exit_success = EXIT_SUCCESS;
+constexpr int exit_failure = EXIT_FAILURE;
+constexpr int exit_bad_args = 2;
 
+class app {
+public:
+  using argv = std::vector<std::string_view>;
+  using mainfn = int (*)(app &, argv const &);
 
-int run(std::vector<std::string_view> &args);
+  app();
 
-void usage(std::ostream &s);
+  int run(std::vector<std::string_view> &args);
 
-bool solve_day(
-    std::map<const int, std::unique_ptr<xmas::solution>>::value_type const
-        &solution);
+  std::map<std::string_view, mainfn> commands;
+
+private:
+  static int help(app &, argv const &days);
+  static int exec_some_days(app &, argv const &days);
+  static int exec_all_days(app &, argv const &days);
+
+  bool any_action;
+};

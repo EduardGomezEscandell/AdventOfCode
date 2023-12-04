@@ -1,7 +1,9 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <optional>
+#include <ratio>
 #include <stdexcept>
 
 namespace xmas {
@@ -14,6 +16,10 @@ public:
   virtual void load();
   virtual bool run() noexcept;
 
+  // Same as standard library
+  using duration = std::chrono::duration<long, std::ratio<1, 1000000000>>;
+  virtual duration time() const;
+
 protected:
   virtual std::int64_t part1() { throw std::runtime_error("not implemented"); }
   virtual std::int64_t part2() { throw std::runtime_error("not implemented"); }
@@ -25,6 +31,9 @@ private:
 
   std::optional<std::int64_t> p1;
   std::optional<std::int64_t> p2;
+
+  duration time_p1;
+  duration time_p2;
 };
 
 } // namespace xmas
