@@ -15,15 +15,17 @@ namespace internal {
 std::map<int, std::unique_ptr<solution>> &registered_solutions() noexcept;
 }
 
-template <int V, std::derived_from<xmas::solution> T> void register_solution() {
+template <std::derived_from<xmas::solution> S> void register_solution() {
   auto &m = internal::registered_solutions();
+  S s{};
+  const auto day = s.day();
 
-  if (auto x = m.find(V); x != m.end()) {
+  if (auto x = m.find(day); x != m.end()) {
     throw std::runtime_error(std::format(
-        "Attempting the overwrite registered solution for day {}", V));
+        "Attempting the overwrite registered solution for day {}", day));
   }
 
-  m[V] = std::unique_ptr<solution>(new T());
+  m[day] = std::unique_ptr<solution>(new S(std::move(s)));
 }
 
 } // namespace xmas
