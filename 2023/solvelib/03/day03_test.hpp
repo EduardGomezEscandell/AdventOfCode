@@ -45,11 +45,11 @@ TEST_CASE("Day 3") {
     REQUIRE_EQ(solution.part2(), 71160);
   }
 
-  // SUBCASE("Real data") {
-  //   Day03 solution{};
-  //   solution.set_input("./data/03/input.txt");
-  //   solution.load();
-  //   REQUIRE_EQ(solution.part1(), 554003);
-  //   REQUIRE_THROWS(solution.part2());
-  // }
+  SUBCASE("Real data") {
+    Day03 solution{};
+    solution.set_input("./data/03/input.txt");
+    solution.load();
+    REQUIRE_EQ(solution.part1(), 554003);
+    REQUIRE_EQ(solution.part2(), 87263515);
+  }
 }
