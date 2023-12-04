@@ -14,5 +14,5 @@ int main(int argc, char **argv) {
     args.emplace_back(argv[i]);
   }
 
-  return run(args);
+  return app{}.run(args);
 }
