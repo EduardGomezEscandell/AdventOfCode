@@ -23,21 +23,23 @@ std::int64_t Day03::part1() {
   xlog::debug("Detected {} rows and {} columns", nrows, ncols);
 
   // Make a mask labeling all symbol-adjacent cells
-  std::vector<bool> mask(this->input.size(), 0);
+  // Cannot use vector<bool> because writing into nearby entries is
+  // thread-unsafe.
+  std::vector<std::int8_t> mask(this->input.size(), 0);
   {
     // Detect symbols
-    std::vector<bool> symbols(this->input.size(), 0);
+    std::vector<std::int8_t> symbols(this->input.size(), 0);
     std::transform(std::execution::par_unseq, this->input.cbegin(),
                    this->input.cend(), symbols.begin(), [](char ch) {
                      if (ch == '.')
-                       return false;
+                       return 0;
                      if (ch == '\n')
-                       return false;
+                       return 0;
                      if (ch >= '0' && ch <= '9')
-                       return false;
+                       return 0;
 
                      // Upper row
-                     return true;
+                     return 1;
                    });
 
     std::vector<std::size_t> iota(this->input.size(), 0);
@@ -45,7 +47,8 @@ std::int64_t Day03::part1() {
 
     // Expand the mask to cover symbol adjacency
     std::transform(std::execution::par_unseq, iota.cbegin(), iota.cend(),
-                   mask.begin(), [&](std::size_t idx) -> std::int64_t {
+                   mask.begin(),
+                   [nrows, ncols, &symbols](std::size_t idx) -> std::int64_t {
                      // Top row
                      const auto row = idx / ncols;
                      const auto col = idx % ncols;
@@ -55,38 +58,38 @@ std::int64_t Day03::part1() {
 
                      if (rightmost) {
                        // Skip \n
-                       return false;
+                       return 0;
                      }
 
                      // Same row
-                     if (!leftmost && symbols[idx - 1])
-                       return true;
-                     if (!rightmost && symbols[idx + 1])
-                       return true;
+                     if (!leftmost && symbols[idx - 1]==1)
+                       return 1;
+                     if (!rightmost && symbols[idx + 1]==1)
+                       return 1;
 
                      // Top row
                      if (row > 0) {
                        const auto top = idx - ncols;
-                       if (symbols[top])
-                         return true;
-                       if (!leftmost && symbols[top - 1])
-                         return true;
-                       if (!rightmost && symbols[top + 1])
-                         return true;
+                       if (symbols[top]==1)
+                         return 1;
+                       if (!leftmost && symbols[top - 1]==1)
+                         return 1;
+                       if (!rightmost && symbols[top + 1]==1)
+                         return 1;
                      }
 
                      // Bottom row
                      if (row < nrows - 1) {
                        const auto bot = idx + ncols;
-                       if (symbols[bot])
-                         return true;
-                       if (!leftmost && symbols[bot - 1])
-                         return true;
-                       if (!rightmost && symbols[bot + 1])
-                         return true;
+                       if (symbols[bot]==1)
+                         return 1;
+                       if (!leftmost && symbols[bot - 1]==1)
+                         return 1;
+                       if (!rightmost && symbols[bot + 1]==1)
+                         return 1;
                      }
 
-                     return false;
+                     return 0;
                    });
   }
 
@@ -95,7 +98,7 @@ std::int64_t Day03::part1() {
   std::iota(rows.begin(), rows.end(), 0);
   return std::transform_reduce(
       std::execution::par_unseq, rows.begin(), rows.end(), 0,
-      std::plus<std::int64_t>{}, [&](std::size_t row) {
+      std::plus<std::int64_t>{}, [ncols, this, &mask](std::size_t row) {
         auto begin = row * ncols;
         auto end = begin + ncols;
 
@@ -122,7 +125,7 @@ std::int64_t Day03::part1() {
           num += input[idx] - '0';
 
           // Is it in contact?
-          if (mask[idx])
+          if (mask[idx] == 1)
             relevant = true;
         }
 
