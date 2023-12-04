@@ -15,8 +15,9 @@ solution::duration solution::time() const {
   return this->time_p1 + this->time_p2;
 }
 
-bool solution::run() noexcept {
-  xlog::info("Day {}", this->day());
+bool solution::run(bool verbose) noexcept {
+  if(verbose)
+    xlog::info("Day {}", this->day());
 
   try {
     this->load();
@@ -33,10 +34,12 @@ bool solution::run() noexcept {
     const auto result = this->part1();
     this->time_p1 = std::chrono::high_resolution_clock::now() - start;
 
-    xlog::info(
-        "Result 1: {} ({} μs)", result,
-        std::chrono::duration_cast<std::chrono::microseconds>(this->time_p1)
-            .count());
+    if (verbose) {
+      xlog::info(
+          "result 1: {} ({} μs)", result,
+          std::chrono::duration_cast<std::chrono::microseconds>(this->time_p1)
+              .count());
+    }
   } catch (std::runtime_error &err) {
     xlog::error("Part 1 failed with message: {}", err.what());
   } catch (...) {
@@ -49,10 +52,12 @@ bool solution::run() noexcept {
     const auto result = this->part2();
     this->time_p2 = std::chrono::high_resolution_clock::now() - start;
 
-    xlog::info(
-        "Result 2: {} ({} μs)", result,
-        std::chrono::duration_cast<std::chrono::microseconds>(this->time_p2)
-            .count());
+    if (verbose) {
+      xlog::info(
+          "Result 2: {} ({} μs)", result,
+          std::chrono::duration_cast<std::chrono::microseconds>(this->time_p2)
+              .count());
+    }
   } catch (std::runtime_error &err) {
     xlog::error("Part 2 failed with message: {}", err.what());
   } catch (...) {

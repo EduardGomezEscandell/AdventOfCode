@@ -14,6 +14,10 @@ using solution_vector = std::vector<
 
 solution_vector select_days(argv days);
 solution_vector select_all_days();
+
 bool execute_days(app &, solution_vector const &days);
+
+bool time_days(app &, solution_vector const &days,
+               xmas::solution::duration timeout);
 
 } // namespace app

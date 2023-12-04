@@ -4,6 +4,8 @@
 #include "xmaslib/solution/solution.hpp"
 
 #include <charconv>
+#include <chrono>
+#include <cmath>
 #include <memory>
 #include <stdexcept>
 #include <string_view>
@@ -12,7 +14,8 @@ namespace app {
 
 std::optional<xmas::solution::duration>
 solve_day(std::map<const int, std::unique_ptr<xmas::solution>>::value_type const
-              &solution);
+              &solution,
+          bool verbose);
 
 solution_vector select_all_days() {
   try {
@@ -67,7 +70,7 @@ bool execute_days(app &, solution_vector const &days) {
   bool total_success = true;
 
   for (auto d : days) {
-    const auto t = solve_day(*d);
+    const auto t = solve_day(*d, true);
     if (!t.has_value()) {
       total_success = false;
       continue;
@@ -84,9 +87,76 @@ bool execute_days(app &, solution_vector const &days) {
   return total_success;
 }
 
+std::int64_t microseconds(xmas::solution::duration d) {
+  return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
+}
+
+bool time_days(app &, solution_vector const &days,
+               xmas::solution::duration timeout) {
+  xmas::solution::duration total{};
+  bool total_success = true;
+
+  xlog::debug("Timing solution in debug mode"); // Will not be printed on
+                                                // Release mode :)
+
+  for (auto d : days) {
+    auto begin = std::chrono::high_resolution_clock::now();
+
+    std::int64_t iter = 0;
+    xmas::solution::duration daily_total{};
+
+    // Used to compute standard deviation
+    std::int64_t M = 0, S = 0;
+
+    while (std::chrono::high_resolution_clock::now() - begin < timeout) {
+      const auto t = solve_day(*d, false);
+      if (!t.has_value()) {
+        total_success = false;
+        continue;
+      }
+      daily_total += *t;
+      ++iter;
+
+      // std deviation stuff
+      // https://mathcentral.uregina.ca/QQ/database/QQ.09.02/carlos1.html
+      auto us = microseconds(*t);
+      const auto prevM = M;
+      M += (us - prevM) / iter;
+      S += (us - prevM) * (us - M);
+    }
+
+    if (iter == 0) {
+      xlog::warning("Could not successfully complete day {}", d->second->day());
+      continue;
+    }
+
+    // Average
+    const auto mean = std::chrono::duration_cast<std::chrono::microseconds>(
+                          daily_total / iter)
+                          .count();
+    const auto dev = static_cast<std::int64_t>(std::sqrt(S / iter));
+
+    // Report
+    xlog::info(
+        "Day {} ran {} times: the mean time is {} μs with a standard deviation "
+        "of {} μs",
+        d->second->day(), iter, mean, dev);
+
+    total += daily_total / iter;
+  }
+
+  xlog::info("DONE");
+  xlog::info(
+      "Average total time was {} ms",
+      std::chrono::duration_cast<std::chrono::milliseconds>(total).count());
+
+  return total_success;
+}
+
 std::optional<xmas::solution::duration>
 solve_day(std::map<const int, std::unique_ptr<xmas::solution>>::value_type const
-              &solution) {
+              &solution,
+          bool verbose) {
 
   try {
     solution.second->set_input(
@@ -97,7 +167,7 @@ solve_day(std::map<const int, std::unique_ptr<xmas::solution>>::value_type const
     return {};
   }
 
-  if (auto success = solution.second->run(); !success) {
+  if (auto success = solution.second->run(verbose); !success) {
     return {};
   }
 
