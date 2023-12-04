@@ -29,6 +29,6 @@ TEST_CASE("Day 04") {
     solution.set_input("./data/04/input.txt");
     solution.load();
     REQUIRE_EQ(solution.part1(), 23028);
-    // REQUIRE_EQ(solution.part2(), 5);
+    REQUIRE_EQ(solution.part2(), 9236992);
   }
 }
