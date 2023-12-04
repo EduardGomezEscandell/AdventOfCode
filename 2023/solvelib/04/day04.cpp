@@ -133,23 +133,24 @@ std::int64_t Day04::part2() {
 
   // Must not be parallel because we overwrite copies
   std::vector<std::int64_t> copies(nrows, 1);
-  auto v = std::ranges::views::transform(
-      rows, [&hits, &copies](std::size_t const row) {
-        const auto nhits = hits[row];
-        const auto ncopies = copies[row];
+  std::transform(rows.begin(), rows.end(), copies.begin(),
+                 [&hits, &copies](std::size_t const row) {
+                   const auto nhits = hits[row];
+                   const auto ncopies = copies[row];
 
-        xlog::debug("Game {}: there are {} copies with score {}", row + 1,
-                    ncopies, nhits);
+                   xlog::debug("Game {}: there are {} copies with {} hits each",
+                               row + 1, ncopies, nhits);
 
-        // Add copies of following cards
-        auto mbegin = copies.begin() + static_cast<std::ptrdiff_t>(row) + 1;
-        auto mend = mbegin + nhits;
-        std::transform(mbegin, mend, mbegin,
-                       [ncopies](auto &m) { return m + ncopies; });
+                   // Add copies of following cards
+                   auto mbegin =
+                       copies.begin() + static_cast<std::ptrdiff_t>(row) + 1;
+                   auto mend = mbegin + nhits;
+                   std::transform(mbegin, mend, mbegin,
+                                  [ncopies](auto &m) { return m + ncopies; });
 
-        return ncopies;
-      });
+                   return ncopies;
+                 });
 
   // std::ranges::reduce does not exist >:(
-  return std::reduce(v.begin(), v.end());
+  return std::reduce(copies.begin(), copies.end());
 }
