@@ -117,14 +117,14 @@ struct layer {
 #ifndef NDEBUG
     auto it = std::adjacent_find(mappings.begin(), mappings.end(),
                                  [](mapping const &prev, mapping const &next) {
-                                   return prev.from + prev.len > next.from;
+                                   return prev.src + prev.len > next.src;
                                  });
     if (it != mappings.end()) {
       auto first = *it;
       auto second = *(it + 1);
       throw std::runtime_error(
-          std::format("Entry ({},{},{}) overlaps with ({},{},{})", first.from,
-                      first.to, first.len, second.from, second.to, second.len));
+          std::format("Entry ({},{},{}) overlaps with ({},{},{})", first.src,
+                      first.dest, first.len, second.src, second.dest, second.len));
     }
 #endif
   }
