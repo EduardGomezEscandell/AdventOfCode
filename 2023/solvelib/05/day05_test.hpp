@@ -17,11 +17,18 @@ TEST_CASE("Day 05") {
     REQUIRE_EQ(solution.part1(), 35);
   }
 
-  SUBCASE("Part 2") {
+  SUBCASE("Part 2, example 2") {
     Day05 solution{};
     solution.set_input("./data/05/example2.txt");
     solution.load();
-    REQUIRE_THROWS(solution.part2());
+    REQUIRE_EQ(solution.part2(), 46);
+  }
+
+  SUBCASE("Part 2, example 3") {
+    Day05 solution{};
+    solution.set_input("./data/05/example3.txt");
+    solution.load();
+    REQUIRE_EQ(solution.part2(), 46);
   }
 
   SUBCASE("Real data") {
@@ -29,6 +36,6 @@ TEST_CASE("Day 05") {
     solution.set_input("./data/05/input.txt");
     solution.load();
     REQUIRE_EQ(solution.part1(), 331445006);
-    REQUIRE_THROWS(solution.part2());
+    REQUIRE_EQ(solution.part2(), 6472060);
   }
 }
