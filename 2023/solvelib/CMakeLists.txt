@@ -4,6 +4,7 @@ add_library(solvelib
     02/day02.hpp    02/day02.cpp 02/day02_test.hpp 02/game.hpp    02/game.cpp
     03/day03.hpp    03/day03.cpp 03/day03_test.hpp
     04/day04.hpp    04/day04.cpp 04/day04_test.hpp
+    05/day05.hpp    05/day05.cpp 05/day05_test.hpp
 )
 
 set_target_properties(solvelib PROPERTIES LINKER_LANGUAGE CXX)
