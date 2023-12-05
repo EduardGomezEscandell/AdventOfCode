@@ -34,7 +34,7 @@ void Day03::load() {
   }
 }
 
-std::int64_t Day03::part1() {
+std::uint64_t Day03::part1() {
 
   const auto [nrows, ncols] = dimensions(this->input);
 
@@ -113,13 +113,13 @@ std::int64_t Day03::part1() {
   std::vector<std::size_t> rows(nrows, 0);
   std::iota(rows.begin(), rows.end(), 0);
   return std::transform_reduce(
-      std::execution::par_unseq, rows.begin(), rows.end(), 0,
-      std::plus<std::int64_t>{}, [ncols, this, &mask](std::size_t row) {
+      std::execution::par_unseq, rows.begin(), rows.end(), 0u,
+      std::plus{}, [ncols, this, &mask](std::size_t row) {
         auto begin = row * ncols;
         auto end = begin + ncols;
 
-        std::int64_t total = 0;
-        std::int64_t num = 0;
+        std::uint64_t total = 0;
+        std::uint64_t num = 0;
         bool relevant = false;
 
         for (std::size_t idx = begin; idx != end; ++idx) {
@@ -138,7 +138,7 @@ std::int64_t Day03::part1() {
 
           // Parse next digit
           num *= 10;
-          num += input[idx] - '0';
+          num += uint(input[idx] - '0');
 
           // Is it in contact?
           if (mask[idx] == 1)
@@ -149,7 +149,7 @@ std::int64_t Day03::part1() {
       });
 }
 
-std::int64_t Day03::part2() {
+std::uint64_t Day03::part2() {
   const auto [nrows, ncols] = dimensions(this->input);
 
   std::vector<std::size_t> rows(nrows, 0);
@@ -191,9 +191,9 @@ std::int64_t Day03::part2() {
   std::vector<std::size_t> iota(nrows * ncols, 0);
   std::iota(iota.begin(), iota.end(), 0);
   return std::transform_reduce(
-      std::execution::par_unseq, iota.begin(), iota.end(), 0,
-      std::plus<std::int64_t>{},
-      [this, nrows, ncols, &numbers](const std::size_t idx) -> std::int64_t {
+      std::execution::par_unseq, iota.begin(), iota.end(), 0u,
+      std::plus{},
+      [this, nrows, ncols, &numbers](const std::size_t idx) -> std::uint64_t {
         if (this->input[idx] != '*') {
           return 0;
         }
@@ -201,7 +201,7 @@ std::int64_t Day03::part2() {
         const auto row = idx / ncols;
         const auto col = idx % ncols;
 
-        std::vector<std::int64_t> neighbours;
+        std::vector<std::uint64_t> neighbours;
         neighbours.reserve(5);
 
         const bool leftmost = (col == 0);
@@ -209,10 +209,10 @@ std::int64_t Day03::part2() {
 
         // Side neighbours
         if (!leftmost && numbers[row][col - 1] != -1) {
-          neighbours.push_back(numbers[row][col - 1]);
+          neighbours.emplace_back(numbers[row][col - 1]);
         }
         if (!rightmost && numbers[row][col + 1] != -1) {
-          neighbours.push_back(numbers[row][col + 1]);
+          neighbours.emplace_back(numbers[row][col + 1]);
         }
 
         // Up neighbours
@@ -220,14 +220,14 @@ std::int64_t Day03::part2() {
           auto r = numbers[row - 1];
           if (r[col] != -1) {
             // Either a number on top
-            neighbours.push_back(r[col]);
+            neighbours.emplace_back(r[col]);
           } else {
             // Or numbers on top-left and top-right
             if (!leftmost && r[col - 1] != -1) {
-              neighbours.push_back(r[col - 1]);
+              neighbours.emplace_back(r[col - 1]);
             }
             if (!rightmost && r[col + 1] != -1) {
-              neighbours.push_back(r[col + 1]);
+              neighbours.emplace_back(r[col + 1]);
             }
           }
         }
@@ -237,14 +237,14 @@ std::int64_t Day03::part2() {
           auto r = numbers[row + 1];
           if (r[col] != -1) {
             // Either a number below
-            neighbours.push_back(r[col]);
+            neighbours.emplace_back(r[col]);
           } else {
             // Or numbers below-left and below-right
             if (!leftmost && r[col - 1] != -1) {
-              neighbours.push_back(r[col - 1]);
+              neighbours.emplace_back(r[col - 1]);
             }
             if (!rightmost && r[col + 1] != -1) {
-              neighbours.push_back(r[col + 1]);
+              neighbours.emplace_back(r[col + 1]);
             }
           }
         }

@@ -21,16 +21,16 @@ public:
   virtual duration time() const;
 
 protected:
-  virtual std::int64_t part1() { throw std::runtime_error("not implemented"); }
-  virtual std::int64_t part2() { throw std::runtime_error("not implemented"); }
+  virtual std::uint64_t part1() { throw std::runtime_error("not implemented"); }
+  virtual std::uint64_t part2() { throw std::runtime_error("not implemented"); }
 
   std::string input;
 
 private:
   std::string data_path;
 
-  std::optional<std::int64_t> p1;
-  std::optional<std::int64_t> p2;
+  std::optional<std::uint64_t> p1;
+  std::optional<std::uint64_t> p2;
 
   duration time_p1;
   duration time_p2;

@@ -6,7 +6,7 @@
 #include "xmaslib/line_iterator/line_iterator.hpp"
 #include "xmaslib/log/log.hpp"
 
-std::int64_t Day02::part1() {
+std::uint64_t Day02::part1() {
   xmas::line_range range(this->input);
 
   constexpr std::int64_t max_red = 12;
@@ -14,7 +14,7 @@ std::int64_t Day02::part1() {
   constexpr std::int64_t max_blue = 14;
 
   return std::transform_reduce(
-      range.begin(), range.end(), 0, std::plus<std::int64_t>{},
+      range.begin(), range.end(), 0u, std::plus{},
       [](std::string_view line) -> std::int64_t {
         const game g(line);
 
@@ -35,15 +35,15 @@ std::int64_t Day02::part1() {
       });
 }
 
-std::int64_t Day02::part2() {
+std::uint64_t Day02::part2() {
   xmas::line_range range(this->input);
 
   return std::transform_reduce(
-      range.begin(), range.end(), 0, std::plus<std::int64_t>{},
-      [](std::string_view line) -> std::int64_t {
+      range.begin(), range.end(), 0u, std::plus{},
+      [](std::string_view line) -> std::uint64_t {
         const game g(line);
 
-        const auto p = g.max.red * g.max.green * g.max.blue;
+        const auto p = static_cast<std::uint64_t>(g.max.red * g.max.green * g.max.blue);
         xlog::debug("Power value is {} for {}", p, g);
         return p;
       });
