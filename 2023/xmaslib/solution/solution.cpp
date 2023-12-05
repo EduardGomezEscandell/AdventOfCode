@@ -16,7 +16,9 @@ solution::duration solution::time() const {
 }
 
 bool solution::run(bool verbose) noexcept {
-  if(verbose)
+  bool success = true;
+
+  if (verbose)
     xlog::info("Day {}", this->day());
 
   try {
@@ -42,6 +44,7 @@ bool solution::run(bool verbose) noexcept {
     }
   } catch (std::runtime_error &err) {
     xlog::error("Part 1 failed with message: {}", err.what());
+    success = false;
   } catch (...) {
     xlog::error("Part 1 failed with no message");
     return false;
@@ -60,12 +63,13 @@ bool solution::run(bool verbose) noexcept {
     }
   } catch (std::runtime_error &err) {
     xlog::error("Part 2 failed with message: {}", err.what());
+    success = false;
   } catch (...) {
     xlog::error("Part 2 failed with no message");
     return false;
   }
 
-  return true;
+  return success;
 }
 
 void solution::set_input(std::string_view path) { this->data_path = path; }
