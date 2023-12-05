@@ -8,25 +8,26 @@
 
 bool is_num(char ch) { return ch >= '0' && ch <= '9'; }
 
-std::int64_t Day01::part1() {
+std::uint64_t Day01::part1() {
   std::stringstream ss(this->input);
 
   return std::transform_reduce(
       std::istream_iterator<std::string>(ss),
-      std::istream_iterator<std::string>{}, 0, std::plus<int>{},
-      [](std::string_view line) {
+      std::istream_iterator<std::string>{}, 0u, std::plus{},
+      [](std::string_view line) -> std::uint64_t{
         // First digit
         const auto first = std::ranges::find_if(line, is_num);
-        if (first == line.end())
+        if (first == line.end()) {
           throw std::runtime_error(
               std::format("line {} contains no numbers", line));
+        }
 
         // Last digit
         const auto last =
             std::find_if(line.rbegin(), std::reverse_iterator(first), is_num);
 
         // compute
-        return int(*first - '0') * 10 + int(*last - '0');
+        return static_cast<std::uint64_t>(int(*first - '0') * 10 + int(*last - '0'));
       });
 }
 
@@ -66,12 +67,12 @@ std::pair<Iterator, int> find_number(Iterator begin, Iterator end) {
   return std::make_pair(end, 0);
 }
 
-std::int64_t Day01::part2() {
+std::uint64_t Day01::part2() {
   std::stringstream ss(this->input);
 
   return std::transform_reduce(
       std::istream_iterator<std::string>(ss),
-      std::istream_iterator<std::string>{}, 0, std::plus<int>{},
+      std::istream_iterator<std::string>{}, 0u, std::plus<std::uint64_t>{},
       [](std::string_view line) {
         // First digit
         const auto first = find_number(line.begin(), line.end());
