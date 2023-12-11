@@ -291,7 +291,7 @@ std::uint64_t Day05::part2() {
     });
   }
 
-  xlog::debug("There are {} seeds", seed_pairs.size());
+  xlog::debug("There are {} seed ranges", seed_pairs.size());
 
   ++iline;
   ++iline;
