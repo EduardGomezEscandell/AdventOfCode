@@ -9,3 +9,4 @@
 #include "solvelib/12/day12_test.hpp"
 
 #include "xmaslib/iota/iota_test.hpp"
+#include "xmaslib/lru/lru_test.hpp"
