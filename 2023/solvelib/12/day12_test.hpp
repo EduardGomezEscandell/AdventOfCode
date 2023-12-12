@@ -101,11 +101,53 @@ TEST_CASE("Day 12") {
     REQUIRE_EQ(solution.part1(), 3);
   }
 
-  SUBCASE("Part 2") {
+  SUBCASE("Part 1, example 15") {
+    Day12 solution{};
+    solution.set_input("./data/12/example15.txt");
+    solution.load();
+    REQUIRE_EQ(solution.part1(), 4);
+  }
+
+  SUBCASE("Part 2, example 1") {
+    Day12 solution{};
+    solution.set_input("./data/12/example1.txt");
+    solution.load();
+    REQUIRE_EQ(solution.part2(), 16384);
+  }
+
+  SUBCASE("Part 2, example 2") {
+    Day12 solution{};
+    solution.set_input("./data/12/example2.txt");
+    solution.load();
+    REQUIRE_EQ(solution.part2(), 1);
+  }
+
+  SUBCASE("Part 2, example 3") {
+    Day12 solution{};
+    solution.set_input("./data/12/example3.txt");
+    solution.load();
+    REQUIRE_EQ(solution.part2(), 506250);
+  }
+
+  SUBCASE("Part 2, example 4") {
+    Day12 solution{};
+    solution.set_input("./data/12/example4.txt");
+    solution.load();
+    REQUIRE_EQ(solution.part2(), 1);
+  }
+
+  SUBCASE("Part 2, example 6") {
     Day12 solution{};
     solution.set_input("./data/12/example6.txt");
     solution.load();
-    REQUIRE_THROWS(solution.part2());
+    REQUIRE_EQ(solution.part2(), 525152);
+  }
+
+  SUBCASE("Part 2, example 15") {
+    Day12 solution{};
+    solution.set_input("./data/12/example15.txt");
+    solution.load();
+    REQUIRE_EQ(solution.part2(), 5184);
   }
 
   SUBCASE("Real data") {
@@ -113,6 +155,7 @@ TEST_CASE("Day 12") {
     solution.set_input("./data/12/input.txt");
     solution.load();
     REQUIRE_EQ(solution.part1(), 7653);
-    REQUIRE_THROWS(solution.part2());
+    REQUIRE_GT(solution.part2(), 2121046676);
+    REQUIRE_GT(solution.part2(), 75135490708);
   }
 }

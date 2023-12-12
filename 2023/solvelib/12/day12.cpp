@@ -5,6 +5,7 @@
 #include "xmaslib/lazy_string/lazy_string.hpp"
 #include "xmaslib/line_iterator/line_iterator.hpp"
 #include "xmaslib/log/log.hpp"
+#include "xmaslib/lru/lru.hpp"
 #include "xmaslib/parsing/parsing.hpp"
 #include "xmaslib/view/view.hpp"
 
@@ -14,6 +15,7 @@
 #include <cstring>
 #include <execution>
 #include <functional>
+#include <iterator>
 #include <numeric>
 #include <ranges>
 #include <sstream>
@@ -200,86 +202,146 @@ bool contains(xmas::view<std::vector<cell>::const_iterator> v, cell c) {
   return it != v.end();
 }
 
-std::uint64_t
-count_combinations(xmas::view<std::vector<cell>::const_iterator> cells_base,
-                   xmas::view<std::vector<int>::const_iterator> ranges_base) {
-  // Deterministic progress
-  //
-  //   We consume # and . from left to write
-  auto [cells, ranges, ok] = trim_left(cells_base, ranges_base);
-  if (!ok) {
-    return 0;
+struct state {
+  xmas::view<std::vector<cell>::const_iterator> cells;
+  xmas::view<std::vector<int>::const_iterator> ranges;
+
+  bool operator==(state const &other) const noexcept {
+    return (&*cells.begin() == &*other.cells.begin()) &&
+           (cells.size() == other.cells.size()) &&
+           (&*ranges.begin() == &*other.ranges.begin()) &&
+           (cells.size() == other.cells.size());
   }
 
-  if (ranges.size() == 0) {
-    if (contains(cells, cell::set)) {
+  std::size_t hash() const noexcept {
+    static_assert(sizeof(std::size_t) >= 8);
+    auto h1 = hash16bit(&*cells.begin());
+    auto h2 = hash16bit(&*cells.end());
+    auto h3 = hash16bit(&*ranges.begin());
+    auto h4 = hash16bit(&*ranges.end());
+    return h1 << 48 | h2 << 32 | h3 << 16 | h4; // or use boost::hash_combine
+  }
+
+private:
+  static std::size_t hash16bit(auto const *p) {
+    return std::hash<std::uint64_t>{}(reinterpret_cast<std::uint64_t>(p)) &
+           0xffff;
+  }
+};
+
+} // namespace
+
+template <> struct std::hash<state> {
+
+  std::size_t operator()(const state &s) const noexcept { return s.hash(); }
+};
+
+namespace {
+
+[[nodiscard]] std::uint64_t
+count_combinations(xmas::lru_cache<state, std::uint64_t> &lru,
+                   xmas::view<std::vector<cell>::const_iterator> cells_base,
+                   xmas::view<std::vector<int>::const_iterator> ranges_base) {
+
+  if (auto opt = lru.get({cells_base, ranges_base}); opt.has_value()) {
+    return *opt;
+  }
+
+  const auto result = [&]() -> std::uint64_t {
+    // Deterministic progress
+    //
+    //   We consume # and . from left to write
+    auto [cells, ranges, ok] = trim_left(cells_base, ranges_base);
+    if (!ok) {
       return 0;
     }
-    return 1;
-  }
 
-  const auto leftover =
-      static_cast<std::size_t>(std::reduce(ranges.begin(), ranges.end())) +
-      ranges.size() - 1;
-  if (cells.size() < static_cast<std::size_t>(leftover)) {
-    return 0;
-  }
-
-  // Speculative progress
-  //
-  // We try to force ? into # and . and see if it breaks
-  auto pound = std::ranges::find(cells, cell::set);
-  auto size = std::min(1 + cells.size() - static_cast<std::size_t>(leftover),
-                       1 + static_cast<std::size_t>(pound - cells.begin()));
-
-  xmas::views::iota<std::size_t> iota(size);
-  std::uint64_t x = 0;
-  const auto L = static_cast<std::size_t>(ranges.front());
-  for (auto idx : iota) {
-    if (cells[idx] == cell::empty) {
-      continue;
+    if (ranges.size() == 0) {
+      if (contains(cells, cell::set)) {
+        return 0;
+      }
+      return 1;
     }
 
-    x += [cells, ranges, L](std::size_t idx) -> std::uint64_t {
-      auto v = cells.drop(idx);
+    const auto leftover =
+        static_cast<std::size_t>(std::reduce(ranges.begin(), ranges.end())) +
+        ranges.size() - 1;
+    if (cells.size() < leftover) {
+      return 0;
+    }
 
-      auto prefix = v.take(L);
-      auto it = std::ranges::find(prefix, cell::empty);
-      if (it != prefix.end()) {
-        // Range cannot start here
-        return 0;
-      }
+    // Speculative progress
+    //
+    // We try to force ? into # and . and see if it breaks
+    auto pound = std::ranges::find(cells, cell::set);
+    auto size = std::min(1 + cells.size() - static_cast<std::size_t>(leftover),
+                         1 + static_cast<std::size_t>(pound - cells.begin()));
 
-      if (it != cells.end() && *it == cell::set) {
-        // Collision with next block
-        return 0;
-      }
+    const auto L = static_cast<std::size_t>(ranges.front());
+    xmas::views::iota<std::size_t> iota(size);
+    return std::transform_reduce(
+        iota.begin(), iota.end(), std::uint64_t{0u}, std::plus<std::uint64_t>{},
+        [&lru, cells, ranges, L](std::size_t idx) -> std::uint64_t {
+          if (cells[idx] == cell::empty) {
+            return 0;
+          }
 
-      if (ranges.size() == 1) {
-        // End of sequence
-        if (contains(v.drop(ranges.front()), cell::set)) {
-          return 0;
-        }
-        return 1;
-      }
+          if (idx != 0 && cells[idx - 1] == cell::set) {
+            // Collision with prev block
+            return 0;
+          }
 
-      if (L + 1 >= v.size()) {
-        // Invalid combination
-        return 0;
-      }
+          auto v = cells.drop(idx);
 
-      auto x = count_combinations(v.drop(L + 1), ranges.drop(1));
-      return x;
-    }(idx);
-  }
+          auto prefix = v.take(L);
+          auto it = std::ranges::find(prefix, cell::empty);
+          if (it != prefix.end()) {
+            // Range does not fit
+            return 0;
+          }
 
-  return x;
+          if (it != v.end() && *it == cell::set) {
+            // Collision with next block
+            return 0;
+          }
+
+          if (ranges.size() == 1) {
+            // End of sequence
+            if (contains(v.drop(ranges.front()), cell::set)) {
+              return 0;
+            }
+            return 1;
+          }
+
+          auto x = count_combinations(lru, v.drop(L + 1), ranges.drop(1));
+          return x;
+        });
+  }();
+
+  lru.set(state{cells_base, ranges_base}, result);
+  return result;
 }
 
+template <bool quintuple = false>
 std::uint64_t process_line(std::string_view line) {
   auto [cells_base, ranges_base] = parse_line(line);
   if (ranges_base.size() == 0) {
     return 1;
+  }
+
+  if constexpr (quintuple) {
+    auto cells0 = cells_base;
+    auto ranges0 = ranges_base;
+
+    cells_base.reserve(cells_base.size() * 5 + 4);
+    ranges_base.reserve(ranges_base.size() * 5);
+
+    for (std::size_t i = 0; i < 4; ++i) {
+      cells_base.push_back(cell::unknown);
+      std::copy(cells0.begin(), cells0.end(), std::back_inserter(cells_base));
+      std::copy(ranges0.begin(), ranges0.end(),
+                std::back_inserter(ranges_base));
+    }
   }
 
   // Trim right. Left trim is done inside count_combinations
@@ -293,13 +355,16 @@ std::uint64_t process_line(std::string_view line) {
     return 0;
   }
 
-  const auto x = count_combinations(cells, ranges);
+  xmas::lru_cache<state, std::uint64_t> lru(128);
+
+  const auto x = count_combinations(lru, cells, ranges);
   if (x == 0) {
     xlog::warning("No combinations possible for line {} (error from the left)",
                   line);
   } else {
-    xlog::debug("{} -> {}", line, x);
+    xlog::debug("{} -> ({}) -> {}", line, stringify_line(cells, ranges), x);
   }
+
   return x;
 }
 
@@ -309,7 +374,14 @@ std::uint64_t Day12::part1() {
   auto in = xmas::views::linewise(this->input);
 
   return std::transform_reduce(std::execution::par_unseq, in.cbegin(),
-                               in.cend(), 0u, std::plus{}, process_line);
+                               in.cend(), std::uint64_t(0u),
+                               std::plus<std::uint64_t>{}, process_line<false>);
 }
 
-std::uint64_t Day12::part2() { throw std::runtime_error("Not implemented"); }
+std::uint64_t Day12::part2() {
+  auto in = xmas::views::linewise(this->input);
+
+  return std::transform_reduce(std::execution::par_unseq, in.cbegin(),
+                               in.cend(), std::uint64_t(0u),
+                               std::plus<std::uint64_t>{}, process_line<true>);
+}
