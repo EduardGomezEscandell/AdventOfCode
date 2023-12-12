@@ -197,8 +197,9 @@ struct layer {
 //
 // return.first: The layer that was parsed
 // return.second: An iterator pointing to the beginning of the next section
-std::pair<layer, xmas::line_iterator> parse_layer(xmas::line_iterator begin,
-                                                  xmas::line_iterator end) {
+std::pair<layer, xmas::views::linewise::iterator>
+parse_layer(xmas::views::linewise::iterator begin,
+            xmas::views::linewise::iterator end) {
   layer l;
   auto it = begin;
 
@@ -268,7 +269,7 @@ void extend(std::vector<T> &dst, std::vector<T> const &src) {
 
 std::uint64_t Day05::part1() {
   // Parsing
-  auto rng = xmas::line_range(this->input);
+  auto rng = xmas::views::linewise(this->input);
   auto iline = rng.begin();
 
   // Parse header
@@ -306,7 +307,7 @@ std::uint64_t Day05::part1() {
 
 std::uint64_t Day05::part2() {
   // Parsing
-  auto rng = xmas::line_range(this->input);
+  auto rng = xmas::views::linewise(this->input);
   auto iline = rng.begin();
 
   // Parse header
