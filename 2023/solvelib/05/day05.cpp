@@ -2,6 +2,7 @@
 
 #include "xmaslib/line_iterator/line_iterator.hpp"
 #include "xmaslib/log/log.hpp"
+#include "xmaslib/parsing/parsing.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -16,36 +17,6 @@
 
 namespace {
 
-// parse_ints parses a list of integers inbetween other characters
-// "534<dv13213zv  5643" -> [534, 13213, 5343]
-std::vector<std::uint64_t> parse_ints(std::string_view str) {
-  std::vector<std::uint64_t> out;
-
-  std::uint64_t n = 0;  // Current value of number
-  bool parsing = false; // Are we parsing a number?
-
-  for (auto ch : str) {
-    if (ch >= '0' && ch <= '9') {
-      parsing = true;
-      n = 10 * n + std::uint64_t(ch - '0');
-      continue;
-    }
-
-    if (parsing) {
-      out.push_back(n);
-    }
-
-    n = 0;
-    parsing = false;
-  }
-
-  if (parsing) {
-    out.push_back(n);
-  }
-
-  return out;
-}
-
 // Parses the first line of the almanac into a list of ints
 std::vector<std::uint64_t> parse_seeds(std::string_view first_line) {
   auto it = std::find(first_line.cbegin(), first_line.cend(), ':');
@@ -53,7 +24,7 @@ std::vector<std::uint64_t> parse_seeds(std::string_view first_line) {
     throw std::runtime_error("first line contains no ':'");
   }
 
-  return parse_ints({it + 1, first_line.cend()});
+  return xmas::parse_ints<std::size_t>({it + 1, first_line.cend()});
 }
 
 // A mapping is a source->destination (len) triplet.
@@ -206,7 +177,7 @@ parse_layer(xmas::views::linewise::iterator begin,
   // Skip title
   ++it;
   for (; it != end; ++it) {
-    auto ints = parse_ints(*it);
+    auto ints = xmas::parse_ints<std::size_t>(*it);
     if (auto size = ints.size(); size == 0) {
       // End of section: skip empty line and leave
       ++it;
