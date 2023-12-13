@@ -4,70 +4,70 @@
 #include <string_view>
 
 namespace xmas {
+namespace views {
 
-struct line_iterator {
-  using iterator_category = std::forward_iterator_tag;
-  using difference_type = std::ptrdiff_t;
-  using value_type = std::string_view;
-  using pointer = value_type *;
-  using reference = value_type &;
+struct linewise {
+  class iterator;
 
-  static auto begin(std::string_view str) {
-    auto it = line_iterator(str.begin(), str.end());
-    it.advance_endl();
-    return it;
-  }
+  linewise(std::string_view ss) : view{ss} {}
 
-  static auto end(std::string_view str) {
-    return line_iterator(str.end(), str.end());
-  }
+  iterator cbegin() const { return {view.begin(), view.end()}; }
+  iterator cend() const { return {view.end(), view.end()}; }
 
-  bool operator==(line_iterator const &other) {
-    return this->start == other.start;
-  }
-
-  bool operator!=(line_iterator const &other) { return !(*this == other); }
-
-  line_iterator operator++() {
-    start = endl;
-    if (start == endtext) {
-      return *this;
-    }
-
-    ++start;
-    advance_endl();
-
-    return *this;
-  }
-
-  value_type operator*() const { return {start, endl}; }
-
-private:
-  using base = std::string_view::iterator;
-
-  void advance_endl() {
-    this->endl =
-        std::find(std::execution::unseq, this->start, this->endtext, '\n');
-  }
-
-  line_iterator(base start, base end)
-      : start(start), endl(start), endtext(end) {
-    advance_endl();
-  }
-
-  base start;
-  base endl;
-  base endtext;
-};
-
-struct line_range {
-  line_range(std::string_view ss) : view{ss} {}
-
-  auto begin() const { return line_iterator::begin(view); }
-  auto end() const { return line_iterator::end(view); }
+  auto begin() const { return cbegin(); }
+  auto end() const { return cend(); }
 
 private:
   std::string_view view;
+
+public:
+  class iterator {
+    friend linewise;
+
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = std::string_view;
+    using pointer = value_type *;
+    using reference = value_type &;
+
+    bool operator==(iterator const &other) {
+      return this->start == other.start;
+    }
+
+    bool operator!=(iterator const &other) { return !(*this == other); }
+
+    iterator operator++() {
+      start = endl;
+      if (start == endtext) {
+        return *this;
+      }
+
+      ++start;
+      advance_endl();
+
+      return *this;
+    }
+
+    value_type operator*() const { return {start, endl}; }
+
+  private:
+    using base = std::string_view::iterator;
+
+    void advance_endl() {
+      this->endl =
+          std::find(std::execution::unseq, this->start, this->endtext, '\n');
+    }
+
+    iterator(base start, base end) : start(start), endl(start), endtext(end) {
+      advance_endl();
+    }
+
+    base start;
+    base endl;
+    base endtext;
+  };
 };
 
+} // namespace views
 } // namespace xmas

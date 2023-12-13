@@ -16,9 +16,19 @@ template <std::integral T> class iota {
 public:
   class iterator;
 
+  using size_type = std::size_t;
+
   constexpr iota(T begin, T end) : m_begin(begin), m_end(end) {
-    assert(begin <= end);
+#ifndef NDEBUG
+    if (begin > end) {
+      throw std::runtime_error(std::format(
+          "xmas::views::iota::iota begin (which is {}) >= end (which is {})",
+          begin, end));
+    }
+
+#endif
   }
+
   constexpr iota(T end) : iota(0, end) {}
   constexpr iota() : iota(0, std::numeric_limits<T>::max()) {}
 
@@ -28,31 +38,49 @@ public:
   constexpr iterator cbegin() const noexcept { return iterator(m_begin); }
   constexpr iterator cend() const noexcept { return iterator(m_end); }
 
-  constexpr std::size_t size() const noexcept {
-    return safe_cast<std::size_t>(m_end - m_begin);
+  constexpr size_type size() const noexcept {
+    return safe_cast<size_type>(m_end - m_begin);
   }
 
   constexpr T front() const noexcept { return m_begin; }
   constexpr T back() const noexcept { return m_end - 1; }
 
-  constexpr T operator[](std::size_t index) const noexcept {
+  constexpr T operator[](std::integral auto index) const noexcept {
 #ifndef NDEBUG
     range_check(index);
 #endif
-    return safe_cast<T>(m_begin + safe_cast<std::ptrdiff_t>(index));
+    return safe_cast<T>(safe_cast<std::ptrdiff_t>(m_begin) +
+                        safe_cast<std::ptrdiff_t>(index));
   }
 
-  constexpr T at(std::size_t index) const {
-    range_check(index);
-    return safe_cast<T>(m_begin + safe_cast<std::ptrdiff_t>(index));
+  constexpr T at(size_type index) const {
+    range_check<false>(index);
+    return safe_cast<T>(m_begin + index);
   }
 
 private:
-  constexpr void range_check(std::size_t index) const {
+  template <bool debug_only = true>
+  constexpr void range_check([[maybe_unused]] size_type index) const {
+#ifndef NDEBUG
+    constexpr bool is_debug = true;
+#else
+    constexpr bool is_debug = false;
+#endif
+    if constexpr (debug_only && !is_debug) {
+      return;
+    }
+
+    if (static_cast<std::ptrdiff_t>(index) < 0) {
+      throw std::runtime_error(
+          std::format("xmas::views::iota::range_check: index (which is {}) "
+                      "< 0",
+                      index));
+    }
+
     if (index >= size()) {
       throw std::runtime_error(
-          std::format("xmas::views::iota::range_check: index (which is %zu) "
-                      ">= this->size()  (which is %zu)",
+          std::format("xmas::views::iota::range_check: index (which is {}) "
+                      ">= this->size()  (which is {})",
                       index, this->size()));
     }
   }
@@ -83,7 +111,7 @@ public:
     }
 
     constexpr iterator operator++(int) noexcept {
-      auto it = iterator{v + 1};
+      auto it = iterator{v};
       ++*this;
       return it;
     }
@@ -132,8 +160,8 @@ public:
     [[nodiscard]] constexpr value_type operator*() const noexcept { return v; }
 
     [[nodiscard]] constexpr value_type
-    operator[](std::size_t index) const noexcept {
-      return safe_cast<value_type>(v + safe_cast<std::ptrdiff_t>(index));
+    operator[](size_type index) const noexcept {
+      return safe_cast<value_type>(v + index);
     }
 
   private:

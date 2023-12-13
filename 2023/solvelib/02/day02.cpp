@@ -7,7 +7,7 @@
 #include "xmaslib/log/log.hpp"
 
 std::uint64_t Day02::part1() {
-  xmas::line_range range(this->input);
+  xmas::views::linewise range(this->input);
 
   constexpr std::int64_t max_red = 12;
   constexpr std::int64_t max_green = 13;
@@ -36,15 +36,15 @@ std::uint64_t Day02::part1() {
 }
 
 std::uint64_t Day02::part2() {
-  xmas::line_range range(this->input);
+  xmas::views::linewise range(this->input);
 
-  return std::transform_reduce(
-      range.begin(), range.end(), 0u, std::plus{},
-      [](std::string_view line) -> std::uint64_t {
-        const game g(line);
+  return std::transform_reduce(range.begin(), range.end(), 0u, std::plus{},
+                               [](std::string_view line) -> std::uint64_t {
+                                 const game g(line);
 
-        const auto p = static_cast<std::uint64_t>(g.max.red * g.max.green * g.max.blue);
-        xlog::debug("Power value is {} for {}", p, g);
-        return p;
-      });
+                                 const auto p = static_cast<std::uint64_t>(
+                                     g.max.red * g.max.green * g.max.blue);
+                                 xlog::debug("Power value is {} for {}", p, g);
+                                 return p;
+                               });
 }
