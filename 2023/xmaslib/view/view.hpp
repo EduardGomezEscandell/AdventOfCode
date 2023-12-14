@@ -6,7 +6,13 @@
 #include <execinfo.h>
 
 namespace xmas {
+/*
+View is a non-owning range defined only by begin and end iterators, like a more
+general string_view.
 
+It has some convenience facilities to manage iterator pairs. When built in debug
+mode, bounds checking is enabled for all operations.
+*/
 template <typename It> class view {
   It m_begin, m_end;
 
@@ -17,6 +23,12 @@ public:
   auto end() const { return m_end; }
 
   auto &front() const { return *m_begin; }
+  auto &back() const {
+    std::size_t i = size() - 1;
+    check_bounds(i, __PRETTY_FUNCTION__);
+    return *(m_begin + 1);
+  }
+
   auto size() const { return static_cast<std::size_t>(m_end - m_begin); }
 
   template <std::integral N = std::ptrdiff_t> void pop_front(N n = 1) {
@@ -31,6 +43,8 @@ public:
 
   template <std::integral N = std::ptrdiff_t>
   [[nodiscard]] view subview(N begin, N end) const {
+    check_bounds(begin, __PRETTY_FUNCTION__);
+    check_bounds(end, __PRETTY_FUNCTION__);
     return view{m_begin + static_cast<std::ptrdiff_t>(begin),
                 m_begin + static_cast<std::ptrdiff_t>(end)};
   }

@@ -15,6 +15,29 @@
 namespace xmas {
 namespace views {
 
+/*
+strided is a view with iterators that skip elements, similar to python's [begin:end:stride]
+
+So these two would be equivalent:
+
+```python
+for item in array[begin:end:stride]:
+  do_something(item)
+```
+
+```c++
+for(auto item: strided{array.begin(), array.end(), stride}) {
+  do_something(item);
+}
+```
+
+It also allows parallel algorithms:
+
+```c++
+strided s{array.begin(), array.end(), stride};
+std::for_each(std::execution::par, s, do_something);
+```
+*/
 template <typename Base> class strided {
   // Ensure base iterator is random_access
   static_assert(

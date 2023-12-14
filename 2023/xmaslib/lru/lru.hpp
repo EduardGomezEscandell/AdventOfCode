@@ -7,6 +7,10 @@
 
 namespace xmas {
 
+/*
+Least Recently Updated cache. A cache of the specified max_size. When a new
+entry is added, the least recently updated entry is evicted.
+*/
 template <typename K, typename V> class lru_cache {
 public:
   lru_cache(std::size_t max_size) : max_size(max_size), by_key(max_size) {}
