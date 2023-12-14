@@ -1,5 +1,6 @@
 #pragma once
 #include <format>
+#include <iterator>
 #include <stdexcept>
 
 #include <execinfo.h>
@@ -50,6 +51,11 @@ public:
   [[nodiscard]] auto &operator[](N n) const {
     check_bounds(n, __PRETTY_FUNCTION__);
     return *(m_begin + static_cast<std::ptrdiff_t>(n));
+  }
+
+  [[nodiscard]] auto reverse() const {
+    return view<std::reverse_iterator<It>>{std::reverse_iterator(m_end),
+                                           std::reverse_iterator(m_begin)};
   }
 
 private:
