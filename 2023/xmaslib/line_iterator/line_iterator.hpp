@@ -37,7 +37,7 @@ public:
 
     bool operator!=(iterator const &other) { return !(*this == other); }
 
-    iterator operator++() {
+    iterator &operator++() {
       start = endl;
       if (start == endtext) {
         return *this;
@@ -47,6 +47,12 @@ public:
       advance_endl();
 
       return *this;
+    }
+
+    iterator operator++(int) {
+      auto it = *this;
+      ++*this;
+      return it;
     }
 
     value_type operator*() const { return {start, endl}; }
