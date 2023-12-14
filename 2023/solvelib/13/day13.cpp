@@ -1,5 +1,6 @@
 #include "day13.hpp"
 
+#include "xmaslib/functional/functional.hpp"
 #include "xmaslib/line_iterator/line_iterator.hpp"
 #include "xmaslib/log/log.hpp"
 #include "xmaslib/stride/stride.hpp"
@@ -12,7 +13,6 @@
 #include <execution>
 #include <functional>
 #include <numeric>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -79,50 +79,75 @@ void check_line_symmetry(std::vector<bool> &potential_axes, Iterator line_begin,
   }
 }
 
-std::size_t check_block_symmetry(std::string_view block) {
-  const auto [nrows, ncols] = block_dimensions(block);
+std::vector<std::size_t>
+check_block_horizontal_symmetries(std::string_view block, std::size_t nrows,
+                                  std::size_t ncols) {
 
-  // Horizontal
-  {
-    const std::size_t width = ncols - 1; // -1 to skip the trailing endline
-    std::vector<bool> potential_axes(width, true);
+  const std::size_t width = ncols - 1; // -1 to skip the trailing endline
+  std::vector<bool> potential_axes(width, true);
 
-    for (std::size_t row = 0; row < nrows; ++row) {
-      auto begin = block.begin() + static_cast<std::ptrdiff_t>(row * ncols);
-      auto end = begin + static_cast<std::ptrdiff_t>(width);
+  for (std::size_t row = 0; row < nrows; ++row) {
+    auto begin = block.begin() + static_cast<std::ptrdiff_t>(row * ncols);
+    auto end = begin + static_cast<std::ptrdiff_t>(width);
 
-      check_line_symmetry(potential_axes, begin, end);
-    }
-
-    auto it = std::ranges::find(potential_axes, true);
-    if (it != potential_axes.end()) {
-      xlog::debug("Horizontal symmetry @ {}", it - potential_axes.begin());
-      return static_cast<std::uint64_t>(it - potential_axes.begin());
-    }
+    check_line_symmetry(potential_axes, begin, end);
   }
 
-  // Vertical
-  {
-    std::vector<bool> potential_axes(nrows, true);
-
-    for (std::size_t col = 0; col < ncols; ++col) {
-      // We transpose the view by having a view with an iterator
-      // where ++it means jump to next row
-      auto begin = block.begin() + static_cast<std::ptrdiff_t>(col);
-      auto end = begin + static_cast<std::ptrdiff_t>(nrows * ncols);
-      auto v = xmas::views::strided(begin, end, ncols);
-
-      check_line_symmetry(potential_axes, v.begin(), v.end());
-    }
-
-    auto it = std::ranges::find(potential_axes, true);
-    if (it != potential_axes.end()) {
-      xlog::debug("Vertical symmetry @ s{}", it - potential_axes.begin());
-      return 100 * static_cast<std::uint64_t>(it - potential_axes.begin());
+  std::vector<std::size_t> symmetries;
+  for (std::size_t i = 0; i < potential_axes.size(); ++i) {
+    if (potential_axes[i]) {
+      symmetries.push_back(i);
     }
   }
+  return symmetries;
+}
 
-  throw std::runtime_error("Block has no symmetry");
+std::vector<std::size_t> check_block_vertical_symmetries(std::string_view block,
+                                                         std::size_t nrows,
+                                                         std::size_t ncols) {
+  std::vector<bool> potential_axes(nrows, true);
+
+  for (std::size_t col = 0; col < ncols; ++col) {
+    // We transpose the block by having a view with an iterator
+    // where ++it means jump to next row.
+    auto begin = block.begin() + static_cast<std::ptrdiff_t>(col);
+    auto end = begin + static_cast<std::ptrdiff_t>(nrows * ncols);
+    auto v = xmas::views::strided(begin, end, ncols);
+
+    check_line_symmetry(potential_axes, v.begin(), v.end());
+  }
+
+  std::vector<std::size_t> symmetries;
+  for (std::size_t i = 0; i < potential_axes.size(); ++i) {
+    if (potential_axes[i]) {
+      symmetries.push_back(i);
+    }
+  }
+  return symmetries;
+}
+
+std::pair<std::uint64_t, std::uint64_t>
+solve_block(std::string_view block, std::size_t nrows, std::size_t ncols) {
+  auto h = check_block_horizontal_symmetries(block, nrows, ncols);
+  if (h.size() != 0) {
+    return {h.front(), 0};
+  }
+
+  auto v = check_block_vertical_symmetries(block, nrows, ncols);
+  if (v.size() != 0) {
+    return {0, v.front()};
+  }
+
+  xlog::warning("block with no possible symmetry");
+  return {0, 0};
+}
+
+char flip(char c) {
+  if (c == '#')
+    return '.';
+  if (c == '.')
+    return '#';
+  return c;
 }
 
 } // namespace
@@ -142,11 +167,54 @@ std::uint64_t Day13::part1() {
   xlog::debug("Located {} blocks", block_begins.size() - 1);
 
   return std::transform_reduce(
-      std::execution::seq, block_begins.begin(), block_begins.end() - 1,
+      std::execution::par_unseq, block_begins.begin(), block_begins.end() - 1,
       block_begins.begin() + 1, std::uint64_t{0}, std::plus<std::uint64_t>{},
-      [](auto begin, auto begin_next) -> std::uint64_t {
-        return check_block_symmetry(std::string_view{begin, begin_next - 1});
+      [](auto begin, auto begin_next) {
+        std::string_view block{begin, begin_next - 1};
+        const auto [nrows, ncols] = block_dimensions(block);
+        auto p1 = solve_block(block, nrows, ncols);
+        return p1.first + 100 * p1.second;
       });
 }
 
-std::uint64_t Day13::part2() { throw std::runtime_error("Not implemented"); }
+std::uint64_t Day13::part2() {
+  auto block_begins = locate_block_begins(this->input);
+
+  xlog::debug("Located {} blocks", block_begins.size() - 1);
+
+  return std::transform_reduce(
+      std::execution::par_unseq, block_begins.begin(), block_begins.end() - 1,
+      block_begins.begin() + 1, std::uint64_t{0}, std::plus<std::uint64_t>{},
+      [](auto begin, auto begin_next) -> std::uint64_t {
+        // Blocks are relatively small (smaller than 20x20) so we can
+        // brute-force it
+        std::string block{begin, begin_next - 1};
+        const auto [nrows, ncols] = block_dimensions(block);
+        auto part1 = solve_block(block, nrows, ncols);
+
+        for (char &c : block) {
+          if (c == '\n') {
+            continue;
+          }
+
+          c = flip(c);
+
+          auto sym = check_block_horizontal_symmetries(block, nrows, ncols);
+          auto it = std::ranges::find_if_not(sym, xmas::equals(part1.first));
+          if (it != sym.end()) {
+            return *it;
+          }
+
+          sym = check_block_vertical_symmetries(block, nrows, ncols);
+          it = std::ranges::find_if_not(sym, xmas::equals(part1.second));
+          if (it != sym.end()) {
+            return 100 * (*it);
+          }
+
+          c = flip(c);
+        }
+
+        xlog::warning("block with no possible symmetry");
+        return 0;
+      });
+}
