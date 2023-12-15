@@ -8,6 +8,7 @@ public:
   void load() override;
 
 public:
+  std::uint64_t solve(std::size_t expansion_rate) const;
   std::uint64_t part1() override;
   std::uint64_t part2() override;
 };

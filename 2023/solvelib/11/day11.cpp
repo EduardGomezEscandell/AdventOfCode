@@ -2,22 +2,25 @@
 
 #include "xmaslib/iota/iota.hpp"
 #include "xmaslib/log/log.hpp"
-#include "xmaslib/matrix/csc.hpp"
 
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <execution>
-#include <functional>
-#include <numeric>
-#include <stdexcept>
+#include <map>
 #include <string_view>
 #include <utility>
 #include <vector>
 
 namespace {
 
-using distance_t = std::uint64_t;
+struct coords {
+  std::size_t row, col;
+};
+
+std::uint64_t absolute_difference(std::uint64_t a, std::uint64_t b) {
+  return (a > b) ? (a - b) : (b - a);
+}
 
 [[nodiscard]] std::pair<std::size_t, std::size_t>
 dimensions(std::string_view input) {
@@ -30,67 +33,65 @@ dimensions(std::string_view input) {
   return std::make_pair(nrows, ncols);
 }
 
-// Compresses a matrix as a vector of vectors. There is an entry for each row.
-// At every row, there is a list of all the columns that fulfil the predicate
-[[nodiscard]] xmas::csc_matrix<std::size_t> parse_input_and_expand(std::string_view input) {
+auto parse_and_expand_universe(std::string_view input,
+                               std::size_t expansion_rate) {
   const auto [nrows, ncols] = dimensions(input);
 
-  // Excessively large matrix, we'll shrink it in the end
-  xmas::csc_matrix<std::size_t> matrix(2 * nrows,
-                                       2 * (ncols - 1)); // -1 to skip "\n"
-
-  xmas::views::iota<std::size_t> rows(nrows);
-  std::size_t id = 0;
-  std::size_t row = 0;
-  for (std::size_t line = 0; line < nrows; ++line) {
-    std::vector<std::size_t> columns;
-    std::vector<std::size_t> indeces;
-    for (std::size_t col = 0; col < ncols - 1; ++col) {
-      const std::size_t i = line * ncols + col;
-      if (input[i] == '#') {
-        columns.push_back(col);
-        indeces.push_back(id++);
+  // Find galaxies and expand rows
+  std::vector<coords> galaxies;
+  std::map<std::size_t, std::size_t> column_mapping;
+  {
+    std::size_t row = 0;
+    for (std::size_t line = 0; line < nrows; ++line) {
+      bool empty = true;
+      for (std::size_t col = 0; col < ncols - 1; ++col) {
+        const std::size_t i = line * ncols + col;
+        if (input[i] == '#') {
+          galaxies.push_back({row, col});
+          column_mapping[col] = col;
+          empty = false;
+        }
       }
-    }
-    if (columns.size() == 0) {
-      row += 2;
-    } else {
-      matrix.init_row(row++, columns, indeces);
-    }
-  };
-
-  std::for_each(matrix.begin(), matrix.end(), [](auto g) {
-    xlog::debug("Galaxy {}:  {},{}", g.value, g.row, g.col);
-  });
-
-  // Update columns according to empty cols
-
-  // Create a mapping col -> new col
-  xmas::views::iota<std::size_t> iota(ncols);
-  std::vector<std::size_t> true_column(ncols);
-
-  auto col_density = matrix.col_density();
-  std::transform_exclusive_scan(
-      std::execution::par_unseq, iota.begin(), iota.end(), true_column.begin(),
-      std::size_t{0}, std::plus<std::size_t>{},
-      [&](std::size_t col) { return (col_density[col] ? 1u : 2u); });
-
-  // Map columns to new coordinates
-  std::for_each(std::execution::par_unseq, matrix.raw_columns().begin(),
-                matrix.raw_columns().end(),
-                [&true_column](std::size_t &col) { col = true_column[col]; });
-
-  matrix.shrink();
-  return matrix;
-}
-
-struct coords {
-  std::size_t row, col;
-
-  bool operator==(coords const &other) const noexcept {
-    return row == other.row && col == other.col;
+      if (empty) {
+        row += expansion_rate;
+      } else {
+        ++row;
+      }
+    };
   }
-};
+
+  // Create mapping from original to expanded columns
+  {
+    std::size_t empties = 0;
+    std::ptrdiff_t prev_row = -1;
+    for (auto &map : column_mapping) {
+      auto row = std::ptrdiff_t(map.first);
+      empties += std::size_t(row - prev_row - 1);
+      prev_row = row;
+
+      map.second = map.first + empties * (expansion_rate - 1);
+    }
+  }
+
+#ifndef NDEBUG
+  for (auto map : column_mapping) {
+    xlog::debug("Mapping columns {}->{}", map.first, map.second);
+  }
+#endif
+
+  // Expand columns
+  std::for_each(
+      std::execution::par_unseq, galaxies.begin(), galaxies.end(),
+      [&column_mapping](coords &g) { g.col = column_mapping.at(g.col); });
+
+#ifndef NDEBUG
+  for (auto i : xmas::views::iota(galaxies.size())) {
+    xlog::debug("Galaxy {}:  {},{}", i, galaxies[i].row, galaxies[i].col);
+  }
+#endif
+
+  return galaxies;
+}
 
 } // namespace
 
@@ -103,35 +104,36 @@ void Day11::load() {
   }
 }
 
-std::uint64_t Day11::part1() {
-
-  // Compress matrix
-  auto galaxies = parse_input_and_expand(input);
+std::uint64_t Day11::solve(std::size_t expansion_rate) const {
+  auto galaxies = parse_and_expand_universe(input, expansion_rate);
 
   // Compute distances
   std::size_t n = galaxies.size();
-  std::vector<distance_t> distances;
-  distances.reserve((n * (n - 1)) / 2);
-  for (auto it = galaxies.begin(); it != galaxies.end(); ++it) {
-    auto g1 = *it;
-    std::size_t i = g1.value;
-    for (auto jt = std::next(it); jt != galaxies.end(); ++jt) {
-      auto g2 = *jt;
-      std::size_t j = g2.value;
+  std::vector<std::uint64_t> distances((n * (n - 1)) / 2);
 
-      // Taxicab distance
-      distance_t vdistance = g2.row - g1.row;
-      distance_t hdistance = /* abs */
-          (g2.col > g1.col) ? (g2.col - g1.col) : (g1.col - g2.col);
-      distance_t d = vdistance + hdistance;
+  xmas::views::iota<std::size_t> iota(n);
+  std::for_each(std::execution::par_unseq, iota.begin(), iota.end(),
+                [&galaxies, &distances](std::size_t i) {
+                  auto &g1 = galaxies[i];
+                  for (std::size_t j = i + 1; j != galaxies.size(); ++j) {
+                    auto &g2 = galaxies[j];
 
-      xlog::debug("Distance between {} and {} is {}", i, j, d);
-      distances.push_back(d);
-    }
-  }
+                    // Taxicab distance
+                    std::uint64_t vdistance =
+                        absolute_difference(g2.row, g1.row);
+                    std::uint64_t hdistance =
+                        absolute_difference(g2.col, g1.col);
+                    std::uint64_t d = vdistance + hdistance;
+
+                    xlog::debug("Distance between {} and {} is {}", i, j, d);
+                    std::size_t dest = (j * (j - 1)) / 2 + i; // <3 Gauss
+                    distances[dest] = d;
+                  }
+                });
 
   return std::reduce(std::execution::unseq, distances.begin(), distances.end(),
-                     distance_t{0}, std::plus<distance_t>{});
+                     std::uint64_t{0}, std::plus<std::uint64_t>{});
 }
 
-std::uint64_t Day11::part2() { throw std::runtime_error("Not implemented"); }
+std::uint64_t Day11::part1() { return solve(2); }
+std::uint64_t Day11::part2() { return solve(1'000'000); }
