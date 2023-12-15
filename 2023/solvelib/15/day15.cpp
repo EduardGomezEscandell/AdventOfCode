@@ -27,8 +27,8 @@ struct hash_map {
 
   void insert(key_t &&k, value_t &&v) {
     auto &bucket = buckets[Day15::hash256(k)];
-    auto it = std::ranges::find_if(bucket,
-                                   [&k](auto pair) { return pair.first == k; });
+    auto it = std::ranges::find_if(
+        bucket, [&k](auto const &pair) { return pair.first == k; });
     if (it == bucket.end()) {
       bucket.insert(
           it, std::make_pair(std::forward<key_t>(k), std::forward<value_t>(v)));
@@ -42,7 +42,7 @@ struct hash_map {
   void remove(key_t const &k) {
     auto &bucket = buckets[Day15::hash256(k)];
     auto it = std::ranges::find_if(bucket,
-                                   [&k](auto pair) { return pair.first == k; });
+                                   [&k](auto const& pair) { return pair.first == k; });
     if (it == bucket.end()) {
       return; // Nothing to remove
     }
