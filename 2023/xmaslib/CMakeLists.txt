@@ -1,7 +1,8 @@
 add_library(xmaslib
-    solution/solution.hpp solution/solution.cpp
-    registry/registry.hpp registry/registry.cpp
-    log/log.hpp log/log.cpp
+    solution/solution.cpp
+    registry/registry.cpp
+    log/log.cpp
+    matrix/text_matrix.cpp
 )
 
 set_target_properties(xmaslib PROPERTIES LINKER_LANGUAGE CXX)
