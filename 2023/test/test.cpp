@@ -10,7 +10,7 @@
 #include "solvelib/11/day11_test.hpp"
 #include "solvelib/12/day12_test.hpp"
 #include "solvelib/13/day13_test.hpp"
-
+#include "solvelib/14/day14_test.hpp"
 #include "solvelib/15/day15_test.hpp"
 
 #include "xmaslib/iota/iota_test.hpp"
