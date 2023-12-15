@@ -116,6 +116,17 @@ public:
       return it;
     }
 
+    constexpr iterator operator--() noexcept {
+      --v;
+      return *this;
+    }
+
+    constexpr iterator operator--(int) noexcept {
+      auto it = iterator{v};
+      --*this;
+      return it;
+    }
+
     constexpr iterator &operator+=(std::ptrdiff_t delta) noexcept {
       v += safe_cast<value_type>(delta);
       return *this;
