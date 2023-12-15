@@ -21,7 +21,7 @@ void log(severity prefix, std::string_view message) {
     return "\x1b[31mUNKNOWN SEVERITY\x1b[0m";
   }();
 
-  std::cerr << std::format("{}: {}\n", p, message) << std::flush;
+  std::cerr << std::format("{} {}\n", p, message) << std::flush;
 }
 
 } // namespace internal
