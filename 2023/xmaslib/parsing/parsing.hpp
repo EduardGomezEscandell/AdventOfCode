@@ -3,6 +3,15 @@
 
 namespace xmas {
 
+template <std::integral T> [[nodiscard]] T parse_int(std::string_view str) {
+  T x{};
+  for (auto ch : str) {
+    x *= 10;
+    x += ch - '0';
+  }
+  return x;
+}
+
 // parse_ints parses a list of integers inbetween other characters
 // "534<dv13213zv  5643" -> [534, 13213, 5343]
 template <std::integral T>
