@@ -54,8 +54,12 @@ public:
     assert(begin < end);
   }
 
-  [[nodiscard]] auto begin() const { return m_begin; }
-  [[nodiscard]] auto end() const { return m_end; }
+  [[nodiscard]] auto begin() { return m_begin; }
+  [[nodiscard]] auto end() { return m_end; }
+
+  [[nodiscard]] auto rbegin() { return std::reverse_iterator(m_end); }
+  [[nodiscard]] auto rend() { return std::reverse_iterator(m_begin); }
+
   [[nodiscard]] auto size() const {
     return safe_cast(std::size_t, m_end - m_begin);
   }
@@ -167,8 +171,12 @@ public:
     }
 
     [[nodiscard]] value_type operator*() const noexcept { return *base; }
+    [[nodiscard]] reference operator*() noexcept { return *base; }
 
     [[nodiscard]] value_type operator[](std::size_t index) const noexcept {
+      return *(base + index * safe_cast(difference_type, stride));
+    }
+    [[nodiscard]] reference operator[](std::size_t index) noexcept {
       return *(base + index * safe_cast(difference_type, stride));
     }
 

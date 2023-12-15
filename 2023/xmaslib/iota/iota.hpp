@@ -12,7 +12,7 @@ namespace xmas {
 namespace views {
 
 // iota is a view that ranges over integers in [begin, end).
-template <std::integral T> class iota {
+template <std::integral T = std::size_t> class iota {
 public:
   class iterator;
 

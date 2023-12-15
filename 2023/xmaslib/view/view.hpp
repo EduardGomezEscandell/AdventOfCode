@@ -1,9 +1,6 @@
 #pragma once
-#include <format>
-#include <iterator>
-#include <stdexcept>
 
-#include <execinfo.h>
+#include <iterator>
 
 namespace xmas {
 /*
@@ -21,6 +18,9 @@ public:
 
   auto begin() const { return m_begin; }
   auto end() const { return m_end; }
+
+  auto rbegin() const { return std::reverse_iterator(m_end); }
+  auto rend() const { return std::reverse_iterator(m_begin); }
 
   auto &front() const { return *m_begin; }
   auto &back() const {
