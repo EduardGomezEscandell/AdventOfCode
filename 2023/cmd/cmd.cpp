@@ -96,8 +96,15 @@ bool time_days(app &, solution_vector const &days,
   xmas::solution::duration total{};
   bool total_success = true;
 
-  xlog::debug("Timing solution in debug mode"); // Will not be printed on
-                                                // Release mode :)
+  xlog::debug("Timing solution in debug mode is not recommended");
+
+  xlog::info("Every day's solution will be executed non-stop for {} seconds to "
+             "evaluate its performance.",
+             std::chrono::duration_cast<std::chrono::seconds>(timeout).count());
+
+  constexpr std::string_view fmt = "{:>7} {:>8} {:>7}    {:>7}";
+  xlog::info("");
+  xlog::info("    DAY    COUNT  MEAN(μs)  DEVIATION(μs)");
 
   for (auto d : days) {
     auto begin = std::chrono::high_resolution_clock::now();
@@ -137,18 +144,15 @@ bool time_days(app &, solution_vector const &days,
     const auto dev = static_cast<std::int64_t>(std::sqrt(S / iter));
 
     // Report
-    xlog::info(
-        "Day {} ran {} times: the mean time is {} μs with a standard deviation "
-        "of {} μs",
-        d->second->day(), iter, mean, dev);
+    xlog::info(fmt, d->second->day(), iter, mean, dev);
 
     total += daily_total / iter;
   }
 
-  xlog::info("DONE");
   xlog::info(
-      "Total average time was {} μs",
-      std::chrono::duration_cast<std::chrono::microseconds>(total).count());
+      fmt, "TOTAL", "-",
+      std::chrono::duration_cast<std::chrono::microseconds>(total).count(),
+      "-");
 
   return total_success;
 }
