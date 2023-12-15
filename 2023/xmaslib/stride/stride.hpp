@@ -16,7 +16,8 @@ namespace xmas {
 namespace views {
 
 /*
-strided is a view with iterators that skip elements, similar to python's [begin:end:stride]
+strided is a view with iterators that skip elements, similar to python's
+[begin:end:stride]
 
 So these two would be equivalent:
 
@@ -57,6 +58,10 @@ public:
   [[nodiscard]] auto end() const { return m_end; }
   [[nodiscard]] auto size() const {
     return safe_cast(std::size_t, m_end - m_begin);
+  }
+
+  [[nodiscard]] auto operator[](std::size_t index) const {
+    return m_begin[index];
   }
 
 private:
@@ -163,7 +168,7 @@ public:
 
     [[nodiscard]] value_type operator*() const noexcept { return *base; }
 
-    [[nodiscard]] value_type operator[](std::ptrdiff_t index) const noexcept {
+    [[nodiscard]] value_type operator[](std::size_t index) const noexcept {
       return *(base + index * safe_cast(difference_type, stride));
     }
 
