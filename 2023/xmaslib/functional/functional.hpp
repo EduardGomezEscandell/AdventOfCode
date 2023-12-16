@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 namespace xmas {
 
 template <typename T> class equals {
@@ -20,6 +21,20 @@ public:
 
 private:
   T value;
+};
+
+template <typename T> class min {
+public:
+  constexpr bool operator()(T const &l, T const &r) const {
+    return std::min(l, r);
+  }
+};
+
+template <typename T> class max {
+public:
+  constexpr T operator()(T const &l, T const &r) const {
+    return std::max(l, r);
+  }
 };
 
 } // namespace xmas
