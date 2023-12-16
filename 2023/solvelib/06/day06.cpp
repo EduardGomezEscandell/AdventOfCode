@@ -27,9 +27,6 @@ std::uint64_t parse_int_ignore_nonnumeric(std::string_view str) {
 }
 
 std::uint64_t count_wins(std::uint64_t time, std::uint64_t distance) noexcept {
-  auto T = static_cast<double>(time);
-  auto D = static_cast<double>(distance) + 1;
-
   // Solve quadratic equation:
   //
   //    d=t(T - t)
@@ -40,22 +37,13 @@ std::uint64_t count_wins(std::uint64_t time, std::uint64_t distance) noexcept {
   //  The equation simplifies down:
   //
   //  t = -(T/2) ± sqrt((T/2)^2 - d)
+  auto T = static_cast<double>(time);
+  auto D = static_cast<double>(distance) + 1;
 
   double half = T / 2;
   double delta = std::sqrt(half * half - D);
-  auto min_t = std::uint64_t(half - delta);
-  auto max_t = std::uint64_t(half + delta);
-
-  // These are lower bounds, we may need a correction
-  auto d = min_t * (time - min_t);
-  if (d <= distance) {
-    ++min_t;
-  }
-
-  d = max_t * (time - max_t);
-  if (d <= distance) {
-    --max_t;
-  }
+  auto min_t = std::uint64_t(std::ceil(half - delta));
+  auto max_t = std::uint64_t(std::floor(half + delta));
 
   xlog::debug("Race {},{} -> [{}, {}]", time, distance, int(min_t), int(max_t));
   return max_t - min_t + 1;
