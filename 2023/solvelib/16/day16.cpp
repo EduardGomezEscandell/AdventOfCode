@@ -1,4 +1,7 @@
 #include "day16.hpp"
+#include "xmaslib/functional/functional.hpp"
+#include "xmaslib/iota/iota.hpp"
+#include "xmaslib/lazy_string/lazy_string.hpp"
 #include "xmaslib/log/log.hpp"
 #include "xmaslib/matrix/text_matrix.hpp"
 
@@ -58,26 +61,6 @@ struct beam {
 
   bool operator==(beam const &other) const {
     return row == other.row && col == other.col && towards == other.towards;
-  }
-
-  std::size_t hash() const {
-    static_assert(sizeof(std::size_t) == 8);
-
-    constexpr auto mask =
-        (~std::size_t{0}) >> 36; // 00000..00011...111 (28 active bits)
-
-    auto r =
-        std::size_t(row + 100) & mask; // 28 bits.  +1000 to ensure positivity
-    auto c =
-        std::size_t(col + 100) & mask; // 28 bits.  +1000 to ensure positivity
-    auto d = std::size_t(towards) & 0xff; //  8 bits
-
-    // Asserting no overflows
-    assert(std::ptrdiff_t(r) == row + 100);
-    assert(std::ptrdiff_t(c) == col + 100);
-    assert(direction(d) == towards);
-
-    return (((r << 28) | c) << 8) | d;
   }
 
   std::size_t srow() const {
@@ -255,47 +238,90 @@ struct beam {
 };
 } // namespace
 
-template <> struct std::hash<beam> {
-  std::size_t operator()(const beam &s) const noexcept { return s.hash(); }
-};
-
 namespace {
 
-std::uint64_t solve(xmas::views::text_matrix const &map,
-                    std::unordered_set<beam> &beams) {
+std::uint64_t solve(xmas::views::text_matrix const &map, beam init_beam) {
   std::vector visited(map.nrows(), std::vector<cell>(map.ncols(), cell{}));
+  std::vector<beam> beams{init_beam};
 
   while (!beams.empty()) {
     auto curr = std::move(beams);
     beams = {};
+    beams.reserve(2 * curr.size());
 
     for (auto b : curr) {
       auto new_beams = b.advance(map, visited);
       for (auto &nb : new_beams) {
-        beams.insert(nb);
+        beams.push_back(nb);
       }
     }
   }
 
-  return std::transform_reduce(
-      std::execution::par_unseq, visited.begin(), visited.end(),
-      std::uint64_t{0}, std::plus<std::uint64_t>{}, [](auto const &row) {
+  auto x = std::transform_reduce(
+      std::execution::unseq, visited.begin(), visited.end(), std::uint64_t{0},
+      std::plus<std::uint64_t>{}, [](auto const &row) {
         return std::transform_reduce(
             std::execution::unseq, row.begin(), row.end(), std::uint64_t{0},
             std::plus<std::uint64_t>{},
             [](cell c) { return int(c.visited) != 0u; });
       });
+
+  xlog::debug("Running {} from ({:>3},{:>3}) results in {:>3} visited cells",
+              xmas::lazy_string([&]() -> std::string {
+                switch (init_beam.towards) {
+                case direction::right:
+                  return "LEFT ";
+                case direction::left:
+                  return "RIGHT";
+                case direction::up:
+                  return "UP   ";
+                case direction::down:
+                  return "DOWN ";
+                default:
+                  return std::format("{:>4}?", int(init_beam.towards));
+                }
+              }),
+              init_beam.row, init_beam.col, x);
+
+  return x;
 }
 
 } // namespace
 
 std::uint64_t Day16::part1() {
   xmas::views::text_matrix map(this->input);
-
-  std::unordered_set<beam> beams{
-      beam{.towards = direction::right, .row = 0, .col = -1}};
-
-  return solve(map, beams);
+  return solve(map, {.towards = direction::right, .row = 0, .col = -1});
 }
 
-std::uint64_t Day16::part2() { throw std::runtime_error("Not implemented"); }
+std::uint64_t Day16::part2() {
+  xmas::views::text_matrix map(this->input);
+
+// Iterate over all rows, entering from left and right every iteration
+  xmas::views::iota<std::size_t> rows(map.nrows());
+  auto h = std::transform_reduce(
+      std::execution::par_unseq, rows.begin(), rows.end(), std::uint64_t{0},
+      xmas::max<std::uint64_t>{}, [&map](std::size_t row) {
+        auto from_left = solve(map, {.towards = direction::right,
+                                     .row = std::ptrdiff_t(row),
+                                     .col = -1});
+        auto from_right = solve(map, {.towards = direction::left,
+                                      .row = std::ptrdiff_t(row),
+                                      .col = std::ptrdiff_t(map.ncols())});
+        return std::max(from_left, from_right);
+      });
+
+// Iterate over all columns, entering from above and below every iteration
+  xmas::views::iota<std::size_t> cols(map.ncols());
+  auto v = std::transform_reduce(
+      std::execution::par_unseq, cols.begin(), cols.end(), std::uint64_t{0},
+      xmas::max<std::uint64_t>{}, [&map](std::size_t col) {
+        auto from_above = solve(map, {.towards = direction::down,
+                                      .row = -1,
+                                      .col = std::ptrdiff_t(col)});
+        auto from_below = solve(map, {.towards = direction::up,
+                                      .row = std::ptrdiff_t(map.nrows()),
+                                      .col = std::ptrdiff_t(col)});
+        return std::max(from_above, from_below);
+      });
+  return std::max(h, v);
+}
