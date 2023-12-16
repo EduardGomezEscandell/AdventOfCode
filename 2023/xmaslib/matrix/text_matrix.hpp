@@ -21,6 +21,8 @@ struct text_matrix {
   [[nodiscard]] std::size_t nrows() const noexcept { return n_rows; }
   [[nodiscard]] std::size_t ncols() const noexcept { return n_cols; }
 
+  std::string_view data() const { return text; }
+
 private:
   std::size_t n_rows;
   std::size_t n_cols;
