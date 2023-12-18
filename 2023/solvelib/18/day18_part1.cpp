@@ -249,7 +249,3 @@ std::uint64_t Day18::part1() {
         row.cbegin(), row.cend(), [](cell c) -> std::uint64_t { return c.filled; });
     });
 }
-
-std::uint64_t Day18::part2() {
-  throw std::runtime_error("Not implemented");
-}

@@ -14,7 +14,7 @@ TEST_CASE("Day 18") {
     Day18 solution{};
     solution.set_input("./data/18/example.txt");
     solution.load();
-    REQUIRE_THROWS(solution.part2());
+    REQUIRE_EQ(solution.part2(), 952408144115);
   }
 
   SUBCASE("Real data") {
@@ -22,6 +22,6 @@ TEST_CASE("Day 18") {
     solution.set_input("./data/18/input.txt");
     solution.load();
     REQUIRE_EQ(solution.part1(), 48400);
-    REQUIRE_THROWS(solution.part2());
+    REQUIRE_EQ(solution.part2(), 0);
   }
 }
