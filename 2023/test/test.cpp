@@ -6,6 +6,7 @@
 #include "solvelib/03/day03_test.hpp"
 #include "solvelib/04/day04_test.hpp"
 #include "solvelib/05/day05_test.hpp"
+#include "solvelib/06/day06_test.hpp"
 
 #include "solvelib/11/day11_test.hpp"
 #include "solvelib/12/day12_test.hpp"
