@@ -68,16 +68,7 @@ instruction parse_instruction(auto str) {
   return instr;
 }
 
-} // namespace
-
-void Day15::load() {
-  xmas::solution::load();
-
-  // Trailing newline is necessary
-  if (this->input.back() != '\n') {
-    this->input.push_back('\n');
-  }
-}
+}  // namespace
 
 std::uint64_t Day15::part1() {
   auto view = std::string_view(input.begin(), input.end() - 1) |

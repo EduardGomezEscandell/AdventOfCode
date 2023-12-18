@@ -77,16 +77,7 @@ dimensions(std::string_view input) {
   return hits;
 }
 
-} // namespace
-
-void Day04::load() {
-  xmas::solution::load();
-
-  // Trailing newline is necessary
-  if (this->input.back() != '\n') {
-    this->input.push_back('\n');
-  }
-}
+}  // namespace
 
 std::uint64_t Day04::part1() {
   const auto [nrows, ncols] = dimensions(this->input);

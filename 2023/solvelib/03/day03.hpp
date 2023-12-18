@@ -5,7 +5,6 @@
 class Day03 : public xmas::solution {
 public:
   int day() override { return 3; }
-  void load() override;
 
 public:
   std::uint64_t part1() override;

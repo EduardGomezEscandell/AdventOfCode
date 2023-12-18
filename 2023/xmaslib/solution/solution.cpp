@@ -87,6 +87,11 @@ void solution::load() {
 
   if (input.size() == 0) {
     xlog::warning("did not load any data from {}", this->data_path);
+    return;
+  }
+
+  if (input.back() != '\n') {
+    input.push_back('\n');
   }
 }
 

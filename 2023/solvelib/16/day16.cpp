@@ -15,14 +15,6 @@
 #include <unordered_set>
 #include <vector>
 
-void Day16::load() {
-  xmas::solution::load();
-
-  // Trailing newline is necessary
-  if (this->input.back() != '\n') {
-    this->input.push_back('\n');
-  }
-}
 
 namespace {
 

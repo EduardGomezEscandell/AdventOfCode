@@ -6,7 +6,6 @@
 class Day15 : public xmas::solution {
 public:
   int day() override { return 15; }
-  void load() override;
 
 public:
   // Modulo 256 comes built-in :D

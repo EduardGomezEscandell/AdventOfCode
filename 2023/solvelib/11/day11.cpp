@@ -93,16 +93,7 @@ auto parse_and_expand_universe(std::string_view input,
   return galaxies;
 }
 
-} // namespace
-
-void Day11::load() {
-  xmas::solution::load();
-
-  // Trailing newline is necessary
-  if (this->input.back() != '\n') {
-    this->input.push_back('\n');
-  }
-}
+}  // namespace
 
 std::uint64_t Day11::solve(std::size_t expansion_rate) const {
   auto galaxies = parse_and_expand_universe(input, expansion_rate);

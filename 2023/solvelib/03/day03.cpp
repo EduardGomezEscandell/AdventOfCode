@@ -23,16 +23,7 @@ std::pair<std::size_t, std::size_t> dimensions(std::string_view input) {
 
   return std::make_pair(nrows, ncols);
 }
-} // namespace
-
-void Day03::load() {
-  xmas::solution::load();
-
-  // Trailing newline is necessary
-  if (this->input.back() != '\n') {
-    this->input.push_back('\n');
-  }
-}
+}  // namespace
 
 std::uint64_t Day03::part1() {
 

@@ -150,16 +150,7 @@ char flip(char c) {
   return c;
 }
 
-} // namespace
-
-void Day13::load() {
-  xmas::solution::load();
-
-  // Trailing newline is necessary
-  if (this->input.back() != '\n') {
-    this->input.push_back('\n');
-  }
-}
+}  // namespace
 
 std::uint64_t Day13::part1() {
   auto block_begins = locate_block_begins(this->input);

@@ -12,14 +12,6 @@
 #include <numeric>
 #include <stdexcept>
 
-void Day14::load() {
-  xmas::solution::load();
-
-  // Trailing newline is necessary
-  if (this->input.back() != '\n') {
-    this->input.push_back('\n');
-  }
-}
 
 std::uint64_t Day14::part1() {
   xmas::views::text_matrix matrix(input);
