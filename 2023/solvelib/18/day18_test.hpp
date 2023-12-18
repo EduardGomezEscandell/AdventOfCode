@@ -7,7 +7,7 @@ TEST_CASE("Day 18") {
     Day18 solution{};
     solution.set_input("./data/18/example.txt");
     solution.load();
-    REQUIRE_THROWS(solution.part1());
+    REQUIRE_EQ(solution.part1(), 62);
   }
 
   SUBCASE("Part 2, example") {
@@ -21,7 +21,7 @@ TEST_CASE("Day 18") {
     Day18 solution{};
     solution.set_input("./data/18/input.txt");
     solution.load();
-    REQUIRE_THROWS(solution.part1());
+    REQUIRE_EQ(solution.part1(), 48400);
     REQUIRE_THROWS(solution.part2());
   }
 }
