@@ -19,14 +19,12 @@ using argv = std::span<std::string_view>;
 struct command {
   std::vector<std::string_view> flags;
   std::string_view help;
-  std::function<int(app &, argv)> run = [](app &, argv) {
-    return exit_success;
-  };
+  std::function<int(app&, argv)> run = [](app&, argv) { return exit_success; };
 };
 
 class app {
 public:
-  void register_command(command const &);
+  void register_command(command const&);
   std::string usage();
   int run(argv args);
 

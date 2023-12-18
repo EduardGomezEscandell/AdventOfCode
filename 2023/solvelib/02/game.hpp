@@ -17,15 +17,17 @@ struct game {
   explicit game(std::string_view);
 };
 
-template <> struct std::formatter<rgb> : std::formatter<std::string> {
-  auto format(rgb const &r, format_context &ctx) const {
+template <>
+struct std::formatter<rgb> : std::formatter<std::string> {
+  auto format(rgb const& r, format_context& ctx) const {
     return formatter<std::string>::format(
-        std::format("{{{}, {}, {} }}", r.red, r.green, r.blue), ctx);
+      std::format("{{{}, {}, {} }}", r.red, r.green, r.blue), ctx);
   }
 };
 
-template <> struct std::formatter<game> : std::formatter<std::string> {
-  auto format(game const &g, format_context &ctx) const {
+template <>
+struct std::formatter<game> : std::formatter<std::string> {
+  auto format(game const& g, format_context& ctx) const {
     auto f = std::format("{{ game: {}, max: {}}}", g.id, g.max);
 
     return formatter<std::string>::format(f, ctx);

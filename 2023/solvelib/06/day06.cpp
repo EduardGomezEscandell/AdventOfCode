@@ -63,9 +63,8 @@ std::uint64_t Day06::part1() {
   // It's faster with std::execution::unseq than with std::execution::par_unseq.
   // Probably because the input is too small to justify allocating extra
   // threads.
-  return std::transform_reduce(
-      std::execution::unseq, times.cbegin(), times.cend(), distances.cbegin(),
-      std::uint64_t{1}, std::multiplies<std::uint64_t>{}, count_wins);
+  return std::transform_reduce(std::execution::unseq, times.cbegin(), times.cend(),
+    distances.cbegin(), std::uint64_t{1}, std::multiplies<std::uint64_t>{}, count_wins);
 }
 
 std::uint64_t Day06::part2() {

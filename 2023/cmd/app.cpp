@@ -11,8 +11,7 @@
 
 namespace app {
 
-std::string replace(std::string_view in, char target,
-                    std::string_view replacement) {
+std::string replace(std::string_view in, char target, std::string_view replacement) {
   std::string out;
   out.reserve(in.size());
 
@@ -34,27 +33,25 @@ std::string app::usage() {
 
   for (auto cmd : commands_flat) {
     s << '\n';
-    for (auto &alias : cmd.flags) {
+    for (auto& alias : cmd.flags) {
       s << std::format("aoc2023 {}\n", alias);
     }
 
     constexpr auto prefix = "    ";
-    std::string help =
-        prefix + replace(cmd.help, '\n', std::format("\n{}", prefix));
+    std::string help = prefix + replace(cmd.help, '\n', std::format("\n{}", prefix));
     s << help << '\n';
   }
 
   return s.str();
 }
 
-void app::register_command(command const &cmd) {
+void app::register_command(command const& cmd) {
   this->commands_flat.push_back(cmd);
 
   for (auto alias : cmd.flags) {
     auto it = this->commands.find(alias);
     if (it != this->commands.end()) {
-      throw std::runtime_error(
-          std::format("Flag {} is already defined", alias));
+      throw std::runtime_error(std::format("Flag {} is already defined", alias));
     }
 
     this->commands[alias] = cmd;
@@ -82,8 +79,7 @@ int app::run(argv args) {
 
     auto argv_begin = it + 1;
     auto argv_end =
-        std::find_if(argv_begin, args.end(),
-                     [](std::string_view s) { return s.starts_with("-"); });
+      std::find_if(argv_begin, args.end(), [](std::string_view s) { return s.starts_with("-"); });
 
     xlog::debug("Found command {} with {} arguments", c, argv_end - argv_begin);
     cmd.emplace_back(icmd->second, std::span{argv_begin, argv_end});
@@ -92,7 +88,7 @@ int app::run(argv args) {
   }
 
   // Execute commands
-  for (auto &command : cmd) {
+  for (auto& command : cmd) {
     auto r = command.c.run(*this, command.args);
     switch (r) {
     case exit_success:

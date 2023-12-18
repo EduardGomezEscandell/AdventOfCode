@@ -23,7 +23,7 @@ bool solution::run(bool verbose) noexcept {
 
   try {
     this->load();
-  } catch (std::runtime_error &err) {
+  } catch (std::runtime_error& err) {
     xlog::error("Load failed with message: {}", err.what());
     return false;
   } catch (...) {
@@ -37,12 +37,11 @@ bool solution::run(bool verbose) noexcept {
     this->time_p1 = std::chrono::high_resolution_clock::now() - start;
 
     if (verbose) {
-      xlog::info(
-          "result 1: {} ({} μs)", result,
-          std::chrono::duration_cast<std::chrono::microseconds>(this->time_p1)
-              .count());
+      xlog::info("result 1: {} ({} μs)", result,
+        std::chrono::duration_cast<std::chrono::microseconds>(this->time_p1)
+          .count());
     }
-  } catch (std::runtime_error &err) {
+  } catch (std::runtime_error& err) {
     xlog::error("Part 1 failed with message: {}", err.what());
     success = false;
   } catch (...) {
@@ -56,12 +55,11 @@ bool solution::run(bool verbose) noexcept {
     this->time_p2 = std::chrono::high_resolution_clock::now() - start;
 
     if (verbose) {
-      xlog::info(
-          "Result 2: {} ({} μs)", result,
-          std::chrono::duration_cast<std::chrono::microseconds>(this->time_p2)
-              .count());
+      xlog::info("Result 2: {} ({} μs)", result,
+        std::chrono::duration_cast<std::chrono::microseconds>(this->time_p2)
+          .count());
     }
-  } catch (std::runtime_error &err) {
+  } catch (std::runtime_error& err) {
     xlog::error("Part 2 failed with message: {}", err.what());
     success = false;
   } catch (...) {
@@ -72,13 +70,15 @@ bool solution::run(bool verbose) noexcept {
   return success;
 }
 
-void solution::set_input(std::string_view path) { this->data_path = path; }
+void solution::set_input(std::string_view path) {
+  this->data_path = path;
+}
 
 void solution::load() {
   std::ifstream f(this->data_path.data());
   if (!f) {
     throw std::runtime_error(
-        std::format("could not open file {}", this->data_path));
+      std::format("could not open file {}", this->data_path));
   }
 
   std::stringstream buff;
@@ -87,6 +87,11 @@ void solution::load() {
 
   if (input.size() == 0) {
     xlog::warning("did not load any data from {}", this->data_path);
+    return;
+  }
+
+  if (input.back() != '\n') {
+    input.push_back('\n');
   }
 }
 
