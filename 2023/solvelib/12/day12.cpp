@@ -27,7 +27,11 @@
 
 namespace {
 
-enum class cell : char { unknown = '?', set = '#', empty = '.' };
+enum class cell : char {
+  unknown = '?',
+  set = '#',
+  empty = '.'
+};
 
 auto parse_line(std::string_view line) {
   auto separator = std::ranges::find(line, ' ');
@@ -46,8 +50,7 @@ auto parse_line(std::string_view line) {
   return std::make_pair(cells, ranges);
 }
 
-std::tuple<std::size_t, std::size_t, bool> trim(auto cells_base,
-                                                auto ranges_base) {
+std::tuple<std::size_t, std::size_t, bool> trim(auto cells_base, auto ranges_base) {
   auto cells = xmas::view{cells_base.begin(), cells_base.end()};
   auto ranges = xmas::view{ranges_base.begin(), ranges_base.end()};
 
@@ -76,8 +79,7 @@ std::tuple<std::size_t, std::size_t, bool> trim(auto cells_base,
     }
 
     // Trimming prefixed ###
-    auto it =
-        std::find_if_not(cells.begin(), cells.end(), xmas::equals(cell::set));
+    auto it = std::find_if_not(cells.begin(), cells.end(), xmas::equals(cell::set));
 
     auto const prefix_size = it - cells.begin();
     if (prefix_size > ranges.front()) {
@@ -150,20 +152,17 @@ std::tuple<std::size_t, std::size_t, bool> trim(auto cells_base,
       return {{}, {}, false};
     }
 
-    cells.pop_front(prefixable_size +
-                    1); // +1 because next . or ? is forced into .
+    cells.pop_front(prefixable_size + 1); // +1 because next . or ? is forced into .
     ranges.pop_front();
   }
 
-  return {cells_base.size() - cells.size(), ranges_base.size() - ranges.size(),
-          true};
+  return {cells_base.size() - cells.size(), ranges_base.size() - ranges.size(), true};
 }
 
-auto stringify_line(auto const &cells, auto const &ranges) {
+auto stringify_line(auto const& cells, auto const& ranges) {
   return xmas::lazy_string{[=]() {
     std::stringstream ss;
-    ss << std::string_view{reinterpret_cast<char const *>(&cells.front()),
-                           cells.size()};
+    ss << std::string_view{reinterpret_cast<char const*>(&cells.front()), cells.size()};
     ss << " ";
     if (ranges.size() == 0) {
       return ss.str();
@@ -178,7 +177,8 @@ auto stringify_line(auto const &cells, auto const &ranges) {
 }
 
 auto trim_left(xmas::view<std::vector<cell>::const_iterator> cells,
-               xmas::view<std::vector<int>::const_iterator> ranges) {
+  xmas::view<std::vector<int>::const_iterator>
+    ranges) {
   auto const [ctrim, rtrim, ok] = trim(cells, ranges);
   cells.pop_front(ctrim);
   ranges.pop_front(rtrim);
@@ -187,10 +187,11 @@ auto trim_left(xmas::view<std::vector<cell>::const_iterator> cells,
 }
 
 auto trim_right(xmas::view<std::vector<cell>::const_iterator> cells,
-                xmas::view<std::vector<int>::const_iterator> ranges) {
+  xmas::view<std::vector<int>::const_iterator>
+    ranges) {
 
-  auto const [ctrim, rtrim, ok] = trim(std::ranges::views::reverse(cells),
-                                       std::ranges::views::reverse(ranges));
+  auto const [ctrim, rtrim, ok] =
+    trim(std::ranges::views::reverse(cells), std::ranges::views::reverse(ranges));
   cells.pop_back(ctrim);
   ranges.pop_back(rtrim);
 
@@ -206,11 +207,9 @@ struct state {
   xmas::view<std::vector<cell>::const_iterator> cells;
   xmas::view<std::vector<int>::const_iterator> ranges;
 
-  bool operator==(state const &other) const noexcept {
-    return (&*cells.begin() == &*other.cells.begin()) &&
-           (cells.size() == other.cells.size()) &&
-           (&*ranges.begin() == &*other.ranges.begin()) &&
-           (cells.size() == other.cells.size());
+  bool operator==(state const& other) const noexcept {
+    return (&*cells.begin() == &*other.cells.begin()) && (cells.size() == other.cells.size()) &&
+           (&*ranges.begin() == &*other.ranges.begin()) && (cells.size() == other.cells.size());
   }
 
   std::size_t hash() const noexcept {
@@ -223,25 +222,28 @@ struct state {
   }
 
 private:
-  static std::size_t hash16bit(auto const *p) {
-    return std::hash<std::uint64_t>{}(reinterpret_cast<std::uint64_t>(p)) &
-           0xffff;
+  static std::size_t hash16bit(auto const* p) {
+    return std::hash<std::uint64_t>{}(reinterpret_cast<std::uint64_t>(p)) & 0xffff;
   }
 };
 
 } // namespace
 
-template <> struct std::hash<state> {
+template <>
+struct std::hash<state> {
 
-  std::size_t operator()(const state &s) const noexcept { return s.hash(); }
+  std::size_t operator()(const state& s) const noexcept {
+    return s.hash();
+  }
 };
 
 namespace {
 
-[[nodiscard]] std::uint64_t
-count_combinations(xmas::lru_cache<state, std::uint64_t> &lru,
-                   xmas::view<std::vector<cell>::const_iterator> cells_base,
-                   xmas::view<std::vector<int>::const_iterator> ranges_base) {
+[[nodiscard]] std::uint64_t count_combinations(xmas::lru_cache<state, std::uint64_t>& lru,
+  xmas::view<std::vector<cell>::const_iterator>
+    cells_base,
+  xmas::view<std::vector<int>::const_iterator>
+    ranges_base) {
 
   if (auto opt = lru.get({cells_base, ranges_base}); opt.has_value()) {
     return *opt;
@@ -264,8 +266,7 @@ count_combinations(xmas::lru_cache<state, std::uint64_t> &lru,
     }
 
     const auto leftover =
-        static_cast<std::size_t>(std::reduce(ranges.begin(), ranges.end())) +
-        ranges.size() - 1;
+      static_cast<std::size_t>(std::reduce(ranges.begin(), ranges.end())) + ranges.size() - 1;
     if (cells.size() < leftover) {
       return 0;
     }
@@ -275,47 +276,46 @@ count_combinations(xmas::lru_cache<state, std::uint64_t> &lru,
     // We try to force ? into # and . and see if it breaks
     auto pound = std::ranges::find(cells, cell::set);
     auto size = std::min(1 + cells.size() - static_cast<std::size_t>(leftover),
-                         1 + static_cast<std::size_t>(pound - cells.begin()));
+      1 + static_cast<std::size_t>(pound - cells.begin()));
 
     const auto L = static_cast<std::size_t>(ranges.front());
     xmas::views::iota<std::size_t> iota(size);
-    return std::transform_reduce(
-        iota.begin(), iota.end(), std::uint64_t{0u}, std::plus<std::uint64_t>{},
-        [&lru, cells, ranges, L](std::size_t idx) -> std::uint64_t {
-          if (cells[idx] == cell::empty) {
+    return std::transform_reduce(iota.begin(), iota.end(), std::uint64_t{0u},
+      std::plus<std::uint64_t>{}, [&lru, cells, ranges, L](std::size_t idx) -> std::uint64_t {
+        if (cells[idx] == cell::empty) {
+          return 0;
+        }
+
+        if (idx != 0 && cells[idx - 1] == cell::set) {
+          // Collision with prev block
+          return 0;
+        }
+
+        auto v = cells.drop(idx);
+
+        auto prefix = v.take(L);
+        auto it = std::ranges::find(prefix, cell::empty);
+        if (it != prefix.end()) {
+          // Range does not fit
+          return 0;
+        }
+
+        if (it != v.end() && *it == cell::set) {
+          // Collision with next block
+          return 0;
+        }
+
+        if (ranges.size() == 1) {
+          // End of sequence
+          if (contains(v.drop(ranges.front()), cell::set)) {
             return 0;
           }
+          return 1;
+        }
 
-          if (idx != 0 && cells[idx - 1] == cell::set) {
-            // Collision with prev block
-            return 0;
-          }
-
-          auto v = cells.drop(idx);
-
-          auto prefix = v.take(L);
-          auto it = std::ranges::find(prefix, cell::empty);
-          if (it != prefix.end()) {
-            // Range does not fit
-            return 0;
-          }
-
-          if (it != v.end() && *it == cell::set) {
-            // Collision with next block
-            return 0;
-          }
-
-          if (ranges.size() == 1) {
-            // End of sequence
-            if (contains(v.drop(ranges.front()), cell::set)) {
-              return 0;
-            }
-            return 1;
-          }
-
-          auto x = count_combinations(lru, v.drop(L + 1), ranges.drop(1));
-          return x;
-        });
+        auto x = count_combinations(lru, v.drop(L + 1), ranges.drop(1));
+        return x;
+      });
   }();
 
   lru.set(state{cells_base, ranges_base}, result);
@@ -339,19 +339,16 @@ std::uint64_t process_line(std::string_view line) {
     for (std::size_t i = 0; i < 4; ++i) {
       cells_base.push_back(cell::unknown);
       std::copy(cells0.begin(), cells0.end(), std::back_inserter(cells_base));
-      std::copy(ranges0.begin(), ranges0.end(),
-                std::back_inserter(ranges_base));
+      std::copy(ranges0.begin(), ranges0.end(), std::back_inserter(ranges_base));
     }
   }
 
   // Trim right. Left trim is done inside count_combinations
-  auto [cells, ranges, ok] =
-      trim_right(xmas::view{cells_base.cbegin(), cells_base.cend()},
-                 xmas::view{ranges_base.cbegin(), ranges_base.cend()});
+  auto [cells, ranges, ok] = trim_right(xmas::view{cells_base.cbegin(), cells_base.cend()},
+    xmas::view{ranges_base.cbegin(), ranges_base.cend()});
 
   if (!ok) {
-    xlog::warning("No combinations possible for line {} (error from the right)",
-                  line);
+    xlog::warning("No combinations possible for line {} (error from the right)", line);
     return 0;
   }
 
@@ -359,8 +356,7 @@ std::uint64_t process_line(std::string_view line) {
 
   const auto x = count_combinations(lru, cells, ranges);
   if (x == 0) {
-    xlog::warning("No combinations possible for line {} (error from the left)",
-                  line);
+    xlog::warning("No combinations possible for line {} (error from the left)", line);
   } else {
     xlog::debug("{} -> ({}) -> {}", line, stringify_line(cells, ranges), x);
   }
@@ -373,15 +369,13 @@ std::uint64_t process_line(std::string_view line) {
 std::uint64_t Day12::part1() {
   auto in = xmas::views::linewise(this->input);
 
-  return std::transform_reduce(std::execution::par_unseq, in.cbegin(),
-                               in.cend(), std::uint64_t(0u),
-                               std::plus<std::uint64_t>{}, process_line<false>);
+  return std::transform_reduce(std::execution::par_unseq, in.cbegin(), in.cend(), std::uint64_t(0u),
+    std::plus<std::uint64_t>{}, process_line<false>);
 }
 
 std::uint64_t Day12::part2() {
   auto in = xmas::views::linewise(this->input);
 
-  return std::transform_reduce(std::execution::par_unseq, in.cbegin(),
-                               in.cend(), std::uint64_t(0u),
-                               std::plus<std::uint64_t>{}, process_line<true>);
+  return std::transform_reduce(std::execution::par_unseq, in.cbegin(), in.cend(), std::uint64_t(0u),
+    std::plus<std::uint64_t>{}, process_line<true>);
 }

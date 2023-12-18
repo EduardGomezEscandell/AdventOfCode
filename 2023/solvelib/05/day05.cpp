@@ -89,7 +89,7 @@ struct layer {
 
     // Process the input range from left to right, until we have no input range
     // left.
-    for (mapping const &m : mappings) {
+    for (mapping const& m : mappings) {
       if (m.src + m.len < in.begin) {
         // mapping is to the left of the input range
         continue;
@@ -110,8 +110,8 @@ struct layer {
       // Extact the overlap (the rest of the input will be processed next
       // iteration)
       auto overlap = intrange{
-          .begin = in.begin,
-          .end = std::min(in.end, m.src + m.len),
+        .begin = in.begin,
+        .end = std::min(in.end, m.src + m.len),
       };
       in.begin = overlap.end;
 
@@ -119,8 +119,8 @@ struct layer {
       auto begin_delta = overlap.begin - m.src;
       auto end_delta = overlap.end - m.src;
       out.push_back({
-          .begin = m.dest + begin_delta,
-          .end = m.dest + end_delta,
+        .begin = m.dest + begin_delta,
+        .end = m.dest + end_delta,
       });
 
       // Process right tail (if there is one)
@@ -140,23 +140,18 @@ struct layer {
   // After parsing the mappings (source->dest pairs), we sort them according to
   // the source.
   void commit() {
-    std::ranges::sort(mappings, [](mapping const &a, mapping const &b) {
-      return a.src < b.src;
-    });
+    std::ranges::sort(mappings, [](mapping const& a, mapping const& b) { return a.src < b.src; });
 
     // Validate no overlap between ranges, throw in case there is
     // That would mean a bad input (or me misunderstanding the problem :P)
 #ifndef NDEBUG
     auto it = std::adjacent_find(mappings.begin(), mappings.end(),
-                                 [](mapping const &prev, mapping const &next) {
-                                   return prev.src + prev.len > next.src;
-                                 });
+      [](mapping const& prev, mapping const& next) { return prev.src + prev.len > next.src; });
     if (it != mappings.end()) {
       auto first = *it;
       auto second = *(it + 1);
-      throw std::runtime_error(std::format(
-          "Entry ({},{},{}) overlaps with ({},{},{})", first.src, first.dest,
-          first.len, second.src, second.dest, second.len));
+      throw std::runtime_error(std::format("Entry ({},{},{}) overlaps with ({},{},{})", first.src,
+        first.dest, first.len, second.src, second.dest, second.len));
     }
 #endif
   }
@@ -168,9 +163,8 @@ struct layer {
 //
 // return.first: The layer that was parsed
 // return.second: An iterator pointing to the beginning of the next section
-std::pair<layer, xmas::views::linewise::iterator>
-parse_layer(xmas::views::linewise::iterator begin,
-            xmas::views::linewise::iterator end) {
+std::pair<layer, xmas::views::linewise::iterator> parse_layer(xmas::views::linewise::iterator begin,
+  xmas::views::linewise::iterator end) {
   layer l;
   auto it = begin;
 
@@ -184,14 +178,14 @@ parse_layer(xmas::views::linewise::iterator begin,
       break;
     } else if (size != 3) {
       // Wrong input (or more likely: found a bug!)
-      throw std::runtime_error(std::format(
-          "Line '{}' has the wrong number of integers ({})", *it, size));
+      throw std::runtime_error(
+        std::format("Line '{}' has the wrong number of integers ({})", *it, size));
     }
 
     l.mappings.emplace_back(mapping{
-        .src = ints[1],
-        .dest = ints[0],
-        .len = ints[2],
+      .src = ints[1],
+      .dest = ints[0],
+      .len = ints[2],
     });
   }
 
@@ -208,13 +202,12 @@ std::vector<intrange> coalesce_ranges(std::vector<intrange> in) {
   }
 
   // Sort according to range start
-  std::sort(in.begin(), in.end(),
-            [](intrange a, intrange b) { return a.begin < b.begin; });
+  std::sort(in.begin(), in.end(), [](intrange a, intrange b) { return a.begin < b.begin; });
 
   // Merge any 2 or more consecutive ranges where prev.end >= next.begin
   std::vector<intrange> out = {in.front()};
-  for (auto &next : std::span(in.begin() + 1, in.end())) {
-    auto &prev = out.back();
+  for (auto& next : std::span(in.begin() + 1, in.end())) {
+    auto& prev = out.back();
     if (prev.end >= next.begin) {
       // Overlap with previous range: extend the previous one to absorb this one
       prev.end = std::max(prev.end, next.end);
@@ -229,11 +222,11 @@ std::vector<intrange> coalesce_ranges(std::vector<intrange> in) {
 
 // Appends the contents of src at the end of dst
 template <typename T>
-void extend(std::vector<T> &dst, std::vector<T> const &src) {
+void extend(std::vector<T>& dst, std::vector<T> const& src) {
   std::size_t old_size = dst.size();
   dst.resize(old_size + src.size());
   std::copy(std::execution::unseq, src.begin(), src.end(),
-            dst.begin() + static_cast<std::ptrdiff_t>(old_size));
+    dst.begin() + static_cast<std::ptrdiff_t>(old_size));
 }
 
 } // namespace
@@ -255,7 +248,7 @@ std::uint64_t Day05::part1() {
 
   // Parse translation layers
   std::array<layer, 7> layers;
-  for (auto &l : layers) {
+  for (auto& l : layers) {
     auto r = parse_layer(iline, rng.end());
     l = r.first;
     iline = r.second;
@@ -263,17 +256,17 @@ std::uint64_t Day05::part1() {
 
   // Computing each seed in parallel
   return std::transform_reduce(
-      std::execution::par_unseq, seeds.cbegin(), seeds.cend(),
-      std::numeric_limits<std::uint64_t>::max(),
-      [](std::uint64_t x, std::uint64_t y) { return x < y ? x : y; }, /* min */
-      [&layers](const std::uint64_t seed) -> std::uint64_t {
-        auto x = seed;
-        for (auto const &layer : layers) {
-          x = layer.translate(x);
-        }
-        xlog::debug("{}->{}", seed, x);
-        return x;
-      });
+    std::execution::par_unseq, seeds.cbegin(), seeds.cend(),
+    std::numeric_limits<std::uint64_t>::max(),
+    [](std::uint64_t x, std::uint64_t y) { return x < y ? x : y; }, /* min */
+    [&layers](const std::uint64_t seed) -> std::uint64_t {
+      auto x = seed;
+      for (auto const& layer : layers) {
+        x = layer.translate(x);
+      }
+      xlog::debug("{}->{}", seed, x);
+      return x;
+    });
 }
 
 std::uint64_t Day05::part2() {
@@ -286,8 +279,8 @@ std::uint64_t Day05::part2() {
   std::vector<intrange> seed_ranges;
   for (std::size_t i = 0; i + 1 < seed_pairs.size(); i += 2) {
     seed_ranges.push_back({
-        .begin = seed_pairs[i],
-        .end = seed_pairs[i] + seed_pairs[i + 1],
+      .begin = seed_pairs[i],
+      .end = seed_pairs[i] + seed_pairs[i + 1],
     });
   }
 
@@ -301,7 +294,7 @@ std::uint64_t Day05::part2() {
 
   // Parse translation layers
   std::array<layer, 7> layers;
-  for (auto &l : layers) {
+  for (auto& l : layers) {
     auto r = parse_layer(iline, rng.end());
     l = r.first;
     iline = r.second;
@@ -309,22 +302,22 @@ std::uint64_t Day05::part2() {
 
   // Computing each seed range in parallel
   return std::transform_reduce(
-      std::execution::par_unseq, seed_ranges.cbegin(), seed_ranges.cend(),
-      std::numeric_limits<std::uint64_t>::max(),
-      [](std::uint64_t x, std::uint64_t y) { return x < y ? x : y; }, /* min */
-      [&layers](const intrange seed_range) -> std::uint64_t {
-        std::vector<intrange> in = {seed_range};
-        for (auto const &layer : layers) {
-          std::vector<intrange> out;
-          for (auto &i : in) {
-            extend(out, layer.translate(i));
-          }
-
-          in = coalesce_ranges(out);
+    std::execution::par_unseq, seed_ranges.cbegin(), seed_ranges.cend(),
+    std::numeric_limits<std::uint64_t>::max(),
+    [](std::uint64_t x, std::uint64_t y) { return x < y ? x : y; }, /* min */
+    [&layers](const intrange seed_range) -> std::uint64_t {
+      std::vector<intrange> in = {seed_range};
+      for (auto const& layer : layers) {
+        std::vector<intrange> out;
+        for (auto& i : in) {
+          extend(out, layer.translate(i));
         }
-        const auto best = in.front().begin;
 
-        xlog::debug("[{}, {}) -> {}", seed_range.begin, seed_range.end, best);
-        return best;
-      });
+        in = coalesce_ranges(out);
+      }
+      const auto best = in.front().begin;
+
+      xlog::debug("[{}, {}) -> {}", seed_range.begin, seed_range.end, best);
+      return best;
+    });
 }

@@ -7,7 +7,7 @@ TEST_CASE("Day 15") {
 
   SUBCASE("Hashing") {
     using namespace std::string_view_literals;
-    
+
     // Compile-time testing!
     static_assert(Day15::hash256(""sv) == 0);
     static_assert(Day15::hash256("H"sv) == 200);

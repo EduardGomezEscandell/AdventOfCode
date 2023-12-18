@@ -12,18 +12,18 @@
 
 namespace app {
 
-std::optional<xmas::solution::duration>
-solve_day(std::map<const int, std::unique_ptr<xmas::solution>>::value_type const
-              &solution,
-          bool verbose);
+std::optional<xmas::solution::duration> solve_day(
+  std::map<const int, std::unique_ptr<xmas::solution>>::value_type const&
+    solution,
+  bool verbose);
 
 solution_vector select_all_days() {
   try {
     populate_registry();
-  } catch (std::runtime_error &e) {
+  } catch (std::runtime_error& e) {
     xlog::error("could not populate the registry fully: {}", e.what());
   }
-  const auto &solutions = xmas::registered_solutions();
+  const auto& solutions = xmas::registered_solutions();
 
   solution_vector days;
 
@@ -37,15 +37,15 @@ solution_vector select_all_days() {
 solution_vector select_days(argv days) {
   try {
     populate_registry();
-  } catch (std::runtime_error &e) {
+  } catch (std::runtime_error& e) {
     xlog::error("could not populate the registry fully: {}", e.what());
   }
-  const auto &solutions = xmas::registered_solutions();
+  const auto& solutions = xmas::registered_solutions();
 
   solution_vector out;
 
   out.reserve(days.size());
-  for (auto &day : days) {
+  for (auto& day : days) {
     int d = -1;
     std::from_chars(day.begin(), day.end(), d);
     if (d == -1) {
@@ -65,7 +65,7 @@ solution_vector select_days(argv days) {
   return out;
 }
 
-bool execute_days(app &, solution_vector const &days) {
+bool execute_days(app&, solution_vector const& days) {
   xmas::solution::duration total{};
   bool total_success = true;
 
@@ -80,9 +80,8 @@ bool execute_days(app &, solution_vector const &days) {
   }
 
   xlog::info("DONE");
-  xlog::info(
-      "Total time was {} ms",
-      std::chrono::duration_cast<std::chrono::milliseconds>(total).count());
+  xlog::info("Total time was {} ms",
+    std::chrono::duration_cast<std::chrono::milliseconds>(total).count());
 
   return total_success;
 }
@@ -91,8 +90,9 @@ std::int64_t microseconds(xmas::solution::duration d) {
   return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
 }
 
-bool time_days(app &, solution_vector const &days,
-               xmas::solution::duration timeout) {
+bool time_days(app&,
+  solution_vector const& days,
+  xmas::solution::duration timeout) {
   xmas::solution::duration total{};
   bool total_success = true;
 
@@ -100,7 +100,7 @@ bool time_days(app &, solution_vector const &days,
 
   xlog::info("Every day's solution will be executed non-stop for {} seconds to "
              "evaluate its performance.",
-             std::chrono::duration_cast<std::chrono::seconds>(timeout).count());
+    std::chrono::duration_cast<std::chrono::seconds>(timeout).count());
 
   constexpr std::string_view fmt = "{:>7} {:>8} {:>7}    {:>7}";
   xlog::info("");
@@ -138,9 +138,9 @@ bool time_days(app &, solution_vector const &days,
     }
 
     // Average
-    const auto mean = std::chrono::duration_cast<std::chrono::microseconds>(
-                          daily_total / iter)
-                          .count();
+    const auto mean =
+      std::chrono::duration_cast<std::chrono::microseconds>(daily_total / iter)
+        .count();
     const auto dev = static_cast<std::int64_t>(std::sqrt(S / iter));
 
     // Report
@@ -149,25 +149,26 @@ bool time_days(app &, solution_vector const &days,
     total += daily_total / iter;
   }
 
-  xlog::info(
-      fmt, "TOTAL", "-",
-      std::chrono::duration_cast<std::chrono::microseconds>(total).count(),
-      "-");
+  xlog::info(fmt,
+    "TOTAL",
+    "-",
+    std::chrono::duration_cast<std::chrono::microseconds>(total).count(),
+    "-");
 
   return total_success;
 }
 
-std::optional<xmas::solution::duration>
-solve_day(std::map<const int, std::unique_ptr<xmas::solution>>::value_type const
-              &solution,
-          bool verbose) {
+std::optional<xmas::solution::duration> solve_day(
+  std::map<const int, std::unique_ptr<xmas::solution>>::value_type const&
+    solution,
+  bool verbose) {
 
   try {
     solution.second->set_input(
-        std::format("./data/{:02d}/input.txt", solution.second->day()));
-  } catch (std::runtime_error &e) {
-    xlog::error("day {} could not load: {}\n", solution.second->day(),
-                e.what());
+      std::format("./data/{:02d}/input.txt", solution.second->day()));
+  } catch (std::runtime_error& e) {
+    xlog::error(
+      "day {} could not load: {}\n", solution.second->day(), e.what());
     return {};
   }
 

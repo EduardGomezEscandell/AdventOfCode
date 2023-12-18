@@ -1,5 +1,4 @@
 #include "day04.hpp"
-#include "xmaslib/log/log.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -11,12 +10,12 @@
 #include <string_view>
 #include <vector>
 
+#include "xmaslib/log/log.hpp"
+
 namespace {
-[[nodiscard]] std::pair<std::size_t, std::size_t>
-dimensions(std::string_view input) {
+[[nodiscard]] std::pair<std::size_t, std::size_t> dimensions(std::string_view input) {
   const std::size_t ncols =
-      1 + std::size_t(std::find(input.cbegin(), input.cend(), '\n') -
-                      input.cbegin());
+    1 + std::size_t(std::find(input.cbegin(), input.cend(), '\n') - input.cbegin());
   const std::size_t nrows = input.size() / ncols;
   xlog::debug("Detected {} rows and {} columns", nrows, ncols);
 
@@ -24,8 +23,8 @@ dimensions(std::string_view input) {
 }
 
 [[nodiscard]] std::uint64_t card_hits(const std::size_t row,
-                                     const std::string::const_iterator begin,
-                                     const std::string::const_iterator end) {
+  const std::string::const_iterator begin,
+  const std::string::const_iterator end) {
   auto it = std::find(begin, end, ':');
   if (it == end) {
     throw std::runtime_error(std::format("Row {} has no colon (:)", row));
@@ -77,7 +76,7 @@ dimensions(std::string_view input) {
   return hits;
 }
 
-}  // namespace
+} // namespace
 
 std::uint64_t Day04::part1() {
   const auto [nrows, ncols] = dimensions(this->input);
@@ -85,24 +84,21 @@ std::uint64_t Day04::part1() {
   std::vector<std::size_t> rows(nrows, 0);
   std::iota(rows.begin(), rows.end(), 0);
 
-  return std::transform_reduce(
-      std::execution::par_unseq, rows.begin(), rows.end(), 0u,
-      std::plus{},
-      [this, ncols](std::size_t const row) -> std::uint64_t {
-        const auto begin =
-            input.cbegin() + static_cast<std::ptrdiff_t>(row * ncols);
-        const auto end = begin + static_cast<std::ptrdiff_t>(ncols);
+  return std::transform_reduce(std::execution::par_unseq, rows.begin(), rows.end(), 0u, std::plus{},
+    [this, ncols](std::size_t const row) -> std::uint64_t {
+      const auto begin = input.cbegin() + static_cast<std::ptrdiff_t>(row * ncols);
+      const auto end = begin + static_cast<std::ptrdiff_t>(ncols);
 
-        const auto hits = card_hits(row, begin, end);
+      const auto hits = card_hits(row, begin, end);
 
-        std::uint64_t score = 0;
-        if (hits > 0) {
-          score = 1 << (hits - 1);
-        }
+      std::uint64_t score = 0;
+      if (hits > 0) {
+        score = 1 << (hits - 1);
+      }
 
-        xlog::debug("Card {} has a score of {}", row + 1, score);
-        return score;
-      });
+      xlog::debug("Card {} has a score of {}", row + 1, score);
+      return score;
+    });
 }
 
 std::uint64_t Day04::part2() {
@@ -114,32 +110,28 @@ std::uint64_t Day04::part2() {
   // Parse in parallel, compute how many hits per card
   std::vector<std::int64_t> hits(nrows);
   std::transform(rows.cbegin(), rows.cend(), hits.begin(),
-                 [this, ncols](std::size_t const row) -> std::uint64_t {
-                   const auto begin = input.cbegin() +
-                                      static_cast<std::ptrdiff_t>(row * ncols);
-                   const auto end = begin + static_cast<std::ptrdiff_t>(ncols);
-                   return card_hits(row, begin, end);
-                 });
+    [this, ncols](std::size_t const row) -> std::uint64_t {
+      const auto begin = input.cbegin() + static_cast<std::ptrdiff_t>(row * ncols);
+      const auto end = begin + static_cast<std::ptrdiff_t>(ncols);
+      return card_hits(row, begin, end);
+    });
 
   // Must not be parallel because we overwrite copies
   std::vector<std::uint64_t> copies(nrows, 1);
   std::transform(rows.begin(), rows.end(), copies.begin(),
-                 [&hits, &copies](std::size_t const row) -> std::uint64_t {
-                   const auto nhits = hits[row];
-                   const auto ncopies = copies[row];
+    [&hits, &copies](std::size_t const row) -> std::uint64_t {
+      const auto nhits = hits[row];
+      const auto ncopies = copies[row];
 
-                   xlog::debug("Game {}: there are {} copies with {} hits each",
-                               row + 1, ncopies, nhits);
+      xlog::debug("Game {}: there are {} copies with {} hits each", row + 1, ncopies, nhits);
 
-                   // Add copies of following cards
-                   auto mbegin =
-                       copies.begin() + static_cast<std::ptrdiff_t>(row) + 1;
-                   auto mend = mbegin + nhits;
-                   std::transform(mbegin, mend, mbegin,
-                                  [ncopies](auto &m) { return m + ncopies; });
+      // Add copies of following cards
+      auto mbegin = copies.begin() + static_cast<std::ptrdiff_t>(row) + 1;
+      auto mend = mbegin + nhits;
+      std::transform(mbegin, mend, mbegin, [ncopies](auto& m) { return m + ncopies; });
 
-                   return ncopies;
-                 });
+      return ncopies;
+    });
 
   // std::ranges::reduce does not exist >:(
   return std::reduce(copies.begin(), copies.end());

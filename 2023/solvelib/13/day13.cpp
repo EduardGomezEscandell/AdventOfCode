@@ -1,11 +1,5 @@
 #include "day13.hpp"
 
-#include "xmaslib/functional/functional.hpp"
-#include "xmaslib/line_iterator/line_iterator.hpp"
-#include "xmaslib/log/log.hpp"
-#include "xmaslib/stride/stride.hpp"
-#include "xmaslib/view/view.hpp"
-
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
@@ -17,10 +11,15 @@
 #include <string_view>
 #include <vector>
 
+#include "xmaslib/functional/functional.hpp"
+#include "xmaslib/line_iterator/line_iterator.hpp"
+#include "xmaslib/log/log.hpp"
+#include "xmaslib/stride/stride.hpp"
+#include "xmaslib/view/view.hpp"
+
 namespace {
 
-std::vector<std::string_view::iterator>
-locate_block_begins(std::string_view input) {
+std::vector<std::string_view::iterator> locate_block_begins(std::string_view input) {
   std::vector<std::string_view::iterator> block_begins{input.begin()};
 
   if (input.size() == 0) {
@@ -28,9 +27,8 @@ locate_block_begins(std::string_view input) {
   }
 
   for (auto it = input.begin(); it != input.end(); ++it) {
-    it = std::adjacent_find(it, input.end(), [](char l, char r) -> bool {
-      return l == '\n' && r == '\n';
-    });
+    it = std::adjacent_find(
+      it, input.end(), [](char l, char r) -> bool { return l == '\n' && r == '\n'; });
     if (it == input.end()) {
       break;
     }
@@ -43,18 +41,16 @@ locate_block_begins(std::string_view input) {
 
 std::pair<std::size_t, std::size_t> block_dimensions(std::string_view input) {
   const std::size_t ncols =
-      1 + std::size_t(std::find(input.cbegin(), input.cend(), '\n') -
-                      input.cbegin());
+    1 + std::size_t(std::find(input.cbegin(), input.cend(), '\n') - input.cbegin());
   const std::size_t nrows = input.size() / ncols;
   return std::make_pair(nrows, ncols);
 }
 
 template <typename Iterator>
-void check_line_symmetry(std::vector<bool> &potential_axes, Iterator line_begin,
-                         Iterator line_end) {
+void check_line_symmetry(
+  std::vector<bool>& potential_axes, Iterator line_begin, Iterator line_end) {
   assert(line_begin < line_end);
-  assert(potential_axes.size() ==
-         static_cast<std::size_t>(line_end - line_begin));
+  assert(potential_axes.size() == static_cast<std::size_t>(line_end - line_begin));
 
   auto v = xmas::view{line_begin, line_end};
 
@@ -79,10 +75,8 @@ void check_line_symmetry(std::vector<bool> &potential_axes, Iterator line_begin,
   }
 }
 
-std::vector<std::size_t>
-check_block_horizontal_symmetries(std::string_view block, std::size_t nrows,
-                                  std::size_t ncols) {
-
+std::vector<std::size_t> check_block_horizontal_symmetries(
+  std::string_view block, std::size_t nrows, std::size_t ncols) {
   const std::size_t width = ncols - 1; // -1 to skip the trailing endline
   std::vector<bool> potential_axes(width, true);
 
@@ -102,9 +96,8 @@ check_block_horizontal_symmetries(std::string_view block, std::size_t nrows,
   return symmetries;
 }
 
-std::vector<std::size_t> check_block_vertical_symmetries(std::string_view block,
-                                                         std::size_t nrows,
-                                                         std::size_t ncols) {
+std::vector<std::size_t> check_block_vertical_symmetries(
+  std::string_view block, std::size_t nrows, std::size_t ncols) {
   std::vector<bool> potential_axes(nrows, true);
 
   for (std::size_t col = 0; col < ncols; ++col) {
@@ -126,8 +119,8 @@ std::vector<std::size_t> check_block_vertical_symmetries(std::string_view block,
   return symmetries;
 }
 
-std::pair<std::uint64_t, std::uint64_t>
-solve_block(std::string_view block, std::size_t nrows, std::size_t ncols) {
+std::pair<std::uint64_t, std::uint64_t> solve_block(
+  std::string_view block, std::size_t nrows, std::size_t ncols) {
   auto h = check_block_horizontal_symmetries(block, nrows, ncols);
   if (h.size() != 0) {
     return {h.front(), 0};
@@ -150,22 +143,21 @@ char flip(char c) {
   return c;
 }
 
-}  // namespace
+} // namespace
 
 std::uint64_t Day13::part1() {
   auto block_begins = locate_block_begins(this->input);
 
   xlog::debug("Located {} blocks", block_begins.size() - 1);
 
-  return std::transform_reduce(
-      std::execution::par_unseq, block_begins.begin(), block_begins.end() - 1,
-      block_begins.begin() + 1, std::uint64_t{0}, std::plus<std::uint64_t>{},
-      [](auto begin, auto begin_next) {
-        std::string_view block{begin, begin_next - 1};
-        const auto [nrows, ncols] = block_dimensions(block);
-        auto p1 = solve_block(block, nrows, ncols);
-        return p1.first + 100 * p1.second;
-      });
+  return std::transform_reduce(std::execution::par_unseq, block_begins.begin(),
+    block_begins.end() - 1, block_begins.begin() + 1, std::uint64_t{0}, std::plus<std::uint64_t>{},
+    [](auto begin, auto begin_next) {
+      std::string_view block{begin, begin_next - 1};
+      const auto [nrows, ncols] = block_dimensions(block);
+      auto p1 = solve_block(block, nrows, ncols);
+      return p1.first + 100 * p1.second;
+    });
 }
 
 std::uint64_t Day13::part2() {
@@ -173,39 +165,38 @@ std::uint64_t Day13::part2() {
 
   xlog::debug("Located {} blocks", block_begins.size() - 1);
 
-  return std::transform_reduce(
-      std::execution::par_unseq, block_begins.begin(), block_begins.end() - 1,
-      block_begins.begin() + 1, std::uint64_t{0}, std::plus<std::uint64_t>{},
-      [](auto begin, auto begin_next) -> std::uint64_t {
-        // Blocks are relatively small (smaller than 20x20) so we can
-        // brute-force it
-        std::string block{begin, begin_next - 1};
-        const auto [nrows, ncols] = block_dimensions(block);
-        auto part1 = solve_block(block, nrows, ncols);
+  return std::transform_reduce(std::execution::par_unseq, block_begins.begin(),
+    block_begins.end() - 1, block_begins.begin() + 1, std::uint64_t{0}, std::plus<std::uint64_t>{},
+    [](auto begin, auto begin_next) -> std::uint64_t {
+      // Blocks are relatively small (smaller than 20x20) so we can
+      // brute-force it
+      std::string block{begin, begin_next - 1};
+      const auto [nrows, ncols] = block_dimensions(block);
+      auto part1 = solve_block(block, nrows, ncols);
 
-        for (char &c : block) {
-          if (c == '\n') {
-            continue;
-          }
-
-          c = flip(c);
-
-          auto sym = check_block_horizontal_symmetries(block, nrows, ncols);
-          auto it = std::ranges::find_if_not(sym, xmas::equals(part1.first));
-          if (it != sym.end()) {
-            return *it;
-          }
-
-          sym = check_block_vertical_symmetries(block, nrows, ncols);
-          it = std::ranges::find_if_not(sym, xmas::equals(part1.second));
-          if (it != sym.end()) {
-            return 100 * (*it);
-          }
-
-          c = flip(c);
+      for (char& c : block) {
+        if (c == '\n') {
+          continue;
         }
 
-        xlog::warning("block with no possible symmetry");
-        return 0;
-      });
+        c = flip(c);
+
+        auto sym = check_block_horizontal_symmetries(block, nrows, ncols);
+        auto it = std::ranges::find_if_not(sym, xmas::equals(part1.first));
+        if (it != sym.end()) {
+          return *it;
+        }
+
+        sym = check_block_vertical_symmetries(block, nrows, ncols);
+        it = std::ranges::find_if_not(sym, xmas::equals(part1.second));
+        if (it != sym.end()) {
+          return 100 * (*it);
+        }
+
+        c = flip(c);
+      }
+
+      xlog::warning("block with no possible symmetry");
+      return 0;
+    });
 }
