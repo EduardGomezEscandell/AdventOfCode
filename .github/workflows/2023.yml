@@ -31,14 +31,23 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v2
       - name: Install dependencies
-        run: ./dependencies
+        run: |
+          set -e
+          ./dependencies
       - name: Build
-        run: ./make
+        run: |
+          set -e
+          ./make
       - name: Test
-        continue-on-error: true
-        run: ./build/${BUILD_TYPE}/test/test
+        run: |
+          set -e
+          ./build/${BUILD_TYPE}/test/test
       - name: Run
-        run: ./build/${BUILD_TYPE}/cmd/aoc2023 --all
+        run: |
+          set -e
+          ./build/${BUILD_TYPE}/cmd/aoc2023 --all
       - name: Time
         if: matrix.build_type=='Release' && matrix.sanitizer=='no sanitizer'
-        run: ./build/${BUILD_TYPE}/cmd/aoc2023 --time
+        run: |
+          set -e
+          ./build/${BUILD_TYPE}/cmd/aoc2023 --time
