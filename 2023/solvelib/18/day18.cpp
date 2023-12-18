@@ -208,7 +208,39 @@ struct instruction {
   direction dir;
   length_t len;
 
-  static instruction parse(std::string_view sv) {
+  static instruction parse_part1(std::string_view ln) {
+    const auto d = [ln]() {
+      switch (ln.front()) {
+      case 'U':
+        return up;
+      case 'D':
+        return down;
+      case 'R':
+        return right;
+      case 'L':
+        return left;
+      default:
+        throw std::runtime_error(std::format("Line does not contain direction: {}", ln.front()));
+      }
+    }();
+
+    if (ln.size() < 3) {
+      throw std::runtime_error(std::format("Line too short: {}", ln.front()));
+    }
+
+    length_t n = 0;
+    for (auto it = ln.begin() + 2; it != ln.end(); ++it) {
+      if (*it == ' ') {
+        break;
+      }
+      n *= 10;
+      n += static_cast<unsigned>(*it - '0');
+    }
+
+    return {d, n};
+  }
+
+  static instruction parse_part2(std::string_view sv) {
     auto it = std::ranges::find(sv, '#');
     if (it == sv.end()) {
       throw std::runtime_error(std::format("Line has no #: {}", sv));
@@ -258,7 +290,7 @@ struct instruction {
   }
 };
 
-canvas build_canvas(std::string_view input) {
+canvas build_canvas(std::string_view input, instruction parseFunc(std::string_view)) {
   xmas::views::linewise lines(input);
 
   std::vector<instruction> instr;
@@ -267,7 +299,7 @@ canvas build_canvas(std::string_view input) {
 
   coords pos{0, 0};
   for (auto ln : lines) {
-    auto i = instruction::parse(ln);
+    auto i = parseFunc(ln);
     instr.push_back(i);
     pos = i.move(pos);
 
@@ -290,10 +322,8 @@ canvas build_canvas(std::string_view input) {
   return map;
 }
 
-}
-
-std::uint64_t Day18::part2() {
-  auto map = build_canvas(this->input);
+std::uint64_t solve(std::string_view input, instruction parseFunc(std::string_view)) {
+  auto map = build_canvas(input, parseFunc);
 
   xlog::debug("Canvas spans from ({},{}) to ({},{})", map.R.front(), map.C.front(), map.R.back(),
     map.C.back());
@@ -323,4 +353,14 @@ std::uint64_t Day18::part2() {
                                   map.visited[row].end(), column_widths.begin(), std::uint64_t{0},
                                   std::plus<std::uint64_t>{}, std::multiplies<std::uint64_t>{});
     });
+}
+
+}
+
+std::uint64_t Day18::part1() {
+  return solve(this->input, instruction::parse_part1);
+}
+
+std::uint64_t Day18::part2() {
+  return solve(this->input, instruction::parse_part2);
 }
