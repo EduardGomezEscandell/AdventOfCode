@@ -3,11 +3,27 @@
 
 namespace xmas {
 
-template <std::integral T> [[nodiscard]] T parse_int(std::string_view str) {
+template <std::integral T>
+[[nodiscard]] T parse_int(std::string_view str) {
   T x{};
   for (auto ch : str) {
     x *= 10;
     x += ch - '0';
+  }
+  return x;
+}
+
+template <std::integral T>
+[[nodiscard]] T parse_hex(std::string_view str) {
+  T x{};
+  for (auto ch : str) {
+    x *= 0x10;
+    if (ch >= '0' && ch <= '9') {
+      x += ch - '0';
+    }
+    if (ch >= 'a' && ch <= 'f') {
+      x += (ch - 'a') + 0xa;
+    }
   }
   return x;
 }
