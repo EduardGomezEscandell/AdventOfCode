@@ -192,7 +192,7 @@ struct canvas {
 };
 
 block_t len_to_block(length_t p, std::vector<length_t> const& mapping) {
-  auto it = std::find_if(mapping.begin(), mapping.end(), xmas::equals(p));
+  auto it = std::partition_point(mapping.begin(), mapping.end(), xmas::less_than(p));
   if (it == mapping.end()) {
     throw std::runtime_error(std::format("Coordinate past end of the range"));
   }
