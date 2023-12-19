@@ -28,6 +28,20 @@ template <std::integral T>
   return x;
 }
 
+template <std::integral T, typename Iterator>
+[[nodiscard]] std::pair<Iterator,T>  parse_int_until_break(Iterator begin, Iterator end) {
+  T x{};
+  for (; begin!= end; ++begin) {
+    if(*begin <'0' || *begin >'9') {
+      return {begin, x};
+    }
+    
+    x *= 10;
+    x += *begin - '0';
+  }
+  return {end, x};
+}
+
 // parse_ints parses a list of integers inbetween other characters
 // "534<dv13213zv  5643" -> [534, 13213, 5343]
 template <std::integral T>

@@ -35,7 +35,7 @@ template <typename... Args>
 constexpr void debug([[maybe_unused]] std::format_string<Args...> msg,
                      [[maybe_unused]] Args &&...args) {
 #ifndef NDEBUG
-  internal::log(INFO, std::format(msg, std::forward<Args>(args)...));
+  internal::log(DEBUG, std::format(msg, std::forward<Args>(args)...));
 #endif
 }
 
