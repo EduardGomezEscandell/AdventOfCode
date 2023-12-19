@@ -11,12 +11,14 @@
 #include <cstddef>
 #include <execution>
 #include <format>
+#include <functional>
 #include <limits>
 #include <map>
 #include <numeric>
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -47,8 +49,9 @@ type parse_type(char ch) {
 }
 
 auto item_to_lazy_string(item const& item) {
-  return xmas::lazy_string(
-    [&] { return std::format("{{x={:>4},m={:>4},a={:>4},s={:>4}}}", item[X], item[M], item[A], item[S]); });
+  return xmas::lazy_string([&] {
+    return std::format("{{x={:>4},m={:>4},a={:>4},s={:>4}}}", item[X], item[M], item[A], item[S]);
+  });
 }
 
 enum comparisson {
@@ -244,6 +247,56 @@ std::size_t apply_workflow(workflow const& w, item const& it) {
   return w.fallback;
 }
 
+struct range {
+  amount_t begin, end;
+};
+
+using item_range = std::array<range, 4>;
+
+void apply_workflow(
+  workflow const& w, item_range input, std::vector<std::pair<item_range, std::size_t>>& outputs) {
+
+  for (rule const& r : w.rules) {
+    if (r.op == greater_than) {
+      if (input[r.check].end <= r.value) {
+        // No part of the range fullfills the (>) rule
+        continue;
+      }
+      if (input[r.check].begin > r.value) {
+        // The entire range fullfills than the (>) value
+        outputs.emplace_back(input, r.output);
+        return;
+      }
+      // The range is split
+      auto out = input;
+      input[r.check].end = r.value + 1;
+      out[r.check].begin = r.value + 1;
+      outputs.emplace_back(out, r.output);
+      continue;
+    }
+    if (r.op == less_than) {
+      if (input[r.check].begin >= r.value) {
+        // No part of the range fullfills the (<) rule
+        continue;
+      }
+      if (input[r.check].end <= r.value) {
+        // The entire range fullfills than the (<) value
+        outputs.emplace_back(input, r.output);
+        return;
+      }
+      // The range is split
+      auto out = input;
+      out[r.check].end = r.value;
+      input[r.check].begin = r.value;
+      outputs.emplace_back(out, r.output);
+      continue;
+    }
+  }
+
+  outputs.emplace_back(input, w.fallback);
+  return;
+}
+
 }
 
 std::uint64_t Day19::part1() {
@@ -274,5 +327,43 @@ std::uint64_t Day19::part1() {
 }
 
 std::uint64_t Day19::part2() {
-  throw std::runtime_error("Not implemented");
+  xmas::views::linewise lines(input);
+
+  auto [it, workflows, worflow_in] = parse_workflows(lines.begin(), lines.end());
+
+  xlog::debug("Read {} workflows ", workflows.size());
+
+  std::vector<std::pair<item_range, std::size_t>> items{
+    {{
+       range{1, 4001}, // X
+       range{1, 4001}, // M
+       range{1, 4001}, // A
+       range{1, 4001}, // S
+     }, worflow_in}
+  };
+
+  std::uint64_t score = 0;
+  while (!items.empty()) {
+    xlog::debug("Executing batch of {} item ranges", items.size());
+    auto curr = std::move(items);
+    items = {};
+    for (auto const& [item_range, workflow_id] : curr) {
+      if (workflow_id == rule::rejected) {
+        continue;
+      }
+      if (workflow_id == rule::accepted) {
+        auto x = std::transform_reduce(item_range.begin(), item_range.end(), std::uint64_t{1},
+          std::multiplies<uint64_t>{},
+          [](range const& r) -> std::uint64_t { return r.end - r.begin; });
+
+        score += x;
+        continue;
+      }
+
+      workflow const& w = workflows[workflow_id];
+      apply_workflow(w, item_range, items);
+    }
+  }
+
+  return score;
 }
