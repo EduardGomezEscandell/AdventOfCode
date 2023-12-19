@@ -5,6 +5,7 @@ add_library(solvelib
     04/day04.cpp
     05/day05.cpp
     06/day06.cpp
+    07/day07.cpp
 
     11/day11.cpp
     12/day12.cpp
