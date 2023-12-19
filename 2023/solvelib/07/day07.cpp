@@ -7,9 +7,7 @@
 
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <cstdint>
-#include <cstdlib>
 #include <execution>
 #include <format>
 #include <functional>
@@ -17,7 +15,6 @@
 #include <numeric>
 #include <span>
 #include <stdexcept>
-#include <string>
 #include <string_view>
 
 namespace {
@@ -44,10 +41,14 @@ enum type {
 //
 // Example hand [32T3K] has a pair (score = 0x1), and cards with values 3,2,10,3,13:
 // score: 0x132a3d
+//
+// In part 1, J is encoded as 0xb. In part 2 it is encoded as 0x0 to ensure it is at the
+// bottom of the priority ranking.
 using score_t = std::uint32_t;
 
 using hand = std::span<const char, 5>;
 
+template <bool is_part_2>
 std::uint32_t encode_card(char card) {
   if (card <= '9') {
     return static_cast<std::uint32_t>(card - '0');
@@ -56,6 +57,9 @@ std::uint32_t encode_card(char card) {
   case 'T':
     return 0xa;
   case 'J':
+    if constexpr (is_part_2) {
+      return 0;
+    }
     return 0xb;
   case 'Q':
     return 0xc;
@@ -69,16 +73,19 @@ std::uint32_t encode_card(char card) {
 }
 
 constexpr std::array<std::uint8_t, 0xf> empty_score_array = {
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // No clean way of doing this apparently
 
+template <bool is_part_2>
 type compute_type(hand hand) {
   auto counts = empty_score_array;
   for (char card : hand) {
-    ++counts[encode_card(card)];
+    ++counts[encode_card<is_part_2>(card)];
   }
 
+  auto joker_count = std::exchange(counts[0], 0); // Will be 0 when is_part2 == false
   std::partial_sort(std::execution::unseq, counts.begin(), counts.begin() + 2, counts.end(),
     std::greater<std::uint8_t>{});
+  counts[0] += joker_count;
 
   switch (counts[0]) {
   case 5:
@@ -96,19 +103,21 @@ type compute_type(hand hand) {
   }
 }
 
+template <bool is_part_2>
 score_t hand_score(hand hand) {
-  score_t score = compute_type(hand);
+  score_t score = compute_type<is_part_2>(hand);
   for (auto const& card : hand) {
     score <<= 4;
-    score += encode_card(card);
+    score += encode_card<is_part_2>(card);
   }
   return score;
 }
 
 using player_t = std::uint64_t;
 
+template <bool is_part_2>
 player_t encode_player(std::string_view line) {
-  std::uint64_t score = hand_score(std::span<const char, 5>(line.begin(), 5));
+  std::uint64_t score = hand_score<is_part_2>(std::span<const char, 5>(line.begin(), 5));
   std::uint64_t bet = xmas::parse_int<std::uint32_t>({line.begin() + 6, line.end()});
 
   auto r = score << 32 | bet;
@@ -121,13 +130,12 @@ std::uint64_t extract_bid(player_t player) {
   return static_cast<score_t>(player & 0xffffffff);
 }
 
-}
-
-std::uint64_t Day07::part1() {
+template <bool is_part_2>
+std::uint64_t solve(std::string_view input) {
   std::vector<player_t> players;
 
-  auto input = xmas::views::linewise(this->input);
-  std::transform(input.begin(), input.end(), std::back_inserter(players), encode_player);
+  auto lines = xmas::views::linewise(input);
+  std::transform(lines.begin(), lines.end(), std::back_inserter(players), encode_player<is_part_2>);
 
   std::sort(players.begin(), players.end(), std::less<player_t>{});
 
@@ -138,7 +146,12 @@ std::uint64_t Day07::part1() {
       return position * extract_bid(player);
     });
 }
+}
+
+std::uint64_t Day07::part1() {
+  return solve<false>(input);
+}
 
 std::uint64_t Day07::part2() {
-  throw std::runtime_error("Not implemented");
+  return solve<true>(input);
 }
