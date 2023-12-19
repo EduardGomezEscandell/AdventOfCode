@@ -1,5 +1,6 @@
 #include "day05.hpp"
 
+#include "xmaslib/integer_range/integer_range.hpp"
 #include "xmaslib/line_iterator/line_iterator.hpp"
 #include "xmaslib/log/log.hpp"
 #include "xmaslib/parsing/parsing.hpp"
@@ -49,9 +50,7 @@ struct mapping {
   }
 };
 
-struct intrange {
-  std::uint64_t begin, end;
-};
+using intrange = xmas::integer_range<std::uint64_t>;
 
 // a translation layer, such as "seed-to-soil map"
 struct layer {
@@ -83,7 +82,7 @@ struct layer {
   }
 
   // Takes a set of sources and returns the destinations
-  // No guarantess on output ordering
+  // No guarantees on output ordering
   std::vector<intrange> translate(intrange in) const {
     std::vector<intrange> out;
 
@@ -100,31 +99,21 @@ struct layer {
       }
 
       // There is an overlap
+      auto overlap = in.overlap({m.src, m.src + m.len});
 
       // Snip leading part of input range (stays as-is)
-      if (in.begin < m.src) {
-        out.push_back({.begin = in.begin, .end = m.src});
-        in.begin = m.src;
+      if (in.begin < overlap.begin) {
+        out.emplace_back(in.drop_less(overlap.begin));
       }
-
-      // Extact the overlap (the rest of the input will be processed next
-      // iteration)
-      auto overlap = intrange{
-        .begin = in.begin,
-        .end = std::min(in.end, m.src + m.len),
-      };
-      in.begin = overlap.end;
 
       // Map the overlap from src to dest
       auto begin_delta = overlap.begin - m.src;
       auto end_delta = overlap.end - m.src;
-      out.push_back({
-        .begin = m.dest + begin_delta,
-        .end = m.dest + end_delta,
-      });
+      out.emplace_back(m.dest + begin_delta, m.dest + end_delta);
 
       // Process right tail (if there is one)
-      if (in.begin >= in.end) {
+      in.begin = overlap.end;
+      if (in.empty()) {
         break;
       }
     }
@@ -195,31 +184,6 @@ std::pair<layer, xmas::views::linewise::iterator> parse_layer(xmas::views::linew
   return {l, it};
 }
 
-// coalesce_ranges takes a set of ranges and merges overlapping one.
-std::vector<intrange> coalesce_ranges(std::vector<intrange> in) {
-  if (in.size() < 2) {
-    return in;
-  }
-
-  // Sort according to range start
-  std::sort(in.begin(), in.end(), [](intrange a, intrange b) { return a.begin < b.begin; });
-
-  // Merge any 2 or more consecutive ranges where prev.end >= next.begin
-  std::vector<intrange> out = {in.front()};
-  for (auto& next : std::span(in.begin() + 1, in.end())) {
-    auto& prev = out.back();
-    if (prev.end >= next.begin) {
-      // Overlap with previous range: extend the previous one to absorb this one
-      prev.end = std::max(prev.end, next.end);
-      continue;
-    }
-    // No overlap: append
-    out.push_back(next);
-  }
-
-  return out;
-}
-
 // Appends the contents of src at the end of dst
 template <typename T>
 void extend(std::vector<T>& dst, std::vector<T> const& src) {
@@ -278,10 +242,7 @@ std::uint64_t Day05::part2() {
   auto seed_pairs = parse_seeds(*iline);
   std::vector<intrange> seed_ranges;
   for (std::size_t i = 0; i + 1 < seed_pairs.size(); i += 2) {
-    seed_ranges.push_back({
-      .begin = seed_pairs[i],
-      .end = seed_pairs[i] + seed_pairs[i + 1],
-    });
+    seed_ranges.emplace_back(seed_pairs[i], seed_pairs[i] + seed_pairs[i + 1]);
   }
 
   xlog::debug("There are {} seed ranges", seed_pairs.size());
@@ -306,16 +267,17 @@ std::uint64_t Day05::part2() {
     std::numeric_limits<std::uint64_t>::max(),
     [](std::uint64_t x, std::uint64_t y) { return x < y ? x : y; }, /* min */
     [&layers](const intrange seed_range) -> std::uint64_t {
-      std::vector<intrange> in = {seed_range};
+      std::vector<intrange> ranges = {seed_range};
       for (auto const& layer : layers) {
-        std::vector<intrange> out;
-        for (auto& i : in) {
-          extend(out, layer.translate(i));
+        std::vector<intrange> input = std::move(ranges);
+        ranges = {};
+        for (auto& i : input) {
+          extend(ranges, layer.translate(i));
         }
 
-        in = coalesce_ranges(out);
+        xmas::coalesce_ranges(ranges);
       }
-      const auto best = in.front().begin;
+      const auto best = ranges.front().begin;
 
       xlog::debug("[{}, {}) -> {}", seed_range.begin, seed_range.end, best);
       return best;

@@ -1,5 +1,6 @@
 #include "day19.hpp"
 
+#include "xmaslib/integer_range/integer_range.hpp"
 #include "xmaslib/line_iterator/line_iterator.hpp"
 #include "xmaslib/parsing/parsing.hpp"
 #include "xmaslib/lazy_string/lazy_string.hpp"
@@ -60,7 +61,7 @@ enum comparisson {
 };
 
 struct rule {
-  type check;
+  type letter;
   comparisson op;
   uint value;
 
@@ -73,7 +74,7 @@ struct rule {
     return xmas::lazy_string([this] {
       std::stringstream ss;
       ss << [this] {
-        switch (check) {
+        switch (letter) {
         case X:
           return 'x';
         case M:
@@ -85,7 +86,7 @@ struct rule {
         }
         return '?';
       }();
-      ss << char(check) << char(op) << value << ':';
+      ss << char(letter) << char(op) << value << ':';
       if (output == accepted) {
         ss << 'A';
       } else if (output == rejected) {
@@ -158,7 +159,7 @@ void parse_workflow(std::string_view input, std::vector<workflow>& workflows,
 
     // We're at a rule
     rule r;
-    r.check = parse_type(*it); // x,m,a,s
+    r.letter = parse_type(*it); // x,m,a,s
     ++it;
 
     r.op = comparisson(*it);
@@ -237,57 +238,53 @@ std::vector<item> parse_items(
 
 std::size_t apply_workflow(workflow const& w, item const& it) {
   for (rule const& r : w.rules) {
-    if (r.op == greater_than && it[r.check] > r.value) {
+    if (r.op == greater_than && it[r.letter] > r.value) {
       return r.output;
     }
-    if (r.op == less_than && it[r.check] < r.value) {
+    if (r.op == less_than && it[r.letter] < r.value) {
       return r.output;
     }
   }
   return w.fallback;
 }
 
-struct range {
-  amount_t begin, end;
-};
-
-using item_range = std::array<range, 4>;
+using item_range = std::array<xmas::integer_range<amount_t>, 4>;
 
 void apply_workflow(
   workflow const& w, item_range input, std::vector<std::pair<item_range, std::size_t>>& outputs) {
 
   for (rule const& r : w.rules) {
     if (r.op == greater_than) {
-      if (input[r.check].end <= r.value) {
+      if (input[r.letter].end <= r.value) {
         // No part of the range fullfills the (>) rule
         continue;
       }
-      if (input[r.check].begin > r.value) {
+      if (input[r.letter].begin > r.value) {
         // The entire range fullfills than the (>) value
         outputs.emplace_back(input, r.output);
         return;
       }
       // The range is split
+      assert(input[r.letter].contains(r.value));
       auto out = input;
-      input[r.check].end = r.value + 1;
-      out[r.check].begin = r.value + 1;
+      out[r.letter] = input[r.letter].drop_greater(r.value);
       outputs.emplace_back(out, r.output);
       continue;
     }
     if (r.op == less_than) {
-      if (input[r.check].begin >= r.value) {
+      if (input[r.letter].begin >= r.value) {
         // No part of the range fullfills the (<) rule
         continue;
       }
-      if (input[r.check].end <= r.value) {
+      if (input[r.letter].end <= r.value) {
         // The entire range fullfills than the (<) value
         outputs.emplace_back(input, r.output);
         return;
       }
       // The range is split
+      assert(input[r.letter].contains(r.value));
       auto out = input;
-      out[r.check].end = r.value;
-      input[r.check].begin = r.value;
+      out[r.letter] = input[r.letter].drop_less(r.value);
       outputs.emplace_back(out, r.output);
       continue;
     }
@@ -333,13 +330,13 @@ std::uint64_t Day19::part2() {
 
   xlog::debug("Read {} workflows ", workflows.size());
 
-  std::vector<std::pair<item_range, std::size_t>> items{
-    {{
-       range{1, 4001}, // X
-       range{1, 4001}, // M
-       range{1, 4001}, // A
-       range{1, 4001}, // S
-     }, worflow_in}
+  std::vector items{
+    std::pair{item_range{
+                xmas::integer_range<amount_t>{1, 4001}, // X
+                xmas::integer_range<amount_t>{1, 4001}, // M
+                xmas::integer_range<amount_t>{1, 4001}, // A
+                xmas::integer_range<amount_t>{1, 4001}, // S
+              }, worflow_in}
   };
 
   std::uint64_t score = 0;
@@ -352,11 +349,9 @@ std::uint64_t Day19::part2() {
         continue;
       }
       if (workflow_id == rule::accepted) {
-        auto x = std::transform_reduce(item_range.begin(), item_range.end(), std::uint64_t{1},
+        score += std::transform_reduce(item_range.begin(), item_range.end(), std::uint64_t{1},
           std::multiplies<uint64_t>{},
-          [](range const& r) -> std::uint64_t { return r.end - r.begin; });
-
-        score += x;
+          [](auto const& intrange) -> std::uint64_t { return intrange.size(); });
         continue;
       }
 
