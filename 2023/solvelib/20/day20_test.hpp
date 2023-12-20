@@ -7,14 +7,14 @@ TEST_CASE("Day 20") {
     Day20 solution{};
     solution.set_input("./data/20/example1.txt");
     solution.load();
-    REQUIRE_THROWS(solution.part1());
+    REQUIRE_EQ(solution.part1(), 32000000);
   }
 
   SUBCASE("Part 1, example 2") {
     Day20 solution{};
     solution.set_input("./data/20/example2.txt");
     solution.load();
-    REQUIRE_THROWS(solution.part1());
+    REQUIRE_EQ(solution.part1(), 11687500);
   }
 
   SUBCASE("Part 2, example 1") {
@@ -28,7 +28,7 @@ TEST_CASE("Day 20") {
     Day20 solution{};
     solution.set_input("./data/20/input.txt");
     solution.load();
-    REQUIRE_THROWS(solution.part1());
+    REQUIRE_EQ(solution.part1(), 788081152);
     REQUIRE_THROWS(solution.part2());
   }
 }
