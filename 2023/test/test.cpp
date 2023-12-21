@@ -19,6 +19,7 @@
 #include "solvelib/18/day18_test.hpp"
 #include "solvelib/19/day19_test.hpp"
 #include "solvelib/20/day20_test.hpp"
+#include "solvelib/21/day21_test.hpp"
 
 #include "xmaslib/iota/iota_test.hpp"
 #include "xmaslib/lru/lru_test.hpp"
