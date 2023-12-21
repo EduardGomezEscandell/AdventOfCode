@@ -292,7 +292,7 @@ std::uint64_t Day20::part1() {
 }
 
 std::uint64_t Day20::part2() {
-  parse(this->input, false);
+  parse(this->input, true);
   xlog::warning("This problem's solution is hard-coded");
   return 224602011344203;
 }
