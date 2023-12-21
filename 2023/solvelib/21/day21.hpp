@@ -9,6 +9,8 @@ public:
   }
 
 public:
+  std::uint64_t part1_generalized(std::size_t nsteps);
+
   std::uint64_t part1() override;
   std::uint64_t part2() override;
 };
