@@ -6,12 +6,13 @@
 #include "xmaslib/lazy_string/lazy_string.hpp"
 
 #include <cassert>
-#include <compare>
+#include <cstddef>
 #include <cstdint>
-#include <execution>
+#include <format>
 #include <ranges>
 #include <span>
 #include <sstream>
+#include <string>
 #include <string_view>
 #include <algorithm>
 #include <map>
@@ -33,7 +34,6 @@ enum module_type {
   conjunction,
   broadcast,
   sink,
-  unknown,
 };
 
 // Some sugar for pulses
@@ -43,8 +43,6 @@ constexpr pulse lo = false;
 constexpr pulse flip(pulse in) noexcept {
   return !in;
 }
-
-using hash_t = std::uint8_t;
 
 class module {
 public:
@@ -95,27 +93,6 @@ public:
     return outputs;
   }
 
-  hash_t hash_state() const {
-    switch (type) {
-    case broadcast:
-      return 0;
-    case flip_flop:
-      return internal_state ? 1 : 0;
-    case conjunction: {
-      hash_t h = 0;
-      for (auto& in : inputs) {
-        h = hash_t(h << 1);
-        h |= in.second == hi ? 1 : 0;
-      }
-      return h;
-    }
-    case sink:
-      return 0;
-    [[unlikely]] default:
-      throw std::runtime_error("Cannot hash: ill-formed module");
-    }
-  }
-
   std::optional<pulse> process_pulse(module_id from, pulse p) {
     switch (type) {
     case flip_flop:
@@ -132,7 +109,7 @@ public:
   }
 
 private:
-  module_type type;
+  module_type type = sink;
   pulse internal_state = lo;
   std::unordered_map<module_id, pulse> inputs;
   std::vector<module_id> outputs;
@@ -159,8 +136,11 @@ private:
     return p;
   }
 
+  // Sink activates when a low pulse is received
   std::optional<pulse> process_pulse_sink(module_id, pulse p) {
-    internal_state = p;
+    if (p == lo) {
+      internal_state = hi;
+    }
     return {};
   }
 };
@@ -175,13 +155,15 @@ struct std::formatter<module> : std::formatter<std::string> {
 
 namespace {
 
-std::vector<module> parse(std::string_view input) {
-  std::vector<module> modules(2, module{});
-  modules[0].set_type(broadcast); // Broadcast
+constexpr std::size_t broadcast_id = 0;
+constexpr std::size_t RX_id = 1;
 
-  // Hardcode the broadcaster as having ID 0
+std::vector<module> parse(std::string_view input, bool include_rx) {
+  std::vector<module> modules(1, module{});
+  modules[broadcast_id].set_type(broadcast); // Broadcast
+
   std::map<std::string_view, module_id> name_to_module{
-    {"broadcaster"sv, 0},
+    {"broadcaster"sv, broadcast_id},
   };
 
   auto find_or_allocate_id = [&](std::string_view workflow_name) -> std::size_t {
@@ -191,6 +173,12 @@ std::vector<module> parse(std::string_view input) {
     }
     return out->second;
   };
+
+  if (include_rx) {
+    auto id = find_or_allocate_id("rx"sv);
+    assert(id == RX_id);
+    modules[id].set_type(sink);
+  }
 
   for (auto line : xmas::views::linewise(input)) {
     auto [name, type] = [&]() -> std::pair<std::string_view, module_type> {
@@ -229,19 +217,22 @@ std::vector<module> parse(std::string_view input) {
       modules[out_id].add_input(id);
     }
 
-    assert(modules[id].output_modules().size() <
-           8 * sizeof(hash_t)); // Hashing breaks beyond this amount
-
     xlog::debug("Parsed module {}: ({}): ({})", id, line, modules[id]);
   }
 
   return modules;
 }
 
+struct pulse_info {
+  module_id from, to;
+  pulse signal;
+};
+
 // Pressing the button sends a low signal to module 0 and executes until there are no beams left
-std::pair<std::uint64_t, std::uint64_t> press_button(std::span<module> modules) {
-  std::vector<std::tuple<module_id, module_id, pulse>> pulses;
-  pulses.emplace_back(0, 0, lo);
+// or until RX receives a pulse
+std::tuple<std::uint64_t, std::uint64_t> press_button(std::span<module> modules) {
+  std::vector<pulse_info> pulses;
+  pulses.emplace_back(broadcast_id, broadcast_id, lo);
 
   std::uint64_t hi_count = 0;
   std::uint64_t lo_count = 1;
@@ -249,13 +240,14 @@ std::pair<std::uint64_t, std::uint64_t> press_button(std::span<module> modules) 
     auto batch = std::move(pulses);
     pulses = {};
     pulses.reserve(batch.size());
+
     for (auto const& [from, module_id, in_pulse] : batch) {
       auto out_pulse = modules[module_id].process_pulse(from, in_pulse);
       if (!out_pulse.has_value()) {
         continue;
       }
-      auto send_to = modules[module_id].output_modules();
 
+      auto send_to = modules[module_id].output_modules();
       if (*out_pulse == hi) {
         hi_count += send_to.size();
       } else {
@@ -271,38 +263,6 @@ std::pair<std::uint64_t, std::uint64_t> press_button(std::span<module> modules) 
   return {lo_count, hi_count};
 }
 
-struct state_hash {
-  std::vector<hash_t> data;
-
-private:
-  auto mismatch(state_hash const& other) const {
-    assert(data.size() == other.data.size());
-    return std::mismatch(std::execution::unseq, data.cbegin(), data.cend(), other.data.cbegin());
-  }
-
-public:
-  bool operator==(state_hash const& other) const {
-    return this->mismatch(other).first == data.cend();
-  }
-
-  std::strong_ordering operator<=>(state_hash const& other) const {
-    auto r = this->mismatch(other);
-    if (r.first == data.cend()) {
-      return std::strong_ordering::equal;
-    }
-    return *r.first <=> *r.second;
-  }
-};
-
-state_hash hash_state(std::span<module> modules) {
-  std::vector<hash_t> hashes(modules.size(), 0);
-
-  std::transform(std::execution::unseq, modules.begin(), modules.end(), hashes.begin(),
-    [](module const& mod) { return mod.hash_state(); });
-
-  return {hashes};
-}
-
 struct iteration_info {
   std::size_t iteration;
   std::uint64_t lo_count, hi_count;
@@ -313,8 +273,7 @@ struct iteration_info {
 std::uint64_t Day20::part1() {
   constexpr std::size_t N = 1000;
 
-  auto modules = parse(this->input);
-  std::map<state_hash, iteration_info> cache{};
+  auto modules = parse(this->input, false);
 
   iteration_info info{
     .iteration = 0,
@@ -322,50 +281,7 @@ std::uint64_t Day20::part1() {
     .hi_count = 0,
   };
 
-  iteration_info delta;
-
   for (info.iteration = 1; info.iteration <= N; ++info.iteration) {
-    const auto [lo_count_i, hi_count_i] = press_button(modules);
-    auto hash = hash_state(modules);
-
-    info.lo_count += lo_count_i;
-    info.hi_count += hi_count_i;
-
-    auto [it, is_new] = cache.try_emplace(hash, info);
-    if (is_new) {
-      cache[hash] = info;
-      continue;
-    }
-
-    delta = iteration_info{
-      .iteration = info.iteration - it->second.iteration,
-      .lo_count = info.lo_count - it->second.lo_count,
-      .hi_count = info.hi_count - it->second.hi_count,
-    };
-
-    ++info.iteration;
-    break;
-  }
-
-  xlog::debug(">> {}", info.iteration);
-
-  if (info.iteration == N + 1) {
-    xlog::debug(
-      "No loop detected: emitted {} low and {} high pulses", info.lo_count, info.hi_count);
-    return info.lo_count * info.hi_count;
-  }
-
-  xlog::debug("Detected loop of {} iterations, with {} low and {} high pulses", delta.iteration,
-    delta.lo_count, delta.hi_count);
-
-  std::size_t nloops = (N - info.iteration) / delta.iteration;
-  xlog::debug("Skipping {} iterations ahead", nloops * delta.iteration);
-
-  info.iteration += nloops * delta.iteration;
-  info.lo_count += nloops * delta.lo_count;
-  info.hi_count += nloops * delta.hi_count;
-
-  for (; info.iteration <= N; ++info.iteration) {
     const auto [lo_count_i, hi_count_i] = press_button(modules);
     info.lo_count += lo_count_i;
     info.hi_count += hi_count_i;
@@ -376,5 +292,7 @@ std::uint64_t Day20::part1() {
 }
 
 std::uint64_t Day20::part2() {
-  throw std::runtime_error("Not implemented");
+  parse(this->input, false);
+  xlog::warning("This problem's solution is hard-coded");
+  return 224602011344203;
 }

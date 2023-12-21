@@ -11,33 +11,49 @@ general string_view.
 It has some convenience facilities to manage iterator pairs. When built in debug
 mode, bounds checking is enabled for all operations.
 */
-template <typename It> class view {
+template <typename It>
+class view {
   It m_begin, m_end;
 
 public:
-  view(It begin, It end) : m_begin(begin), m_end(end) {}
+  view(It begin, It end) : m_begin(begin), m_end(end) {
+  }
 
-  auto begin() const { return m_begin; }
-  auto end() const { return m_end; }
+  auto begin() const {
+    return m_begin;
+  }
+  auto end() const {
+    return m_end;
+  }
 
-  auto rbegin() const { return std::reverse_iterator(m_end); }
-  auto rend() const { return std::reverse_iterator(m_begin); }
+  auto rbegin() const {
+    return std::reverse_iterator(m_end);
+  }
+  auto rend() const {
+    return std::reverse_iterator(m_begin);
+  }
 
-  auto &front() const { return *m_begin; }
-  auto &back() const {
+  auto& front() const {
+    return *m_begin;
+  }
+  auto& back() const {
     std::size_t i = size() - 1;
     check_bounds(i, __PRETTY_FUNCTION__);
     return *(m_begin + 1);
   }
 
-  auto size() const { return static_cast<std::size_t>(m_end - m_begin); }
+  auto size() const {
+    return static_cast<std::size_t>(m_end - m_begin);
+  }
 
-  template <std::integral N = std::ptrdiff_t> void pop_front(N n = 1) {
+  template <std::integral N = std::ptrdiff_t>
+  void pop_front(N n = 1) {
     check_bounds(n, __PRETTY_FUNCTION__);
     m_begin += static_cast<std::ptrdiff_t>(n);
   }
 
-  template <std::integral N = std::ptrdiff_t> void pop_back(N n = 1) {
+  template <std::integral N = std::ptrdiff_t>
+  void pop_back(N n = 1) {
     check_bounds(n, __PRETTY_FUNCTION__);
     m_end -= static_cast<std::ptrdiff_t>(n);
   }
@@ -46,8 +62,8 @@ public:
   [[nodiscard]] view subview(N begin, N end) const {
     check_bounds(begin, __PRETTY_FUNCTION__);
     check_bounds(end, __PRETTY_FUNCTION__);
-    return view{m_begin + static_cast<std::ptrdiff_t>(begin),
-                m_begin + static_cast<std::ptrdiff_t>(end)};
+    return view{
+      m_begin + static_cast<std::ptrdiff_t>(begin), m_begin + static_cast<std::ptrdiff_t>(end)};
   }
 
   template <std::integral N = std::ptrdiff_t>
@@ -63,28 +79,26 @@ public:
   }
 
   template <std::integral N = std::ptrdiff_t>
-  [[nodiscard]] auto &operator[](N n) const {
+  [[nodiscard]] auto& operator[](N n) const {
     check_bounds(n, __PRETTY_FUNCTION__);
     return *(m_begin + static_cast<std::ptrdiff_t>(n));
   }
 
   [[nodiscard]] auto reverse() const {
-    return view<std::reverse_iterator<It>>{std::reverse_iterator(m_end),
-                                           std::reverse_iterator(m_begin)};
+    return view<std::reverse_iterator<It>>{
+      std::reverse_iterator(m_end), std::reverse_iterator(m_begin)};
   }
 
 private:
   void check_bounds([[maybe_unused]] std::integral auto n,
-                    [[maybe_unused]] std::string_view funcname) const {
+    [[maybe_unused]] std::string_view funcname) const {
 #ifndef NDEBUG
     if (n < 0) {
-      throw std::runtime_error(
-          std::format("{}: index (which is {}) < 0", funcname, n));
+      throw std::runtime_error(std::format("{}: index (which is {}) < 0", funcname, n));
     }
     if (static_cast<std::size_t>(n) > size()) {
-      throw std::runtime_error(
-          std::format("{}: index (which is {}) > this->size() (which is {})",
-                      funcname, n, this->size()));
+      throw std::runtime_error(std::format(
+        "{}: index (which is {}) > this->size() (which is {})", funcname, n, this->size()));
     }
 #endif
   }
