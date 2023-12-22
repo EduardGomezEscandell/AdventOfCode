@@ -3,7 +3,7 @@
 
 TEST_CASE("Day 21") {
 
-  SUBCASE("Part 1, example 1") {
+  SUBCASE("Part 1, example") {
     Day21 solution{};
     solution.set_input("./data/21/example.txt");
     solution.load();
@@ -13,7 +13,7 @@ TEST_CASE("Day 21") {
     REQUIRE_EQ(solution.part1_generalized(6), 16);
   }
 
-  SUBCASE("Part 1, example 2") {
+  SUBCASE("Part 2, example") {
     Day21 solution{};
     solution.set_input("./data/21/example.txt");
     solution.load();
