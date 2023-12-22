@@ -3,6 +3,7 @@
 #include "../stride/stride.hpp"
 #include "../view/view.hpp"
 
+#include <ranges>
 #include <string_view>
 #include <utility>
 
@@ -27,6 +28,16 @@ struct text_matrix {
 
   std::string_view data() const {
     return text;
+  }
+
+  auto rows() {
+    return std::ranges::views::iota(std::size_t{0}, n_rows) |
+           std::ranges::views::transform([this](std::size_t r) { return row(r); });
+  }
+
+  auto cols() {
+    return std::ranges::views::iota(std::size_t{0}, n_cols) |
+           std::ranges::views::transform([this](std::size_t c) { return col(c); });
   }
 
 private:
