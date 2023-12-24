@@ -3,11 +3,19 @@
 #include <iostream>
 
 namespace xlog {
-namespace internal {
 
-void log(severity prefix, std::string_view message) {
-  const auto p = [prefix]() -> std::string_view {
-    switch (prefix) {
+logger& logger::global() {
+  static logger global{};
+  return global;
+}
+
+void logger::set_severity(severity s) {
+  this->min_severity = s;
+}
+
+void logger::log_impl(severity sever, std::string_view message) {
+  const auto p = [sever]() -> std::string_view {
+    switch (sever) {
     case ERROR:
       return "\x1b[31mERROR  \x1b[0m";
     case WARNING:
@@ -23,7 +31,5 @@ void log(severity prefix, std::string_view message) {
 
   std::cerr << std::format("{} {}\n", p, message) << std::flush;
 }
-
-} // namespace internal
 
 } // namespace xlog
