@@ -22,6 +22,11 @@ public:
     assert(begin <= end);
   }
 
+  constexpr integer_range(auto pair) {
+    const auto& [begin, end] = pair;
+    integer_range(begin, end);
+  }
+
   constexpr bool empty() const noexcept {
     return begin == end;
   }

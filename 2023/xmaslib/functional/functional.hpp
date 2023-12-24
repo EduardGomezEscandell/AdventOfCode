@@ -77,6 +77,20 @@ private:
 };
 
 template <typename T>
+class greater_or_equal_than {
+public:
+  explicit constexpr greater_or_equal_than(T value) : value(value) {
+  }
+
+  constexpr bool operator()(T const& other) const {
+    return other >= value;
+  }
+
+private:
+  T value;
+};
+
+template <typename T>
 class min {
 public:
   constexpr bool operator()(T const& l, T const& r) const {

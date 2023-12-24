@@ -21,6 +21,7 @@
 #include "19/day19.hpp"
 #include "20/day20.hpp"
 #include "21/day21.hpp"
+#include "22/day22.hpp"
 
 inline void populate_registry() {
   xmas::register_solution<Day01>();
@@ -42,4 +43,5 @@ inline void populate_registry() {
   xmas::register_solution<Day19>();
   xmas::register_solution<Day20>();
   xmas::register_solution<Day21>();
+  xmas::register_solution<Day22>();
 }
