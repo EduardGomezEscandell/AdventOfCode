@@ -115,6 +115,10 @@ bool time_days(app&,
     // Used to compute standard deviation
     std::int64_t M = 0, S = 0;
 
+    // Disable warning and debug messages (They'll be spammed because
+    // the soultion is re-run many times)
+    xlog::logger::global().set_severity(xlog::ERROR);
+
     while (std::chrono::high_resolution_clock::now() - begin < timeout) {
       const auto t = solve_day(*d, false);
       if (!t.has_value()) {
@@ -131,6 +135,8 @@ bool time_days(app&,
       M += (us - prevM) / iter;
       S += (us - prevM) * (us - M);
     }
+
+    xlog::logger::global().set_severity(xlog::DEBUG);
 
     if (iter == 0) {
       xlog::warning("Could not successfully complete day {}", d->second->day());
