@@ -1,5 +1,6 @@
 #include "day22.hpp"
 
+#include "xmaslib/functional/functional.hpp"
 #include "xmaslib/matrix/matrix.hpp"
 #include "xmaslib/line_iterator/line_iterator.hpp"
 #include "xmaslib/parsing/parsing.hpp"
@@ -9,11 +10,15 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <execution>
 #include <format>
+#include <functional>
 #include <iterator>
 #include <limits>
+#include <numeric>
 #include <ranges>
 #include <set>
+#include <span>
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
@@ -38,7 +43,9 @@ struct block {
   coords upper;
 
   std::size_t id;
-  std::vector<block_t> supported_by{};
+
+  std::set<block_t> supporting{};
+  std::set<block_t> supported_by{};
 
   void set_new_floor(lenght_t floor) {
     assert(floor < lower.z);
@@ -72,7 +79,7 @@ block parse_block(std::string_view line) {
     throw std::runtime_error(std::format("could not parse line: {}", line));
   }
 
-  block b{
+  return {
     .lower = {.x = std::min(ints[0], ints[3]),
               .y = std::min(ints[1], ints[4]),
               .z = std::min(ints[2], ints[5])},
@@ -81,14 +88,10 @@ block parse_block(std::string_view line) {
               .z = std::max(ints[2], ints[5])},
     .id = placeholder_id,
   };
-
-  xlog::debug(
-    "{},{},{}~{},{},{}", b.lower.x, b.lower.y, b.lower.z, b.upper.x, b.upper.y, b.upper.z);
-  return b;
 }
 
-// Returns a list of blocks sorted by height (bottom to top) and the max X and Y coordinates
-std::tuple<std::vector<block>, std::size_t, std::size_t> parse(std::string_view input) {
+// Returns a list of blocks sorted by height (bottom to top)
+std::vector<block> parse(std::string_view input) {
   xmas::views::linewise lines(input);
   std::vector<block> blocks;
   std::transform(lines.begin(), lines.end(), std::back_inserter(blocks), parse_block);
@@ -100,11 +103,7 @@ std::tuple<std::vector<block>, std::size_t, std::size_t> parse(std::string_view 
     blocks[i].id = i;
   }
 
-  auto max_x = rng::max(blocks | v::transform([](block const& b) { return b.upper.x; }));
-  auto max_y = rng::max(blocks | v::transform([](block const& b) { return b.upper.y; }));
-
-  xlog::debug("Detected {} rows and {} columns", max_x + 1, max_y + 1);
-  return {blocks, max_x, max_y};
+  return blocks;
 }
 
 [[maybe_unused]] auto fmt_map(xmas::matrix<std::size_t>& map, std::span<const block>) {
@@ -124,13 +123,12 @@ std::tuple<std::vector<block>, std::size_t, std::size_t> parse(std::string_view 
   });
 }
 
-}
+void simulate_drop(std::span<block> blocks) {
+  auto max_x = rng::max(blocks | v::transform([](block const& b) { return b.upper.x; }));
+  auto max_y = rng::max(blocks | v::transform([](block const& b) { return b.upper.y; }));
 
-std::uint64_t Day22::part1() {
-  auto [blocks, max_x, max_y] = parse(input);
   xmas::matrix map(max_x + 1, max_y + 1, placeholder_id);
-
-  std::set<block_t> cannot_remove{};
+  xlog::debug("Detected {} rows and {} columns", map.nrows(), map.ncols());
 
   for (block& b : blocks) {
     // clang-format off
@@ -141,6 +139,8 @@ std::uint64_t Day22::part1() {
 
     b.set_new_floor(max_z);
 
+    // Update dependencies
+
     // clang-format off
     auto supports = b.view_XY()
       | v::transform([&](coords pos) { return map[pos.x][pos.y]; }) 
@@ -148,16 +148,88 @@ std::uint64_t Day22::part1() {
       | v::filter([&](block_t id) { return blocks[id].upper.z == max_z ; });
     // clang-format on
 
-    if (std::set s(supports.begin(), supports.end()); s.size() == 1) {
-      cannot_remove.insert(*s.begin());
-    }
+    b.supported_by = std::set(supports.begin(), supports.end());
+    rng::for_each(supports, [&](block_t id) { blocks[id].supporting.insert(b.id); });
 
+    // Update map
     rng::for_each(b.view_XY(), [&](coords pos) { map[pos.x][pos.y] = b.id; });
   }
+}
+}
+
+std::uint64_t Day22::part1() {
+  auto blocks = parse(this->input);
+  simulate_drop(blocks);
+
+  // clang-format off
+  auto critical_blocks = blocks 
+    | v::filter([](block const& b) { return b.supported_by.size() == 1; })
+    | v::transform([](block const& b) { return *b.supported_by.begin(); });
+  // clang-format on
+
+  std::set<block_t> cannot_remove(critical_blocks.begin(), critical_blocks.end());
 
   return blocks.size() - cannot_remove.size();
 }
 
+namespace {
+
+// Assuming both ranges are sorted, return TRUE if all elements of 'contained' are inside
+// 'container', and FALSE otherwise.
+bool is_subset(auto const& contained, auto const& container) {
+  if (contained.size() > container.size()) {
+    return false;
+  }
+
+  auto it = contained.begin();
+  auto jt = container.begin();
+
+  for (; it != contained.end(); ++it) {
+    jt = std::partition_point(jt, container.end(), xmas::less_than(*it));
+    if (jt == container.end()) {
+      return false;
+    }
+
+    if (*it == *jt) {
+      continue;
+    }
+
+    return false;
+  }
+  return true;
+}
+
+std::size_t count_chain_reaction(std::span<const block> blocks, block_t root) {
+  std::set<block_t> upstream{root};
+  std::set<block_t> tip{root};
+
+  while (!tip.empty()) {
+    std::set<block_t> candidates;
+    rng::for_each(tip, [&](block_t id) {
+      rng::copy(blocks[id].supporting, std::inserter(candidates, candidates.end()));
+    });
+
+    // clang-format off
+    auto selected = candidates 
+      | v::transform([&](block_t id) { return blocks[id]; })
+      | v::filter([&](block const& b) { return is_subset(b.supported_by, upstream); }) 
+      | v::transform([](block const& b) { return b.id; });
+    // clang-format on
+
+    upstream.insert(tip.begin(), tip.end());
+    tip = std::set(selected.begin(), selected.end());
+  }
+
+  return upstream.size() - 1;
+}
+
+}
+
 std::uint64_t Day22::part2() {
-  throw std::runtime_error("Not implemented");
+  auto blocks = parse(this->input);
+  simulate_drop(blocks);
+
+  return std::transform_reduce(std::execution::par_unseq, blocks.begin(), blocks.end(),
+    std::uint64_t{0}, std::plus<std::uint64_t>{},
+    [&](block const& b) { return count_chain_reaction(blocks, b.id); });
 }
