@@ -13,8 +13,7 @@
 namespace app {
 
 std::optional<xmas::solution::duration> solve_day(
-  std::map<const int, std::unique_ptr<xmas::solution>>::value_type const&
-    solution,
+  std::map<const int, std::unique_ptr<xmas::solution>>::value_type const& solution,
   bool verbose);
 
 solution_vector select_all_days() {
@@ -80,8 +79,8 @@ bool execute_days(app&, solution_vector const& days) {
   }
 
   xlog::info("DONE");
-  xlog::info("Total time was {} ms",
-    std::chrono::duration_cast<std::chrono::milliseconds>(total).count());
+  xlog::info(
+    "Total time was {} ms", std::chrono::duration_cast<std::chrono::milliseconds>(total).count());
 
   return total_success;
 }
@@ -90,9 +89,7 @@ std::int64_t microseconds(xmas::solution::duration d) {
   return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
 }
 
-bool time_days(app&,
-  solution_vector const& days,
-  xmas::solution::duration timeout) {
+bool time_days(app&, solution_vector const& days, xmas::solution::duration timeout) {
   xmas::solution::duration total{};
   bool total_success = true;
 
@@ -115,6 +112,10 @@ bool time_days(app&,
     // Used to compute standard deviation
     std::int64_t M = 0, S = 0;
 
+    // Disable warning and debug messages (They'll be spammed because
+    // the soultion is re-run many times)
+    xlog::logger::global().set_severity(xlog::ERROR);
+
     while (std::chrono::high_resolution_clock::now() - begin < timeout) {
       const auto t = solve_day(*d, false);
       if (!t.has_value()) {
@@ -132,6 +133,8 @@ bool time_days(app&,
       S += (us - prevM) * (us - M);
     }
 
+    xlog::logger::global().set_severity(xlog::DEBUG);
+
     if (iter == 0) {
       xlog::warning("Could not successfully complete day {}", d->second->day());
       continue;
@@ -139,8 +142,7 @@ bool time_days(app&,
 
     // Average
     const auto mean =
-      std::chrono::duration_cast<std::chrono::microseconds>(daily_total / iter)
-        .count();
+      std::chrono::duration_cast<std::chrono::microseconds>(daily_total / iter).count();
     const auto dev = static_cast<std::int64_t>(std::sqrt(S / iter));
 
     // Report
@@ -149,26 +151,20 @@ bool time_days(app&,
     total += daily_total / iter;
   }
 
-  xlog::info(fmt,
-    "TOTAL",
-    "-",
-    std::chrono::duration_cast<std::chrono::microseconds>(total).count(),
-    "-");
+  xlog::info(
+    fmt, "TOTAL", "-", std::chrono::duration_cast<std::chrono::microseconds>(total).count(), "-");
 
   return total_success;
 }
 
 std::optional<xmas::solution::duration> solve_day(
-  std::map<const int, std::unique_ptr<xmas::solution>>::value_type const&
-    solution,
+  std::map<const int, std::unique_ptr<xmas::solution>>::value_type const& solution,
   bool verbose) {
 
   try {
-    solution.second->set_input(
-      std::format("./data/{:02d}/input.txt", solution.second->day()));
+    solution.second->set_input(std::format("./data/{:02d}/input.txt", solution.second->day()));
   } catch (std::runtime_error& e) {
-    xlog::error(
-      "day {} could not load: {}\n", solution.second->day(), e.what());
+    xlog::error("day {} could not load: {}\n", solution.second->day(), e.what());
     return {};
   }
 
