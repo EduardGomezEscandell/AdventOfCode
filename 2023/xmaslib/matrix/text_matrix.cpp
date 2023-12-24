@@ -9,11 +9,9 @@
 namespace xmas {
 namespace views {
 
-std::pair<std::size_t, std::size_t> text_matrix::dimensions(
-  std::string_view input) {
+std::pair<std::size_t, std::size_t> text_matrix::dimensions(std::string_view input) {
   const std::size_t ncols =
-    1 +
-    std::size_t(std::find(input.cbegin(), input.cend(), '\n') - input.cbegin());
+    1 + std::size_t(std::find(input.cbegin(), input.cend(), '\n') - input.cbegin());
   const std::size_t nrows = input.size() / ncols;
   xlog::debug("Detected {} rows and {} columns", nrows, ncols);
 
@@ -33,10 +31,16 @@ view<std::string::iterator> text_matrix::row(std::size_t i) {
     text.begin() + static_cast<std::ptrdiff_t>(pos + n_cols)};
 }
 
+std::string_view text_matrix::line(std::size_t i) const {
+  assert(i < n_rows);
+  const std::size_t pos = i * (n_rows + 1);
+  return {text.begin() + static_cast<std::ptrdiff_t>(pos),
+    text.begin() + static_cast<std::ptrdiff_t>(pos + n_cols)};
+}
+
 strided<std::string::iterator> text_matrix::col(std::size_t j) {
   assert(j < n_cols);
-  return {
-    text.begin() + static_cast<std::ptrdiff_t>(j), text.end(), n_cols + 1};
+  return {text.begin() + static_cast<std::ptrdiff_t>(j), text.end(), n_cols + 1};
 }
 
 char text_matrix::at(std::size_t i, std::size_t j) const {

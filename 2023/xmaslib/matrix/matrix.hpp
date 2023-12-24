@@ -77,6 +77,11 @@ struct matrix {
     return row(r);
   }
 
+  auto operator[](auto rc) const {
+    auto const& [r, c] = rc;
+    return row(r)[c];
+  }
+
   std::span<T> data() noexcept {
     return m_data;
   }

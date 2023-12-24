@@ -14,6 +14,8 @@ struct text_matrix {
   text_matrix(std::string& data);
 
   [[nodiscard]] view<std::string::iterator> row(std::size_t i);
+  [[nodiscard]] std::string_view line(std::size_t i) const;
+
   [[nodiscard]] strided<std::string::iterator> col(std::size_t j);
 
   [[nodiscard]] char at(std::size_t i, std::size_t j) const;
@@ -33,6 +35,11 @@ struct text_matrix {
   auto rows() {
     return std::ranges::views::iota(std::size_t{0}, n_rows) |
            std::ranges::views::transform([this](std::size_t r) { return row(r); });
+  }
+
+  auto lines() const {
+    return std::ranges::views::iota(std::size_t{0}, n_rows) |
+           std::ranges::views::transform([this](std::size_t r) { return line(r); });
   }
 
   auto cols() {
