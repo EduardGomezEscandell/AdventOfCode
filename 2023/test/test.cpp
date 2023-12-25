@@ -8,6 +8,7 @@
 #include "solvelib/05/day05_test.hpp"
 #include "solvelib/06/day06_test.hpp"
 #include "solvelib/07/day07_test.hpp"
+#include "solvelib/08/day08_test.hpp"
 
 #include "solvelib/11/day11_test.hpp"
 #include "solvelib/12/day12_test.hpp"
