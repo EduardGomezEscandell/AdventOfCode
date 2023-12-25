@@ -29,13 +29,13 @@ namespace {
 namespace rng = std::ranges;
 namespace v = std::ranges::views;
 
-using lenght_t = std::size_t;
+using length_t = std::size_t;
 using block_t = std::size_t;
 
 constexpr block_t placeholder_id = std::numeric_limits<block_t>::max();
 
 struct coords {
-  lenght_t x, y, z;
+  length_t x, y, z;
 };
 
 struct block {
@@ -47,14 +47,14 @@ struct block {
   std::set<block_t> supporting{};
   std::set<block_t> supported_by{};
 
-  void set_new_floor(lenght_t floor) {
+  void set_new_floor(length_t floor) {
     assert(floor < lower.z);
     const auto thickness = upper.z - lower.z;
     lower.z = floor + 1;
     upper.z = lower.z + thickness;
   }
 
-  lenght_t size_XY() const noexcept {
+  length_t size_XY() const noexcept {
     return (upper.x - lower.x + 1) * (upper.y - lower.y + 1);
   }
 
@@ -62,8 +62,8 @@ struct block {
     const std::size_t xwidth = (1 + upper.x - lower.x);
     return v::iota(std::size_t{0}, size_XY()) |
            v::transform([this, xwidth](std::size_t idx) -> coords {
-             lenght_t dx = idx % xwidth;
-             lenght_t dy = idx / xwidth;
+             length_t dx = idx % xwidth;
+             length_t dy = idx / xwidth;
              return coords{
                .x = lower.x + dx,
                .y = lower.y + dy,
@@ -74,7 +74,7 @@ struct block {
 };
 
 block parse_block(std::string_view line) {
-  auto ints = xmas::parse_ints<lenght_t>(line);
+  auto ints = xmas::parse_ints<length_t>(line);
   if (ints.size() != 6) {
     throw std::runtime_error(std::format("could not parse line: {}", line));
   }

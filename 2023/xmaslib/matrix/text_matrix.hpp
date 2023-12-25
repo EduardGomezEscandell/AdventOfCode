@@ -21,6 +21,16 @@ struct text_matrix {
   [[nodiscard]] char at(std::size_t i, std::size_t j) const;
   [[nodiscard]] char& at(std::size_t i, std::size_t j);
 
+  [[nodiscard]] char at(auto pair) const {
+    const auto& [row, col] = pair;
+    return this->at(row, col);
+  }
+
+  [[nodiscard]] char& at(auto pair) {
+    const auto& [row, col] = pair;
+    return this->at(row, col);
+  }
+
   [[nodiscard]] std::size_t nrows() const noexcept {
     return n_rows;
   }

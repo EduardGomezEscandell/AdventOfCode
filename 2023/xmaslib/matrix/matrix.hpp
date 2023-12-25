@@ -3,6 +3,7 @@
 #include "../stride/stride.hpp"
 
 #include <ranges>
+#include <type_traits>
 #include <vector>
 
 namespace xmas {
@@ -77,7 +78,14 @@ struct matrix {
     return row(r);
   }
 
-  auto operator[](auto rc) const {
+  template <typename TupleLike>
+  std::enable_if<!std::is_integral_v<TupleLike>, T>::type operator[](TupleLike rc) const {
+    auto const& [r, c] = rc;
+    return row(r)[c];
+  }
+
+  template <typename TupleLike>
+  std::enable_if<!std::is_integral_v<TupleLike>, T&>::type operator[](TupleLike rc) {
     auto const& [r, c] = rc;
     return row(r)[c];
   }
