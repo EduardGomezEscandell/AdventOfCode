@@ -1,13 +1,19 @@
 #include "day23.hpp"
+
 #include "xmaslib/log/log.hpp"
 #include "xmaslib/matrix/matrix.hpp"
 #include "xmaslib/matrix/text_matrix.hpp"
+
 #include <algorithm>
+#include <bitset>
 #include <cassert>
+#include <cstddef>
+#include <format>
 #include <iterator>
+#include <map>
 #include <optional>
 #include <ranges>
-#include <sstream>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -41,29 +47,35 @@ struct graph {
   using node_id = std::size_t;
 
   struct edge {
-    node_id from;
     node_id to;
     length_t len;
   };
 
   struct node {
+    node_id id;
     coords position;
-    std::vector<edge> neigbours;
+    std::map<node_id, length_t> neigbours;
+
+    void add_edge(node_id to, length_t len) {
+      auto it = neigbours.find(to);
+      if (it != neigbours.end()) {
+        it->second = std::max(it->second, len);
+        return;
+      }
+      xlog::debug("Added edge from nodes {} to {} (len={})", id, to, len);
+      neigbours.emplace_hint(it, to, len);
+    }
   };
 
   node_id add_node(coords pos) {
-    xlog::debug("Added node {} at {}", nodes.size(), pos);
-    nodes.push_back({
-      .position = pos,
-      .neigbours = {},
-    });
-    return nodes.size() - 1;
+    const std::size_t id = nodes.size();
+    nodes.emplace_back(id, pos);
+    xlog::debug("Added node {} at {}", id, pos);
+    return id;
   }
 
   void add_edge(node_id from, node_id to, length_t len, bool bidirectional) {
-    xlog::debug("Added edge from nodes {} to {} (len={})", from, to, len);
-
-    nodes[from].neigbours.emplace_back(from, to, len);
+    nodes[from].add_edge(to, len);
 
     if (!bidirectional) {
       return;
@@ -73,7 +85,7 @@ struct graph {
     add_edge(from, to, len, false);
   }
 
-  std::optional<node_id> node_at(coords pos) {
+  std::optional<node_id> node_at(coords pos) const {
     auto it = std::ranges::find_if(
       nodes.begin(), nodes.end(), [&](node const& node) { return node.position == pos; });
     if (it == nodes.end()) {
@@ -234,35 +246,92 @@ graph build_graph(xmas::views::text_matrix map) {
   return g;
 }
 
-length_t dfs_find_longest_path(
-  graph const& g, std::vector<bool> const& visited, graph::node_id from, graph::node_id to) {
-  if (from == to) {
-    return 0;
+struct visit_record {
+private:
+  constexpr static std::size_t N = 64;
+  std::bitset<N> data = {};
+
+public:
+  consteval static std::size_t size() noexcept {
+    return N;
   }
 
-  std::uint64_t best = 0;
-  for (auto const& edge : g.nodes.at(from).neigbours) {
-    if (visited[edge.to]) {
+  bool get(graph::node_id id) const noexcept {
+    return data[id];
+  }
+
+  void set(graph::node_id id) noexcept {
+    data[id] = true;
+  }
+};
+
+// longest_path returns the longest path from node pos to node target, if there is one at all.
+std::optional<length_t> longest_path(
+  graph const& g, graph::node_id pos, graph::node_id target, visit_record visited = {}) {
+  if (pos == target) {
+    return {0};
+  }
+
+  visited.set(pos);
+
+  std::optional<length_t> best = {}; // The best path so far, if any
+
+  for (auto const& [neigh, distance] : g.nodes[pos].neigbours) {
+    if (visited.get(neigh)) {
       continue;
     }
-    auto v = visited;
-    v.at(edge.to) = true;
-    const auto len = edge.len + dfs_find_longest_path(g, visited, edge.to, to);
-    best = std::max(best, len);
+
+    auto len = longest_path(g, neigh, target, visited);
+    if (!len.has_value()) {
+      visited.set(neigh); // Prune node that is not connected to the end
+      continue;
+    }
+
+    best = {std::max(best.value_or(0), distance + *len)};
   }
 
   return best;
 }
+
 }
 
 std::uint64_t Day23::part1() {
   xmas::views::text_matrix map(this->input);
   auto g = build_graph(map);
 
-  std::vector<bool> visited(g.nodes.size(), false);
-  return dfs_find_longest_path(g, visited, 0, 1);
+  if (g.nodes.size() > visit_record::size()) {
+    throw std::runtime_error(
+      std::format("This solution supports at most {} nodes", visit_record::size()));
+  }
+
+  auto opt = longest_path(g, 0, 1);
+  if (!opt.has_value()) {
+    throw std::runtime_error("Could not find a path to the exit");
+  }
+
+  return *opt;
 }
 
 std::uint64_t Day23::part2() {
-  throw std::runtime_error("Not implemented");
+  xmas::views::text_matrix map(this->input);
+  auto g = build_graph(map);
+
+  if (g.nodes.size() > visit_record::size()) {
+    throw std::runtime_error(
+      std::format("This solution supports at most {} nodes", visit_record::size()));
+  }
+
+  // Duplicate all edges in reverse
+  for (auto const& n : g.nodes) {
+    for (auto [dest, len] : n.neigbours) {
+      g.add_edge(dest, n.id, len, false);
+    }
+  }
+
+  auto opt = longest_path(g, 0, 1);
+  if (!opt.has_value()) {
+    throw std::runtime_error("Could not find a path to the exit");
+  }
+
+  return *opt;
 }
