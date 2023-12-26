@@ -4,6 +4,7 @@
 #include "xmaslib/matrix/matrix.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <execution>
 #include <iterator>
@@ -118,19 +119,6 @@ std::uint64_t Day08::part1() {
 
 namespace {
 
-std::uint64_t lcm(auto const& range) {
-  return std::reduce(std::execution::par_unseq, range.begin(), range.end(), std::uint64_t{1},
-    std::lcm<std::uint64_t, std::uint64_t>);
-}
-
-std::size_t factorial(std::size_t n) {
-  std::size_t x = 1;
-  for (std::size_t i = 1; i <= n; ++i) {
-    x *= i;
-  }
-  return x;
-}
-
 auto starting_nodes(std::map<std::string, node> const& network) {
   // clang-format off
   auto starters = network
@@ -166,6 +154,47 @@ auto timings_matrix(std::string_view instr, std::map<std::string, node> const& n
   return timing_matrix;
 }
 
+std::uint64_t compute_permutation(
+  xmas::matrix<std::uint64_t> timings, std::vector<std::uint64_t> selected) {
+  assert(selected.size() == timings.nrows());
+
+  std::vector<std::uint64_t> t(selected.size());
+  for (std::size_t s = 0; s < selected.size(); ++s) {
+    t[s] = timings[s][selected[s]];
+  }
+
+  return std::reduce(std::execution::unseq, t.begin(), t.end(), std::uint64_t{1},
+    std::lcm<std::uint64_t, std::uint64_t>);
+}
+
+std::uint64_t find_best_permutation(
+  xmas::matrix<std::uint64_t> timings, std::vector<std::uint64_t>& selected_finishers) {
+  std::size_t row = selected_finishers.size();
+  if (row == timings.nrows()) {
+    return compute_permutation(timings, selected_finishers);
+  }
+
+  std::size_t best = infinity;
+  selected_finishers.push_back(infinity); // Will be overwritten
+
+  for (std::size_t col = 0; col < timings.ncols(); ++col) {
+    if (timings[row][col] == infinity) {
+      continue;
+    }
+
+    if (std::ranges::find(selected_finishers, col) != selected_finishers.end()) {
+      // Two starters cannot end at the same position
+      continue;
+    }
+
+    selected_finishers.back() = col;
+    best = std::min(best, find_best_permutation(timings, selected_finishers));
+  }
+
+  selected_finishers.pop_back();
+  return best;
+}
+
 }
 
 std::uint64_t Day08::part2() {
@@ -174,35 +203,15 @@ std::uint64_t Day08::part2() {
   // Find all STARTER and FINISHER nodes
   auto starters = starting_nodes(network);
   auto finishers = finishing_nodes(network);
-  //
 
   // Pre-compute the timings to get from every STARTER to every FINISHER
   auto matrix = timings_matrix(instr, network, starters, finishers);
 
   // Every starter must end at a different finisher
-  // Find every permutation and compute the best one
-  std::vector<std::size_t> finish_ids(finishers.size());
-  std::iota(finish_ids.begin(), finish_ids.end(), 0u);
-
-  std::uint64_t best = infinity;
-  std::size_t npermutations = factorial(starters.size());
-
-  std::vector<std::uint64_t> times(starters.size());
-  for (std::size_t i = 0; i < npermutations; ++i) {
-    std::ranges::next_permutation(finish_ids);
-
-    bool any_inf = false;
-    for (std::size_t s = 0; s < starters.size(); ++s) {
-      times[s] = matrix[s][finish_ids[s]];
-      any_inf |= times[s] == infinity;
-    }
-
-    if (any_inf) {
-      continue;
-    }
-
-    best = std::min(best, lcm(times));
-  }
+  // Find every valid permutation, and compute the Least Common Multiple
+  // of the timings of every starter
+  std::vector<std::uint64_t> preselected{};
+  auto best = find_best_permutation(matrix, preselected);
 
   if (best == infinity) {
     throw std::runtime_error("No solution found");
