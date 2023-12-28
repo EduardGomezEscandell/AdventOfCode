@@ -27,3 +27,4 @@
 
 #include "xmaslib/iota/iota_test.hpp"
 #include "xmaslib/lru/lru_test.hpp"
+#include "xmaslib/matrix/algebra_test.hpp"
