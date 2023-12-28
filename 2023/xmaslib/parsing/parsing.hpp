@@ -1,4 +1,5 @@
 #include <string_view>
+#include <type_traits>
 #include <vector>
 
 namespace xmas {
@@ -29,13 +30,13 @@ template <std::integral T>
 }
 
 template <std::integral T, typename Iterator>
-[[nodiscard]] std::pair<Iterator,T>  parse_int_until_break(Iterator begin, Iterator end) {
+[[nodiscard]] std::pair<Iterator, T> parse_int_until_break(Iterator begin, Iterator end) {
   T x{};
-  for (; begin!= end; ++begin) {
-    if(*begin <'0' || *begin >'9') {
+  for (; begin != end; ++begin) {
+    if (*begin < '0' || *begin > '9') {
       return {begin, x};
     }
-    
+
     x *= 10;
     x += *begin - '0';
   }
@@ -49,10 +50,19 @@ template <std::integral T>
   std::vector<T> out;
   out.reserve(str.size());
 
-  T n = 0;              // Current value of number
-  bool parsing = false; // Are we parsing a number?
+  T n = 0;               // Current value of number
+  bool parsing = false;  // Are we parsing a number?
+  bool negative = false; // Was there a negative sign?
 
   for (auto ch : str) {
+    if constexpr (std::is_signed_v<T>) {
+      if (!parsing && ch == '-') {
+        negative = true;
+        parsing = true;
+        continue;
+      }
+    }
+
     if (ch >= '0' && ch <= '9') {
       parsing = true;
       n = 10 * n + T(ch - '0');
@@ -60,14 +70,25 @@ template <std::integral T>
     }
 
     if (parsing) {
+      if constexpr (std::is_signed_v<T>) {
+        if (negative) {
+          n *= -1;
+        }
+      }
       out.push_back(n);
     }
 
     n = 0;
     parsing = false;
+    negative = false;
   }
 
   if (parsing) {
+    if constexpr (std::is_signed_v<T>) {
+      if (negative) {
+        n *= -1;
+      }
+    }
     out.push_back(n);
   }
 
