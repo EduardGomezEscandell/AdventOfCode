@@ -1,19 +1,26 @@
 #include "day10.hpp"
-#include "xmaslib/functional/functional.hpp"
+
 #include "xmaslib/log/log.hpp"
 #include "xmaslib/matrix/text_matrix.hpp"
+
 #include <algorithm>
 #include <cassert>
+#include <cstdint>
+#include <cstdlib>
 #include <execution>
+#include <functional>
 #include <numeric>
 #include <optional>
 #include <stdexcept>
 #include <vector>
 
 namespace {
+
+using Int = std::int64_t;
+
 struct coords {
-  std::size_t r;
-  std::size_t c;
+  Int r;
+  Int c;
 };
 
 enum heading {
@@ -96,13 +103,13 @@ std::optional<coords> take_step(xmas::views::text_matrix map, coords pos, headin
     if(pos.r == 0) return {};
     return {{pos.r - 1, pos.c}};
   case S:
-    if(pos.r+1 == map.nrows()) return {};
+    if(std::size_t(pos.r+1) == map.nrows()) return {};
     return {{pos.r + 1, pos.c}};
   case W:
     if(pos.c == 0) return {};
     return {{pos.r, pos.c - 1}};
   case E:
-    if(pos.c+1 == map.ncols()) return {};
+    if(std::size_t(pos.c+1) == map.ncols()) return {};
     return {{pos.r, pos.c + 1}};
   }
   // clang-format on
@@ -110,7 +117,7 @@ std::optional<coords> take_step(xmas::views::text_matrix map, coords pos, headin
   throw std::runtime_error("Invalid value for heading");
 }
 
-std::vector<heading> find_start_directions(xmas::views::text_matrix map, coords start) {
+heading find_start_direction(xmas::views::text_matrix map, coords start) {
   std::vector<heading> possible_headings;
 
   // North side
@@ -121,16 +128,9 @@ std::vector<heading> find_start_directions(xmas::views::text_matrix map, coords 
   }
 
   // South side
-  if (start.r + 1 != map.nrows()) {
+  if (std::size_t(start.r + 1) != map.nrows()) {
     if (update_heading(map, {start.r + 1, start.c}, S).has_value()) {
       possible_headings.push_back(S);
-    }
-  }
-
-  // East side
-  if (start.c != 0) {
-    if (update_heading(map, {start.r, start.c + 1}, E).has_value()) {
-      possible_headings.push_back(E);
     }
   }
 
@@ -141,41 +141,109 @@ std::vector<heading> find_start_directions(xmas::views::text_matrix map, coords 
     }
   }
 
-  return possible_headings;
+  // East side
+  if (std::size_t(start.c + 1) != map.ncols()) {
+    if (update_heading(map, {start.r, start.c + 1}, E).has_value()) {
+      possible_headings.push_back(E);
+    }
+  }
+
+  switch (possible_headings.size()) {
+  case 0:
+    throw std::runtime_error("No possible heading from start point");
+  case 1:
+    throw std::runtime_error("No closed loop: only one direction available from start");
+  case 2:
+    break;
+  default:
+    xlog::warning("Multiple possible loops");
+  }
+
+  return possible_headings.front();
 }
 
-std::uint64_t loop_size(xmas::views::text_matrix map, coords start, heading heading) {
-  assert(map.at(start) == 'S');
+Int compute_perimeter(std::vector<coords> const& vertices) {
+  return std::transform_reduce(std::execution::par_unseq, vertices.cbegin(), vertices.cend() - 1,
+    vertices.cbegin() + 1, 0, std::plus<Int>{},
+    [](coords const& u, coords const& v) { return std::abs(u.r - v.r) + std::abs(u.c - v.c); });
+}
 
-  std::uint64_t dist = 1;
+// Shoelace formula to find the (maybe non-integer) area, so 2*area is returned.
+// https://en.wikipedia.org/wiki/Shoelace_formula#Shoelace_formula
+Int compute_double_area(std::vector<coords> const& vertices) {
+  Int twice_area = std::transform_reduce(std::execution::par_unseq, vertices.begin(),
+    vertices.end() - 1, vertices.begin() + 1, Int{0}, std::plus<Int>{},
+    [](coords const& u1, coords const& u2) { return u1.r * u2.c - u1.c * u2.r; });
+
+  // Shoelace formula returns the signed area: the sign depends on wether the polygon is traversed
+  // clockwise or counterclockise. This is not something we care about here, so we remove the sign.
+  return std::abs(twice_area);
+}
+
+std::vector<coords> loop_path(xmas::views::text_matrix map, coords start, heading heading) {
+  assert(map.at(start) == 'S');
+  std::vector<coords> vertices{start};
+
   auto pos = take_step(map, start, heading);
   if (!pos.has_value()) {
     xlog::warning("Cancelling path after 0 steps");
     return {};
   }
 
-  auto head = std::make_optional(heading);
-
   while (true) {
-
-    head = update_heading(map, *pos, *head);
-    if (!head.has_value()) {
+    auto new_heading = update_heading(map, *pos, heading);
+    if (!new_heading.has_value()) {
       break;
     }
 
-    pos = take_step(map, *pos, *head);
-    if (!pos.has_value()) {
-      return 0; // Path path
+    if (*new_heading != heading) {
+      heading = *new_heading;
+      vertices.push_back(*pos);
     }
-    ++dist;
+
+    pos = take_step(map, *pos, heading);
+    if (!pos.has_value()) {
+      return {}; // Bad path
+    }
   }
 
   if (map.at(*pos) != 'S') {
     // Bad path
-    return 0;
+    return {};
   }
 
-  return dist / 2;
+  vertices.push_back(start);
+
+  return vertices;
+}
+
+Int loop_perimeter(xmas::views::text_matrix map, coords start, heading heading) {
+  auto vertices = loop_path(map, start, heading);
+  if (vertices.empty()) {
+    return 0; // Bad path
+  }
+
+  return compute_perimeter(vertices);
+}
+
+Int loop_enclosed_area(xmas::views::text_matrix map, coords start, heading heading) {
+  auto vertices = loop_path(map, start, heading);
+  if (vertices.empty()) {
+    return 0; // Bad path
+  }
+  vertices.push_back(vertices.front());
+
+  Int twice_area = compute_double_area(vertices);
+  Int perimeter = compute_perimeter(vertices);
+
+  // Pick's theorem
+  // A = i + b/2 - 1
+  //
+  // where A is the area, i is the count of internal points, and
+  // b is the count of boundary points. We can re-arrange it to:
+  //
+  // i = (2A - b)/2 + 1
+  return (twice_area - perimeter) / 2 + 1;
 }
 
 }
@@ -185,17 +253,26 @@ std::uint64_t Day10::part1() {
 
   auto p = std::ranges::find(this->input, 'S') - this->input.begin();
   coords S{
-    .r = std::size_t(p) / (lines.ncols() + 1), // +1 for the \n
-    .c = std::size_t(p) % (lines.ncols() + 1),
+    .r = Int(p) / Int(lines.ncols() + 1), // +1 for the \n
+    .c = Int(p) % Int(lines.ncols() + 1),
   };
 
-  auto possible_headings = find_start_directions(lines, S);
+  auto heading = find_start_direction(lines, S);
 
-  return std::transform_reduce(std::execution::par_unseq, possible_headings.begin(),
-    possible_headings.end(), std::uint64_t{0}, xmas::max<std::uint64_t>{},
-    [&](heading h) { return loop_size(lines, S, h); });
+  Int perimeter = loop_perimeter(lines, S, heading);
+  return static_cast<std::uint64_t>(perimeter / 2);
 }
 
 std::uint64_t Day10::part2() {
-  throw std::runtime_error("Not implemented");
+  xmas::views::text_matrix lines(this->input);
+
+  auto p = std::ranges::find(this->input, 'S') - this->input.begin();
+  coords S{
+    .r = Int(p) / Int(lines.ncols() + 1), // +1 for the \n
+    .c = Int(p) % Int(lines.ncols() + 1),
+  };
+
+  auto heading = find_start_direction(lines, S);
+  Int enclosed_area = loop_enclosed_area(lines, S, heading);
+  return static_cast<std::uint64_t>(enclosed_area);
 }
