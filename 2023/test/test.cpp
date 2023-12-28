@@ -10,7 +10,7 @@
 #include "solvelib/07/day07_test.hpp"
 #include "solvelib/08/day08_test.hpp"
 #include "solvelib/09/day09_test.hpp"
-
+#include "solvelib/10/day10_test.hpp"
 #include "solvelib/11/day11_test.hpp"
 #include "solvelib/12/day12_test.hpp"
 #include "solvelib/13/day13_test.hpp"
