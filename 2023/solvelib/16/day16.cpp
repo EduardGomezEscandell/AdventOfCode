@@ -16,7 +16,7 @@
 
 namespace {
 
-enum class direction : std::uint8_t {
+enum class heading : std::uint8_t {
   none = 0,
   left = 1,
   right = 2,
@@ -43,18 +43,18 @@ static enum orientation splitter_orientation(char ch) {
 }
 
 struct cell {
-  direction visited = direction::none;
+  heading visited = heading::none;
 
-  bool history_contains(direction x) {
+  bool history_contains(heading x) {
     return (int(visited) & int(x)) != 0;
   }
-  void set_history(direction x) {
-    visited = direction(int(visited) | int(x));
+  void set_history(heading x) {
+    visited = heading(int(visited) | int(x));
   }
 };
 
 struct beam {
-  direction towards;
+  heading towards;
   std::ptrdiff_t row;
   std::ptrdiff_t col;
 
@@ -73,31 +73,31 @@ struct beam {
 
   void step() {
     switch (towards) {
-    case direction::left:
+    case heading::left:
       --col;
       break;
-    case direction::right:
+    case heading::right:
       ++col;
       break;
-    case direction::up:
+    case heading::up:
       --row;
       break;
-    case direction::down:
+    case heading::down:
       ++row;
       break;
-    case direction::none:
+    case heading::none:
       throw std::runtime_error("Beam heading nowhere");
     }
   }
 
   orientation beam_orientation() {
     switch (towards) {
-    case direction::left:
-    case direction::right:
+    case heading::left:
+    case heading::right:
       return orientation::horizontal;
 
-    case direction::up:
-    case direction::down:
+    case heading::up:
+    case heading::down:
       return orientation::vertical;
 
     default:
@@ -109,13 +109,13 @@ struct beam {
     switch (beam_orientation()) {
     case orientation::vertical:
       return {
-        {.towards = direction::left,  .row = row, .col = col},
-        {.towards = direction::right, .row = row, .col = col}
+        {.towards = heading::left,  .row = row, .col = col},
+        {.towards = heading::right, .row = row, .col = col}
       };
     case orientation::horizontal:
       return {
-        {.towards = direction::up,   .row = row, .col = col},
-        {.towards = direction::down, .row = row, .col = col}
+        {.towards = heading::up,   .row = row, .col = col},
+        {.towards = heading::down, .row = row, .col = col}
       };
     default:
       assert(false);
@@ -147,31 +147,31 @@ struct beam {
     return false; // Splitter is parallel
   }
 
-  direction reflection(char pos) {
+  heading reflection(char pos) {
     switch (pos) {
     case '/':
       switch (towards) {
-      case direction::up:
-        return direction::right;
-      case direction::right:
-        return direction::up;
-      case direction::down:
-        return direction::left;
-      case direction::left:
-        return direction::down;
+      case heading::up:
+        return heading::right;
+      case heading::right:
+        return heading::up;
+      case heading::down:
+        return heading::left;
+      case heading::left:
+        return heading::down;
       default:
         assert(false);
       }
     case '\\':
       switch (towards) {
-      case direction::up:
-        return direction::left;
-      case direction::left:
-        return direction::up;
-      case direction::down:
-        return direction::right;
-      case direction::right:
-        return direction::down;
+      case heading::up:
+        return heading::left;
+      case heading::left:
+        return heading::up;
+      case heading::down:
+        return heading::right;
+      case heading::right:
+        return heading::down;
       default:
         assert(false);
       }
@@ -179,7 +179,7 @@ struct beam {
       break;
     }
 
-    return direction::none;
+    return heading::none;
   }
 
   std::string print_state(xmas::views::text_matrix const& map,
@@ -221,7 +221,7 @@ struct beam {
 
       char pos = map.at(srow(), scol());
 
-      if (auto d = reflection(pos); d != direction::none) {
+      if (auto d = reflection(pos); d != heading::none) {
         towards = d;
         continue;
       }
@@ -269,13 +269,13 @@ std::uint64_t solve(xmas::views::text_matrix const& map, beam init_beam) {
   xlog::debug("Running {} from ({:>3},{:>3}) results in {:>3} visited cells",
     xmas::lazy_string([&]() -> std::string {
       switch (init_beam.towards) {
-      case direction::right:
+      case heading::right:
         return "LEFT ";
-      case direction::left:
+      case heading::left:
         return "RIGHT";
-      case direction::up:
+      case heading::up:
         return "UP   ";
-      case direction::down:
+      case heading::down:
         return "DOWN ";
       default:
         return std::format("{:>4}?", int(init_beam.towards));
@@ -290,7 +290,7 @@ std::uint64_t solve(xmas::views::text_matrix const& map, beam init_beam) {
 
 std::uint64_t Day16::part1() {
   xmas::views::text_matrix map(this->input);
-  return solve(map, {.towards = direction::right, .row = 0, .col = -1});
+  return solve(map, {.towards = heading::right, .row = 0, .col = -1});
 }
 
 std::uint64_t Day16::part2() {
@@ -301,10 +301,9 @@ std::uint64_t Day16::part2() {
   auto h = std::transform_reduce(std::execution::par_unseq, rows.begin(), rows.end(),
     std::uint64_t{0}, xmas::max<std::uint64_t>{}, [&map](std::size_t row) {
       auto from_left =
-        solve(map, {.towards = direction::right, .row = std::ptrdiff_t(row), .col = -1});
-      auto from_right = solve(map, {.towards = direction::left,
-                                     .row = std::ptrdiff_t(row),
-                                     .col = std::ptrdiff_t(map.ncols())});
+        solve(map, {.towards = heading::right, .row = std::ptrdiff_t(row), .col = -1});
+      auto from_right = solve(map,
+        {.towards = heading::left, .row = std::ptrdiff_t(row), .col = std::ptrdiff_t(map.ncols())});
       return std::max(from_left, from_right);
     });
 
@@ -313,9 +312,9 @@ std::uint64_t Day16::part2() {
   auto v = std::transform_reduce(std::execution::par_unseq, cols.begin(), cols.end(),
     std::uint64_t{0}, xmas::max<std::uint64_t>{}, [&map](std::size_t col) {
       auto from_above =
-        solve(map, {.towards = direction::down, .row = -1, .col = std::ptrdiff_t(col)});
+        solve(map, {.towards = heading::down, .row = -1, .col = std::ptrdiff_t(col)});
       auto from_below = solve(map,
-        {.towards = direction::up, .row = std::ptrdiff_t(map.nrows()), .col = std::ptrdiff_t(col)});
+        {.towards = heading::up, .row = std::ptrdiff_t(map.nrows()), .col = std::ptrdiff_t(col)});
       return std::max(from_above, from_below);
     });
   return std::max(h, v);

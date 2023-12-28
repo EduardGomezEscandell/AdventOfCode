@@ -31,7 +31,7 @@ struct cell {
   bool filled;
 };
 
-enum direction {
+enum heading {
   right = '0',
   down = '1',
   left = '2',
@@ -205,7 +205,7 @@ blocks coords_to_blocks(coords p, canvas const& map) {
 }
 
 struct instruction {
-  direction dir;
+  heading dir;
   length_t len;
 
   static instruction parse_part1(std::string_view ln) {
@@ -251,7 +251,7 @@ struct instruction {
     }
 
     const auto n = xmas::parse_hex<length_t>(std::string_view{it + 1, it + 6});
-    const auto d = static_cast<direction>(*(it + 6));
+    const auto d = static_cast<heading>(*(it + 6));
 
     return {d, n};
   }

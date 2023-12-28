@@ -8,7 +8,7 @@ add_library(solvelib
     07/day07.cpp
     08/day08.cpp
     09/day09.cpp
-
+    10/day10.cpp
     11/day11.cpp
     12/day12.cpp
     13/day13.cpp

@@ -97,7 +97,7 @@ struct graph {
   std::vector<node> nodes;
 };
 
-enum direction {
+enum heading {
   N = '^',
   E = '>',
   W = '<',
@@ -110,7 +110,7 @@ struct temp_edge {
   length_t len = 0;
   bool bidirectional = true;
 
-  void step(direction towards) {
+  void step(heading towards) {
     switch (towards) {
     case N:
       --pos.row;
@@ -140,7 +140,7 @@ enum BOOL : std::uint8_t {
 
 std::array<temp_edge, 4>::iterator explore(xmas::views::text_matrix map,
   xmas::basic_matrix<BOOL>& visited, std::array<temp_edge, 4>::iterator it, temp_edge tip,
-  direction towards) {
+  heading towards) {
   tip.step(towards);
   while (map.at(tip.pos) == char(towards)) {
     tip.bidirectional = false;
