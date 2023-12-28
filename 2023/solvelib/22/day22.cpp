@@ -1,7 +1,7 @@
 #include "day22.hpp"
 
 #include "xmaslib/functional/functional.hpp"
-#include "xmaslib/matrix/matrix.hpp"
+#include "xmaslib/matrix/dense_matrix.hpp"
 #include "xmaslib/line_iterator/line_iterator.hpp"
 #include "xmaslib/parsing/parsing.hpp"
 #include "xmaslib/lazy_string/lazy_string.hpp"
@@ -106,7 +106,7 @@ std::vector<block> parse(std::string_view input) {
   return blocks;
 }
 
-[[maybe_unused]] auto fmt_map(xmas::matrix<std::size_t>& map, std::span<const block>) {
+[[maybe_unused]] auto fmt_map(xmas::basic_matrix<std::size_t>& map, std::span<const block>) {
   return xmas::lazy_string([&map] {
     std::stringstream ss;
     for (auto r : map.rows()) {
@@ -127,7 +127,7 @@ void simulate_drop(std::span<block> blocks) {
   auto max_x = rng::max(blocks | v::transform([](block const& b) { return b.upper.x; }));
   auto max_y = rng::max(blocks | v::transform([](block const& b) { return b.upper.y; }));
 
-  xmas::matrix map(max_x + 1, max_y + 1, placeholder_id);
+  xmas::basic_matrix<std::size_t> map(max_x + 1, max_y + 1, placeholder_id);
   xlog::debug("Detected {} rows and {} columns", map.nrows(), map.ncols());
 
   for (block& b : blocks) {

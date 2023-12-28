@@ -39,26 +39,48 @@ strided s{array.begin(), array.end(), stride};
 std::for_each(std::execution::par, s, do_something);
 ```
 */
-template <typename Base> class strided {
+template <typename Base>
+class strided {
   // Ensure base iterator is random_access
-  static_assert(
-      std::is_same<typename std::iterator_traits<Base>::iterator_category,
-                   std::random_access_iterator_tag>::value);
+  static_assert(std::is_same<typename std::iterator_traits<Base>::iterator_category,
+    std::random_access_iterator_tag>::value);
 
 public:
   class iterator;
 
   template <std::integral S>
-  strided(Base begin, Base end, S stride)
-      : m_begin{begin, stride}, m_end{aligned(begin, end, stride), stride} {
+  strided(Base begin, Base end, S stride) :
+      m_begin{begin, stride}, m_end{aligned(begin, end, stride), stride} {
     assert(begin < end);
   }
 
-  [[nodiscard]] auto begin() { return m_begin; }
-  [[nodiscard]] auto end() { return m_end; }
+  [[nodiscard]] auto begin() {
+    return m_begin;
+  }
+  [[nodiscard]] auto end() {
+    return m_end;
+  }
 
-  [[nodiscard]] auto rbegin() { return std::reverse_iterator(m_end); }
-  [[nodiscard]] auto rend() { return std::reverse_iterator(m_begin); }
+  [[nodiscard]] auto begin() const {
+    return m_begin;
+  }
+  [[nodiscard]] auto end() const {
+    return m_end;
+  }
+
+  [[nodiscard]] auto cbegin() const {
+    return m_begin;
+  }
+  [[nodiscard]] auto cend() const {
+    return m_end;
+  }
+
+  [[nodiscard]] auto rbegin() {
+    return std::reverse_iterator(m_end);
+  }
+  [[nodiscard]] auto rend() {
+    return std::reverse_iterator(m_begin);
+  }
 
   [[nodiscard]] auto size() const {
     return safe_cast(std::size_t, m_end - m_begin);
@@ -73,8 +95,7 @@ private:
   template <std::integral S>
   [[nodiscard]] static Base aligned(Base begin, Base it, S stride) {
     const auto delta = safe_cast(std::size_t, it - begin);
-    return begin +
-           safe_cast(std::ptrdiff_t, stride * div_round_up(delta, stride));
+    return begin + safe_cast(std::ptrdiff_t, stride * div_round_up(delta, stride));
   }
 
   [[nodiscard]] static std::size_t div_round_up(std::size_t x, std::size_t y) {
@@ -88,8 +109,7 @@ private:
   constexpr static Out safe_cast_impl(In in, std::string_view funcname) {
     Out out = static_cast<Out>(in);
     if (in != static_cast<In>(out)) {
-      throw std::runtime_error(
-          std::format("{}: Failed cast {} != {}", funcname, in, out));
+      throw std::runtime_error(std::format("{}: Failed cast {} != {}", funcname, in, out));
     }
     return out;
   }
@@ -130,12 +150,12 @@ public:
       return it;
     }
 
-    iterator &operator+=(std::ptrdiff_t delta) noexcept {
+    iterator& operator+=(std::ptrdiff_t delta) noexcept {
       base += delta * stride;
       return *this;
     }
 
-    iterator &operator-=(std::ptrdiff_t delta) noexcept {
+    iterator& operator-=(std::ptrdiff_t delta) noexcept {
       base -= delta * stride;
       return *this;
     }
@@ -165,13 +185,16 @@ public:
       return !(*this == other);
     }
 
-    [[nodiscard]] std::strong_ordering
-    operator<=>(iterator other) const noexcept {
+    [[nodiscard]] std::strong_ordering operator<=>(iterator other) const noexcept {
       return base <=> other.base;
     }
 
-    [[nodiscard]] value_type operator*() const noexcept { return *base; }
-    [[nodiscard]] reference operator*() noexcept { return *base; }
+    [[nodiscard]] value_type operator*() const noexcept {
+      return *base;
+    }
+    [[nodiscard]] reference operator*() noexcept {
+      return *base;
+    }
 
     [[nodiscard]] value_type operator[](std::size_t index) const noexcept {
       return *(base + index * safe_cast(difference_type, stride));

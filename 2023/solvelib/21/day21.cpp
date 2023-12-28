@@ -1,7 +1,7 @@
 #include "day21.hpp"
 
 #include "xmaslib/log/log.hpp"
-#include "xmaslib/matrix/matrix.hpp"
+#include "xmaslib/matrix/dense_matrix.hpp"
 #include "xmaslib/matrix/text_matrix.hpp"
 #include "xmaslib/lazy_string/lazy_string.hpp"
 
@@ -45,7 +45,7 @@ coords find_start(xmas::views::text_matrix map) {
 
 constexpr auto sentinel = std::numeric_limits<std::size_t>::max();
 
-void bfs(xmas::views::text_matrix map, xmas::matrix<std::size_t>& distances, std::size_t d,
+void bfs(xmas::views::text_matrix map, xmas::basic_matrix<std::size_t>& distances, std::size_t d,
   coords pos, std::back_insert_iterator<std::vector<coords>> enqueuer) {
   if (distances[pos.row][pos.col] != sentinel) {
     return;
@@ -79,7 +79,8 @@ void bfs(xmas::views::text_matrix map, xmas::matrix<std::size_t>& distances, std
   }
 }
 
-[[maybe_unused]] auto fmt_map(xmas::views::text_matrix map, xmas::matrix<std::size_t>& distance) {
+[[maybe_unused]] auto fmt_map(
+  xmas::views::text_matrix map, xmas::basic_matrix<std::size_t>& distance) {
   return xmas::lazy_string([map, &distance]() -> std::string {
     std::stringstream ss;
     for (std::size_t i = 0; i < map.nrows(); ++i) {
@@ -100,7 +101,7 @@ void bfs(xmas::views::text_matrix map, xmas::matrix<std::size_t>& distances, std
 
 std::pair<std::size_t, std::size_t> count_parities(
   xmas::views::text_matrix map, std::size_t nsteps, coords start) {
-  xmas::matrix<std::size_t> distance(map.nrows(), map.ncols(), sentinel);
+  xmas::basic_matrix<std::size_t> distance(map.nrows(), map.ncols(), sentinel);
 
   std::vector queue{start};
   for (std::size_t s = 0; s <= nsteps; ++s) {

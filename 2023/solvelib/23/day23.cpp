@@ -1,7 +1,7 @@
 #include "day23.hpp"
 
 #include "xmaslib/log/log.hpp"
-#include "xmaslib/matrix/matrix.hpp"
+#include "xmaslib/matrix/dense_matrix.hpp"
 #include "xmaslib/matrix/text_matrix.hpp"
 
 #include <algorithm>
@@ -139,7 +139,7 @@ enum BOOL : std::uint8_t {
 };
 
 std::array<temp_edge, 4>::iterator explore(xmas::views::text_matrix map,
-  xmas::matrix<BOOL>& visited, std::array<temp_edge, 4>::iterator it, temp_edge tip,
+  xmas::basic_matrix<BOOL>& visited, std::array<temp_edge, 4>::iterator it, temp_edge tip,
   direction towards) {
   tip.step(towards);
   while (map.at(tip.pos) == char(towards)) {
@@ -185,7 +185,7 @@ void find_all_nodes(xmas::views::text_matrix map, graph& g) {
 
 graph build_graph(xmas::views::text_matrix map) {
   graph g;
-  xmas::matrix<BOOL> visited(map.nrows(), map.ncols(), FALSE);
+  xmas::basic_matrix<BOOL> visited(map.nrows(), map.ncols(), FALSE);
 
   // Start point
   assert(map.at(0, 1) == '.');

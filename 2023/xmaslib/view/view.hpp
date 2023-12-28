@@ -103,4 +103,9 @@ private:
 #endif
   }
 };
+
+auto make_view(auto range) {
+  return view(range.begin(), range.end());
+}
+
 } // namespace xmas
