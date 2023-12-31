@@ -17,7 +17,7 @@
 #include "solvelib/14/day14_test.hpp"
 #include "solvelib/15/day15_test.hpp"
 #include "solvelib/16/day16_test.hpp"
-
+#include "solvelib/17/day17_test.hpp"
 #include "solvelib/18/day18_test.hpp"
 #include "solvelib/19/day19_test.hpp"
 #include "solvelib/20/day20_test.hpp"
