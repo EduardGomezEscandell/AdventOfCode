@@ -11,7 +11,7 @@ namespace xmas {
 namespace views {
 
 struct text_matrix {
-  text_matrix(std::string& data);
+  explicit text_matrix(std::string& data);
 
   [[nodiscard]] view<std::string::iterator> row(std::size_t i);
   [[nodiscard]] std::string_view line(std::size_t i) const;
@@ -36,6 +36,9 @@ struct text_matrix {
   }
   [[nodiscard]] std::size_t ncols() const noexcept {
     return n_cols;
+  }
+  [[nodiscard]] std::size_t size() const noexcept {
+    return data().size();
   }
 
   std::string_view data() const {
