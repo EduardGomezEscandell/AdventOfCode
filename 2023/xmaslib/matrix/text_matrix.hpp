@@ -37,6 +37,9 @@ struct text_matrix {
   [[nodiscard]] std::size_t ncols() const noexcept {
     return n_cols;
   }
+  [[nodiscard]] std::size_t size() const noexcept {
+    return data().size();
+  }
 
   std::string_view data() const {
     return text;
