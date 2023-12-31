@@ -15,7 +15,6 @@
 #include <ranges>
 #include <sstream>
 #include <stdexcept>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -33,7 +32,6 @@ enum relative_heading {
   right,
   left,
   ahead,
-  reverse
 };
 
 using length_t = std::int64_t;
@@ -45,6 +43,8 @@ struct state {
   heat_t heat_lost;
 
   std::pair<std::size_t, std::size_t> coords() const noexcept {
+    assert(row >= 0);
+    assert(col >= 0);
     return {std::size_t(row), std::size_t(col)};
   }
 
@@ -57,9 +57,6 @@ struct state {
       return;
     case right:
       head = heading((head + 1) % 4u);
-      return;
-    case reverse:
-      head = heading((head + 2) % 4u);
       return;
     }
   }
@@ -109,95 +106,41 @@ struct state {
 
     return true;
   }
-
-  bool move(xmas::views::text_matrix map,
-    std::initializer_list<std::pair<relative_heading, length_t>>
-      moves) {
-    for (auto const& move_ : moves) {
-      bool ok = move(map, move_);
-      if (!ok) {
-        return false;
-      }
-    }
-    return true;
-  }
 };
 
 std::pair<std::size_t, std::size_t> bottom_right(xmas::views::text_matrix map) {
   return {map.nrows() - 1, map.ncols() - 1};
 }
 
-// Possible moves assuming that a single step has already been taken
+// Possible moves assuming that a no step has already been taken
 // in the current heading.
-void possible_moves(xmas::views::text_matrix map, state s, std::invocable<state> auto append) {
+void possible_moves(xmas::views::text_matrix map, state s, std::size_t min_steps,
+  std::size_t max_steps, std::invocable<state> auto append) {
 
-  // Turn left
-  {
-    state n = s;
-    if (bool ok = n.move(map, {left, 1}); ok) {
-      append(n);
+  auto exit = bottom_right(map);
+
+  // Advance from MIN to MAX blocks
+  for (std::size_t i = min_steps; i <= max_steps; ++i) {
+    // Reached the end?
+    if (s.coords() == exit) {
+      append(s);
     }
-  }
 
-  // Turn right
-  {
-    state n = s;
-    if (bool ok = n.move(map, {right, 1}); ok) {
-      append(n);
+    // Turn left?
+    state l = s;
+    if (bool ok = l.move(map, {left, min_steps}); ok) {
+      append(l);
     }
-  }
 
-  // clang-format off
-  // Disabling clang-format because it messes with s.move(...)
-
-  // Ahead, then left
-  {
-    state n = s;
-    if(bool ok = n.move(map, {{ahead, 1}, {left, 1}}); ok) {
-      append(n);
+    // Turn right?
+    state r = s;
+    if (bool ok = r.move(map, {right, min_steps}); ok) {
+      append(r);
     }
-  }
 
-  // Ahead, then right
-  {
-    state n = s;
-    if(bool ok = n.move(map, {{ahead, 1}, {right, 1}}); ok) {
-      append(n);
-    }
-  }
-
-  // Ahead 2, then left
-  {
-    state n = s;
-    if(bool ok = n.move(map, {{ahead, 2}, {left, 1}}); ok) {
-      append(n);
-    }
-  }
-
-  // Ahead 2, then right
-  {
-    state n = s;
-    if(bool ok = n.move(map, {{ahead, 2}, {right, 1}}); ok) {
-      append(n);
-    }
-  }
-
-  // clang-format on
-
-  // Special case: moving ahead reaches the end
-  {
-    state n = s;
-    bool ok = n.move(map, {ahead, 1});
-    if (ok && n.coords() == bottom_right(map)) {
-      append(n);
-    }
-  }
-
-  {
-    state n = s;
-    bool ok = n.move(map, {ahead, 2});
-    if (ok && n.coords() == bottom_right(map)) {
-      append(n);
+    // Step forward
+    if (bool ok = s.move(map, {ahead, 1}); !ok) {
+      return;
     }
   }
 }
@@ -257,7 +200,8 @@ struct heap {
     return s;
   }
 
-  void purge_duplicates() {
+  void purge_redundant(heat_t best_score) {
+    // Remove duplicates
     std::ranges::sort(data, [](state const& l, state const& r) {
       if (l.row != r.row) {
         return l.row < r.row;
@@ -272,58 +216,42 @@ struct heap {
       [](state const& l, state const& r) { return l.row == r.row && l.col == r.col; });
     data.erase(new_end, data.end());
 
+    // Remove redundancies
+    new_end = std::partition(
+      data.begin(), data.end(), [=](state const& a) { return a.heat_lost < best_score; });
+    data.erase(new_end, data.end());
+
+    // Re-make heap
     std::make_heap(data.begin(), data.end(), heuristic);
   }
 
-  static bool heuristic(state const& l, state const& r) noexcept {
-    if (l.heat_lost != r.heat_lost) {
-      return l.heat_lost > r.heat_lost;
-    }
+  // Return TRUE if the left argument has priority over the right.
+  static bool heuristic(state const& lhs, state const& rhs) noexcept {
+    // Prioritize HIGH scores and punish cells close to the origin.
+    auto lscore = std::int64_t(lhs.heat_lost) - (lhs.row + lhs.col);
+    auto rscore = std::int64_t(rhs.heat_lost) - (rhs.row + rhs.col);
 
-    // Prioritize more advanced positions
-    if (l.row != r.row) {
-      return l.row > r.row;
-    }
-
-    if (l.col != r.col) {
-      return l.col > r.col;
-    }
-
-    if (l.head == r.head) {
-      return true; // Arbitrary
-    }
-
-    // Prioritize moving south-east
-    if (l.head == E) {
-      return true;
-    }
-    if (r.head == E) {
-      return false;
-    }
-
-    if (l.head == S) {
-      return true;
-    }
-    if (r.head == S) {
-      return false;
-    }
-
-    // Arbitrary end result
-    return l.head < r.head;
+    return lscore > rscore;
   }
 };
-}
 
-std::uint64_t Day17::part1() {
-  xmas::views::text_matrix map(this->input);
-
-  heap queue;
+std::uint64_t solve(std::string& input, std::size_t min_steps, std::size_t max_steps) {
+  const xmas::views::text_matrix map(input);
 
   // Path-finding!
   //
-  // We only consider the state where a single step has been taken. This step can be taken
-  // in four different directions, so there are 4 possible states at every position. Hence
-  // we keep four cost matrices.
+  // We consider a graph where every node is a player's position and their heading right after
+  // turning. Intermediate states where the player has taken a step already are not considered.
+  //
+  // The edges of the graph connect the current state to all other possible non-intermediate
+  // states. These are computed on the fly by possible_moves().
+  //
+  // Hence, we have four nodes (aka non-intermediate states) in every position in the map: one for
+  // each heading.
+  //
+  // With this, the problem becomes a simple path-finding problem. I used A* to solve it. My
+  // heuristic is prioritizes low heat losses and closeness to the end position. I've made the
+  // choice of heuristic such that I can short-circuit once I've found a solution.
   auto max_heat = std::numeric_limits<heat_t>::max();
 
   std::array<xmas::basic_matrix<heat_t>, 4> visited{
@@ -333,72 +261,63 @@ std::uint64_t Day17::part1() {
     xmas::basic_matrix<heat_t>(map.nrows(), map.ncols(), max_heat),
   };
 
+  heap queue;
+
+  // Starting options
+  for (heading head : {E, S}) {
+    state s{.row = 0, .col = 0, .head = head, .heat_lost = 0};
+    visited[head][s.coords()] = s.heat_lost;
+    if (bool ok = s.move(map, {ahead, min_steps}); !ok) {
+      throw std::runtime_error("Input too small");
+    }
+    visited[head][s.coords()] = s.heat_lost;
+    queue.push(s);
+  }
+
   auto current_best = [&]() -> heat_t {
-    auto v = visited | std::ranges::views::transform(
-                         [&](auto const& visited) { return visited[bottom_right(map)]; });
+    auto v =
+      visited | std::ranges::views::transform([&](auto const& v) { return v[bottom_right(map)]; });
     return std::ranges::min(v);
   };
 
-  // Case 1: start going east
-  state r{.row = 0, .col = 0, .head = E, .heat_lost = 0};
-  if (bool ok = r.move(map, {ahead, 1}); !ok) {
-    throw std::runtime_error("The map is less than 2 columns wide");
-  }
-  visited[E][r.coords()] = r.heat_lost;
-  queue.push(r);
-
-  // Case 2: start going south
-  state s{.row = 0, .col = 0, .head = S, .heat_lost = 0};
-  if (bool ok = s.move(map, {ahead, 1}); !ok) {
-    throw std::runtime_error("The map is less than 2 columns wide");
-  }
-  visited[S][s.coords()] = s.heat_lost;
-  queue.push(s);
-
-  for (std::size_t i = 1; !queue.empty(); ++i) {
-    if (i % map.size() == 0) {
-      //    ^ Every now and then, we remove duplicates
-      // Not sure what the optimum frequency is, so I settled for N
-      // where N is the number of nodes.
-      queue.purge_duplicates();
-      // xlog::debug("{}", fmt_curr_state(visited, s)); // Too verbose
-    }
-
+  while (!queue.empty()) {
     state s = queue.pop();
 
     if (s.heat_lost > visited[s.head][s.coords()]) {
-      // Better path was found, escape
+      // Better path to this state was found, ignore current path.
       continue;
     }
 
-    auto best = current_best();
-    if (s.heat_lost > best) {
+    if (s.heat_lost + distance_to_end(map, s.coords()) > current_best()) {
+      // Short-circuit: all states in the queue have higher heat-loss than the
+      // currently found solution.
       break;
     }
 
-    if (s.heat_lost + distance_to_end(map, s.coords()) > best) {
-      continue;
-    }
-
-    possible_moves(map, s, [&](state const& s) {
-      heat_t& prev = visited[s.head][s.coords()];
-      if (prev < s.heat_lost) {
+    possible_moves(map, s, min_steps, max_steps, [&](state const& cont) {
+      heat_t& prev = visited[cont.head][cont.coords()];
+      if (prev <= cont.heat_lost) {
         return;
       }
-      prev = s.heat_lost;
+      prev = cont.heat_lost;
 
-      if (s.coords() == bottom_right(map)) {
-        // No need to continue path-finding
+      if (cont.coords() == bottom_right(map)) {
         return;
       }
 
-      queue.push(s);
+      queue.push(cont);
     });
   }
 
   return current_best();
 }
 
+}
+
+std::uint64_t Day17::part1() {
+  return solve(this->input, 1, 3);
+}
+
 std::uint64_t Day17::part2() {
-  throw std::runtime_error("Not implemented");
+  return solve(this->input, 4, 10);
 }
