@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <initializer_list>
 #include <type_traits>
 #include <sstream>
 #include <utility>
@@ -18,6 +19,10 @@ template <typename T>
 class basic_vector {
 public:
   basic_vector(basic_vector<T> const& other) : m_data(other.data()) {
+  }
+
+  basic_vector(std::initializer_list<T>&& data) :
+      m_data(std::forward<std::initializer_list<T>>(data)) {
   }
 
   basic_vector(basic_vector&& other) {
