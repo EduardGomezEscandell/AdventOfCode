@@ -22,6 +22,7 @@ add_library(solvelib
     21/day21.cpp
     22/day22.cpp
     23/day23.cpp
+    24/day24.cpp
 )
 
 set_target_properties(solvelib PROPERTIES LINKER_LANGUAGE CXX)

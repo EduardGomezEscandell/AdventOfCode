@@ -19,6 +19,9 @@ public:
   view(It begin, It end) : m_begin(begin), m_end(end) {
   }
 
+  view(auto& container) : m_begin(std::begin(container)), m_end(std::end(container)) {
+  }
+
   auto begin() const {
     return m_begin;
   }
