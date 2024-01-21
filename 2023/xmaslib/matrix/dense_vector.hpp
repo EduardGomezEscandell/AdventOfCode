@@ -1,11 +1,10 @@
 #pragma once
 
-#include "dense_algebra.hpp"
-
 #include "../lazy_string/lazy_string.hpp"
 
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <initializer_list>
 #include <type_traits>
 #include <sstream>
@@ -114,6 +113,18 @@ public:
     return *this;
   }
 
+  basic_vector operator+() const {
+    basic_vector<T> out(size());
+    elementwise(m_data, m_data, [](T t) { return -t; });
+    return out;
+  }
+
+  basic_vector operator-() const {
+    basic_vector<T> out(size());
+    elementwise(m_data, m_data, [](T t) { return -t; });
+    return out;
+  }
+
   basic_vector operator+(basic_vector const& other) const {
     basic_vector<T> out(size());
     elementwise(m_data, other.m_data, out, [](T t, T o) { return t + o; });
@@ -161,7 +172,8 @@ public:
   }
 
   auto norm2() const {
-    return algebra::inner<T>(*this, *this);
+    return std::transform_reduce(
+      std::execution::unseq, begin(), end(), begin(), T{0}, std::plus<T>{}, std::multiplies<T>{});
   }
 
   void normalize() {

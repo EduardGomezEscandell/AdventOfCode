@@ -141,7 +141,7 @@ auto finishing_nodes(std::map<std::string, node> const& network) {
 auto timings_matrix(std::string_view instr, std::map<std::string, node> const& network,
   std::span<std::string> sources, std::span<std::string> destinations) {
 
-  xmas::basic_matrix<std::uint64_t> timing_matrix(sources.size(), destinations.size(), 0);
+  xmas::dense_matrix<std::uint64_t> timing_matrix(sources.size(), destinations.size(), 0);
 
   xmas::views::iota<std::size_t> rows(0, timing_matrix.nrows());
   xmas::views::iota<std::size_t> cols(0, timing_matrix.ncols());
@@ -156,7 +156,7 @@ auto timings_matrix(std::string_view instr, std::map<std::string, node> const& n
 }
 
 std::uint64_t compute_permutation(
-  xmas::basic_matrix<std::uint64_t> timings, std::vector<std::uint64_t> selected) {
+  xmas::dense_matrix<std::uint64_t> timings, std::vector<std::uint64_t> selected) {
   assert(selected.size() == timings.nrows());
 
   std::vector<std::uint64_t> t(selected.size());
@@ -169,7 +169,7 @@ std::uint64_t compute_permutation(
 }
 
 std::uint64_t find_best_permutation(
-  xmas::basic_matrix<std::uint64_t> timings, std::vector<std::uint64_t>& selected_finishers) {
+  xmas::dense_matrix<std::uint64_t> timings, std::vector<std::uint64_t>& selected_finishers) {
   std::size_t row = selected_finishers.size();
   if (row == timings.nrows()) {
     return compute_permutation(timings, selected_finishers);

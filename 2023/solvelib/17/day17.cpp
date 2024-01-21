@@ -147,7 +147,7 @@ void possible_moves(xmas::views::text_matrix map, state s, std::size_t min_steps
 
 using queue = std::priority_queue<state, std::vector<state>, bool (*)(state const&, state const&)>;
 
-[[maybe_unused]] auto fmt_curr_state(std::array<xmas::basic_matrix<heat_t>, 4> const& visited,
+[[maybe_unused]] auto fmt_curr_state(std::array<xmas::dense_matrix<heat_t>, 4> const& visited,
   state s) {
   return xmas::lazy_string([&visited, s] {
     std::stringstream ss;
@@ -254,11 +254,11 @@ std::uint64_t solve(std::string& input, std::size_t min_steps, std::size_t max_s
   // choice of heuristic such that I can short-circuit once I've found a solution.
   auto max_heat = std::numeric_limits<heat_t>::max();
 
-  std::array<xmas::basic_matrix<heat_t>, 4> visited{
-    xmas::basic_matrix<heat_t>(map.nrows(), map.ncols(), max_heat),
-    xmas::basic_matrix<heat_t>(map.nrows(), map.ncols(), max_heat),
-    xmas::basic_matrix<heat_t>(map.nrows(), map.ncols(), max_heat),
-    xmas::basic_matrix<heat_t>(map.nrows(), map.ncols(), max_heat),
+  std::array<xmas::dense_matrix<heat_t>, 4> visited{
+    xmas::dense_matrix<heat_t>(map.nrows(), map.ncols(), max_heat),
+    xmas::dense_matrix<heat_t>(map.nrows(), map.ncols(), max_heat),
+    xmas::dense_matrix<heat_t>(map.nrows(), map.ncols(), max_heat),
+    xmas::dense_matrix<heat_t>(map.nrows(), map.ncols(), max_heat),
   };
 
   heap queue;

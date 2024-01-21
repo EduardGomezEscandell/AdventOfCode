@@ -9,7 +9,7 @@
 TEST_CASE("QR decomoposion") {
 
   SUBCASE("Wikipedia example") {
-    xmas::matrix A(3, 3);
+    xmas::dense_matrix<float> A(3, 3);
 
     // clang-format off
     A[0][0] = 12;     A[0][1] = -51;  A[0][2] =   4;
@@ -35,7 +35,7 @@ TEST_CASE("QR decomoposion") {
   }
 
   SUBCASE("Example") {
-    xmas::matrix A(3, 3);
+    xmas::dense_matrix<float> A(3, 3);
 
     // clang-format off
     A[0][0] = 4;     A[0][1] = 2;  A[0][2] = 1;
@@ -61,7 +61,7 @@ TEST_CASE("QR decomoposion") {
   }
 
   SUBCASE("Example 2") {
-    xmas::matrix A(3, 3);
+    xmas::dense_matrix<float> A(3, 3);
 
     // clang-format off
     A[0][0] = 0;     A[0][1] = 0;  A[0][2] = 1;
