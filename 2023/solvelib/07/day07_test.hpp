@@ -3,6 +3,10 @@
 
 TEST_CASE("Day 07") {
 
+  SUBCASE("Fail on purpose") {
+    REQUIRE_EQ(1, 2);
+  }
+
   SUBCASE("Part 1") {
     Day07 solution{};
     solution.set_input("./data/07/example.txt");
